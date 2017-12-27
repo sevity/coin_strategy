@@ -76,13 +76,16 @@ def one_turn(cnt):
 			sell_price = market_sell('EOS', cnt)
 			print("sell price: ", sell_price)
 			# order_price = max(sell_price - 10, eos_sp)
-			order_price = eos_lp
-			if order_price >= sell_price: order_price = sell_price - 5
+			order_price = eos_lp  # base diff
+			if order_price > sell_price - 5: order_price = sell_price - 5  # min diff
 			print("order price: ", order_price)
 
-			total_sell = sell_price * cnt
-			new_cnt = round(1.0 * total_sell / order_price, 4) - 0.0001
-			print("new_cnt: ", new_cnt)
+			# 아래 코드는 부분체결 고려해서 다시 짜야함
+			# total_sell = sell_price * cnt
+			# new_cnt = round(1.0 * total_sell / order_price, 4) - 0.0001
+			# print("new_cnt: ", new_cnt)
+
+			new_cnt = cnt
 
 			err = order_new('EOS', order_price, new_cnt, 'bid')
 			while err=='5600':  #please try again
@@ -93,4 +96,4 @@ def one_turn(cnt):
 		eos_lp = price
 
 while True:
-	one_turn(20)
+	one_turn(5)

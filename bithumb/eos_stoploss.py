@@ -10,15 +10,27 @@ api_secret = "api_secret_key";
 
 api = XCoinAPI(api_key, api_secret);
 
-rgParams = {
-	"order_currency" : "BTC",
-	"payment_currency" : "KRW"
-};
+
+def get_lastest_transaction(ticker):
+	rgParams = {
+	};
+	while True:
+		try:
+			result = api.xcoinApiCall("/public/recent_transactions/"+ticker, rgParams);
+			assert(result['status']=='0000')
+			a = result['data'][0]['transaction_date'];
+			b = 'uptick' if result['data'][0]['type'] == 'ask' else 'downtick';
+			c = result['data'][0]['price'];
+			return a, b, c
+		except:
+			# print("err1")
+			pass
+		time.sleep(0.5)
+
 
 while True:
-    print("Bithumb Public API URI('/public/ticker') Request...");
-    result = api.xcoinApiCall("/public/ticker", rgParams);
-    print("- Status Code: " + result["status"]);
-    print("- Closing Price: " + result["data"]["closing_price"]);
-    time.sleep(1)
+	date, updown, price = get_lastest_transaction('BTC')
+	print('BTC', date, updown, price)
+	date, updown, price = get_lastest_transaction('EOS')
+	print('EOS', date, updown, price)
 

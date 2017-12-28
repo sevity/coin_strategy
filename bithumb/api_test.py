@@ -48,8 +48,8 @@ rgParams = {
 # /public/orderbook
 # /public/recent_transactions
 
-print("Bithumb Public API URI('/public/ticker') Request...");
-result = api.xcoinApiCall("/public/ticker", rgParams);
+print("Bithumb Public API URI('/public/orderbook') Request...");
+result = api.xcoinApiCall("/public/orderbook", rgParams);
 print("- Status Code: " + result["status"]);
 print("- Opening Price: " + result["data"]["opening_price"]);
 print("- Closing Price: " + result["data"]["closing_price"]);

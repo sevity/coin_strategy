@@ -16,13 +16,9 @@ rgParams = {
 };
 
 while True:
-	try:
-		result = api.xcoinApiCall("/public/orderbook", rgParams);
-		assert(result['status']=='0000')
-		print(result);
-	except:
-		print("err")
-		pass
+        result = api.xcoinApiCall("/public/orderbook", rgParams);
+        assert(result['status']=='0000')
+        print(result);
 
 	time.sleep(2)
 

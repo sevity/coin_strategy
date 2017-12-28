@@ -11,7 +11,7 @@ api_secret = "api_secret_key";
 api = XCoinAPI(api_key, api_secret);
 
 rgParams = {
-	"order_currency" : "BTC",
+	"order_currency" : "EOS",
 	"payment_currency" : "KRW"
 };
 
@@ -24,5 +24,5 @@ while True:
 		print("err")
 		pass
 
-	time.sleep(2)
+	time.sleep(0.1)
 

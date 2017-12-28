@@ -31,7 +31,7 @@ class XCoinAPI:
 		self.api_secret = api_secret;
 
 	def http_body_callback(self, buf):
-		self.contents = buf;
+		self.contents += buf;
 
 	def microtime(self, get_as_float = False):
 		if get_as_float:
@@ -51,6 +51,7 @@ class XCoinAPI:
 		# - nonce: it is an arbitrary number that may only be used once. (Microseconds)
 		# - api_sign: API signature information created in various combinations values.
 
+                self.contents = ""
 		endpoint_item_array = {
 			"endpoint" : endpoint
 		};

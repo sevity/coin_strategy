@@ -1,100 +1,36 @@
 #! /usr/bin/env python
-import sys
-from xcoin_api_client import *
-import pprint
-import time
+from sevity_coin_api import *
 
-api_key = "";
-api_secret = "";
 
 # options ########################################
-panic_sell_cnt = 10
-real_panic_sell_cnt = 30
+panic_sell_cnt = 3
+real_panic_sell_cnt = 20
 price_count_threshold = 3
 volume_count_threshold = 3
-eos_only_price_count_threshold = 4
-min_price_drop = 30
-buy_back_price_offset = 40
+eos_only_price_count_threshold = 7
+btc_only_price_count_threshold = 8
+
+detect_panic_delta = 30
+min_price_drop = 50
+panic_price_offset = 10
+real_panic_price_offset = 30
 ##################################################
 
 
-
-api = XCoinAPI(api_key, api_secret);
-
-def get_lastest_transaction(ticker):
-    rgParams = {
-    };
-    while True:
-        try:
-            result = api.xcoinApiCall("/public/recent_transactions/"+ticker, rgParams);
-            assert(result['status']=='0000')
-            a = result['data'][0]['transaction_date']
-            b = 'uptick' if result['data'][0]['type'] == 'ask' else 'downtick'
-            c = int(result['data'][0]['price'])
-            d = float(result['data'][0]['units_traded'])
-            return a, b, c, d
-        except:
-            print('e')
-            time.sleep(0.05)
-            pass 
-
-
-def market_sell(ticker,cnt):
-    rgParams = {
-        "units" : cnt,
-        "currency" : ticker
-    };
-    result = api.xcoinApiCall("/trade/market_sell/", rgParams);
-    if result['status'] != '0000': return -1, result['status']
-    assert(result['status']=='0000')
-    fill_cnt = len(result['data'])
-    print('market sell fill_cnt', fill_cnt)
-    price = 0.0
-    for x in result['data']:
-        price += float(x['price'])
-    return price / fill_cnt, result['status']
-
-def order_new(ticker, price, cnt, askbid):
-    rgParams = {
-        "order_currency" : ticker,
-        "payment_currency" : "KRW",
-        "units" : float(cnt),
-        "price" : int(price),
-        "type" : askbid,
-    };
-    result = api.xcoinApiCall("/trade/place/", rgParams);
-    # print(result)
-    return result['status']
-    # return result['data']['price']
-
-
 def panic_sell(sell_cnt):
-    sell_price, err = market_sell('EOS', sell_cnt)
-    while int(err) != 0:
-        if int(err) != 5600: print('['+err+']')
-        assert(int(err)==5600)
-        sell_price, err = market_sell('EOS', sell_cnt)
-
-    print("panic sell done. sell price: ", sell_price)
-    return sell_price
+    return market_sell('EOS', sell_cnt)
 
 def buy_back(sell_price, sell_cnt, buy_price):
-    print("sell price", sell_price, "buy_price", buy_price)
-    assert(buy_price <= sell_price - buy_back_price_offset)
+    if buy_price >= sell_price - min_price_drop: buy_price = sell_price - min_price_drop
+    print("* buy_price", buy_price, "gain:{:,} *".format(sell_price - buy_price))
+    # assert(buy_price <= sell_price - buy_back_price_offset)
 
     sell_amount = sell_price * sell_cnt
     fee = 0.00151  # trailing 1 is for preventing overflow
     buy_cnt = round( (1.0) * sell_amount / (buy_price * (1.0 + fee) ), 4)# - 0.0001
-    print("buy_cnt: ", buy_cnt)
+    # print("buy_cnt: ", buy_cnt)
 
-    print('order_new...', buy_price, buy_cnt)
-    err = order_new('EOS', buy_price, buy_cnt, 'bid')
-    while err!='0000':  #please try again
-        if err != '5600':
-            print(err)
-            assert False
-        err = order_new('EOS', buy_price, buy_cnt, 'bid')
-        time.sleep(0.1)
+    order_new('EOS', buy_price, buy_cnt, 'bid')
     print("buy_back done.")
 
 
@@ -140,34 +76,55 @@ class Monitor:
 def one_turn(cnt):
     eos_monitor = Monitor('EOS')
     btc_monitor = Monitor('BTC')
+    panic_cnt = 0
 
     while True:
         ech, ed, ep, ev, epd, evd, epuc, epdc, evuc, evdc, eusp, edsp, eusv, edsv = eos_monitor.get()
         bch, bd, bp, bv, bpd, bvd, bpuc, bpdc, bvuc, bvdc, busp, bdsp, busv, bdsv = btc_monitor.get()
 
         if ech or bch:  # flag_eos_change or flag_btc_change
-            print(ed[11:], 'EOS', "￦{:,}({:>+4,})".format(int(ep), epd), "(c{:>+5,}) [￦↓{}".format(ep - edsp, epdc),\
-                           "V↑{}] (c{:>+5})".format(evuc, int(ev - eusv)), "V{:<5,.0f}({:>+4,.0f})".format(ev, evd),\
-                       '\t\tBTC', "￦{:,}({:>+8,})".format(int(bp), bpd), "[￦↓{}".format(bpdc), "V↑{}]".format(bvuc), "V{:.4f}({:>+4,.4f})".format(bv, bvd))
+            print(ed, 'EOS', "￦{:,}({:>+4,})".format(int(ep), epd), "(c{:>+5,}) [￦↓{}".format(ep - edsp, epdc),\
+                      "V↑{}] (c{:>+5})".format(evuc, int(ev - eusv)), "V{:<5,.0f}({:>+4,.0f})".format(ev, evd),\
+                  '\t\tBTC', "￦{:,}({:>+8,})".format(int(bp), bpd), "[￦↓{}".format(bpdc), "V↑{}]".format(bvuc), "V{:.4f}({:>+4,.4f})".format(bv, bvd))
+        else:
+            continue
 
-        if edsp - ep >= min_price_drop:        
+        if bpdc >= btc_only_price_count_threshold:
+                print('BTC only panic!!'); panic_cnt += 1
+                sell_price = panic_sell(panic_sell_cnt)
+                buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
+                buy_back(sell_price, panic_sell_cnt, buy_price)
+                continue
+
+        if edsp - ep >= detect_panic_delta:        
             if epdc >= price_count_threshold and bpdc >= price_count_threshold:
                 if evuc >= volume_count_threshold and bvuc >= volume_count_threshold:
-                    print('real panic!!!')
+                    print('real panic!!!'); panic_cnt += 1
                     sell_price = panic_sell(real_panic_sell_cnt)
-                    buy_price = sell_price - (epdc - price_count_threshold + 1) * buy_back_price_offset * 3
+                    buy_price = sell_price - min_price_drop - (panic_cnt - 1) * real_panic_price_offset
                     buy_back(sell_price, real_panic_sell_cnt, buy_price)
+                    continue
                 else:
-                    print('small panic!!')
+                    print('small panic!!'); panic_cnt += 1
                     sell_price = panic_sell(panic_sell_cnt)
-                    buy_price = sell_price - (epdc - price_count_threshold + 1) * buy_back_price_offset
+                    buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                     buy_back(sell_price, panic_sell_cnt, buy_price)
+                    continue
             if epdc >= eos_only_price_count_threshold:
-                    print('eos only panic!!')
+                    print('EOS only panic!!'); panic_cnt += 1
                     sell_price = panic_sell(panic_sell_cnt)
-                    buy_price = sell_price - (epdc - eos_only_price_count_threshold + 1) * buy_back_price_offset
+                    buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                     buy_back(sell_price, panic_sell_cnt, buy_price)
+                    continue
+        panic_cnt = 0
 
 while True:
+    krw = get_krw_info()
+    krw = ', '.join('{{{}: ￦{:,.0f}}}'.format(k,v) for k,v in krw.items())
+    print('KRW info', krw)
+    coins = get_balance_all(False)
+    coins = ', '.join("{{{}: {:,.4f}}}".format(k,v) for k,v in coins.items())
+    print('my coins', coins)
+
     one_turn(panic_sell_cnt)
     break

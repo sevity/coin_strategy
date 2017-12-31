@@ -3,12 +3,12 @@ from sevity_coin_api import *
 
 
 # options ########################################
-panic_sell_cnt = 3
+panic_sell_cnt = 4
 real_panic_sell_cnt = 20
 price_count_threshold = 3
 volume_count_threshold = 3
-eos_only_price_count_threshold = 7
-btc_only_price_count_threshold = 8
+eos_only_price_count_threshold = 6
+btc_only_price_count_threshold = 7
 
 detect_panic_delta = 30
 min_price_drop = 50
@@ -89,13 +89,6 @@ def one_turn(cnt):
         else:
             continue
 
-        if bpdc >= btc_only_price_count_threshold:
-                print('BTC only panic!!'); panic_cnt += 1
-                sell_price = panic_sell(panic_sell_cnt)
-                buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
-                buy_back(sell_price, panic_sell_cnt, buy_price)
-                continue
-
         if edsp - ep >= detect_panic_delta:        
             if epdc >= price_count_threshold and bpdc >= price_count_threshold:
                 if evuc >= volume_count_threshold and bvuc >= volume_count_threshold:
@@ -116,6 +109,14 @@ def one_turn(cnt):
                     buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                     buy_back(sell_price, panic_sell_cnt, buy_price)
                     continue
+
+        if bpdc >= btc_only_price_count_threshold:
+                print('BTC only panic!!'); panic_cnt += 1
+                sell_price = panic_sell(panic_sell_cnt)
+                buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
+                buy_back(sell_price, panic_sell_cnt, buy_price)
+                continue
+
         panic_cnt = 0
 
 while True:

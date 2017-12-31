@@ -5,11 +5,9 @@ import pprint
 import time
 
 
-api_key = "e3653ee4a58434abf5fba29f2797de9a";
-api_secret = "29119c1739d8e9451b461f5238353700";
+api_key = "";
+api_secret = "";
 
-# api_key = "00665d4fb675b8bd94cbf747e8c75d5070";
-# api_secret = "7a429a1a656f2a153b21b83947484798";
 
 api = XCoinAPI(api_key, api_secret);
 

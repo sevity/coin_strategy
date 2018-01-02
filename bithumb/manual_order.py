@@ -15,8 +15,8 @@ cnt = 50        # min cnt : (BTC: 0.001 | ETH: 0.01 | DASH: 0.01 | LTC: 0.1 | ET
 
 
 #market_buy('EOS', 100)
-#order_new('EOS', 10600, 1, 'ask')
-buy_all('EOS', False)
+order_new('QTUM', 75920, 5.977, 'ask')
+#buy_all('EOS', False)
 
 
 #print(rate_change(10364,10364), rate_change(1818100, 1856700))

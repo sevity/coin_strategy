@@ -8,7 +8,7 @@ import time
 api_key = "";
 api_secret = "";
 
-api = XCoinAPI(api_key, api_secret);
+    api = XCoinAPI(api_key, api_secret);
 
 def get_lastest_transaction(ticker):
     rgParams = {

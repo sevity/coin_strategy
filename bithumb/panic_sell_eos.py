@@ -3,17 +3,19 @@ from sevity_coin_api import *
 
 
 # options ########################################
-panic_sell_cnt = 4
+panic_sell_cnt = 6
 real_panic_sell_cnt = 20
 price_count_threshold = 3
 volume_count_threshold = 3
 eos_only_price_count_threshold = 6
 btc_only_price_count_threshold = 7
 
-detect_panic_delta = 30
+detect_panic_delta = 40
 min_price_drop = 50
 panic_price_offset = 10
 real_panic_price_offset = 30
+
+eos_delta_only_panic_delta = 80
 ##################################################
 
 
@@ -26,7 +28,7 @@ def buy_back(sell_price, sell_cnt, buy_price):
     # assert(buy_price <= sell_price - buy_back_price_offset)
 
     sell_amount = sell_price * sell_cnt
-    fee = 0.00151  # trailing 1 is for preventing overflow
+    fee = 0.00152  # trailing 1 is for preventing overflow
     buy_cnt = round( (1.0) * sell_amount / (buy_price * (1.0 + fee) ), 4)# - 0.0001
     # print("buy_cnt: ", buy_cnt)
 
@@ -89,6 +91,14 @@ def one_turn(cnt):
         else:
             continue
 
+        if edsp - ep >= eos_delta_only_panic_delta:
+            print('EOS delta only panic!!'); panic_cnt = 1
+            sell_cnt = (edsp - ep) / 10
+            sell_price = panic_sell(sell_cnt)
+            buy_price = sell_price - 60  # should be revised
+            buy_back(sell_price, sell_cnt, buy_price)
+            break
+
         if edsp - ep >= detect_panic_delta:        
             if epdc >= price_count_threshold and bpdc >= price_count_threshold:
                 if evuc >= volume_count_threshold and bvuc >= volume_count_threshold:
@@ -108,14 +118,14 @@ def one_turn(cnt):
                     sell_price = panic_sell(panic_sell_cnt)
                     buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                     buy_back(sell_price, panic_sell_cnt, buy_price)
-                    continue
+                    break
 
         if bpdc >= btc_only_price_count_threshold:
                 print('BTC only panic!!'); panic_cnt += 1
                 sell_price = panic_sell(panic_sell_cnt)
                 buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                 buy_back(sell_price, panic_sell_cnt, buy_price)
-                continue
+                break
 
         panic_cnt = 0
 
@@ -128,4 +138,3 @@ while True:
     print('my coins', coins)
 
     one_turn(panic_sell_cnt)
-    break

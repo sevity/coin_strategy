@@ -76,42 +76,52 @@ def market_sell_sub(ticker,cnt):
         "units" : cnt,
         "currency" : ticker
     };
+    # print('market_sell_sub', ticker, cnt)
     result = api.xcoinApiCall("/trade/market_sell/", rgParams);
     print_err(result)
     r = int(result['status'])
-    if r != 0:
-        return -1, r
+    if r == 0: print(result)
+    else: return -1, -1, r
     assert(r==0)
     fill_cnt = len(result['data'])
     # print('market sell fill_cnt', fill_cnt)
-    price = 0.0
+
+    price_sum = 0.0
+    unit_sum = 0.0
+    gain_sum = 0.0
     for x in result['data']:
-        price += float(x['price'])
-    return price / fill_cnt, r
+        price_sum += float(x['price']) * float(x['units'])
+        unit_sum += float(x['units'])
+        gain_sum += float(x['total']) - float(x['fee'])
+    assert(unit_sum == cnt)
+    return price_sum / unit_sum, gain_sum, r
+
 
 
 def market_sell(ticker, sell_cnt):
-    while True:
-        print("market_sell..", ticker, sell_cnt)
-        try:
-            sell_price, err = market_sell_sub(ticker, sell_cnt)
-            while err != 0:
-                if err != 5600: print('['+err+']')
-                assert(err==5600)
-                sell_price, err = market_sell_sub(ticker, sell_cnt)
+    print("market_sell..", ticker, sell_cnt)
+    sell_price, gain, err = market_sell_sub(ticker, sell_cnt)
+    while err != 0:
+        if err != 5600: print('['+err+']')
+        assert(err==5600)
+        sell_price, gain, err = market_sell_sub(ticker, sell_cnt)
+        time.sleep(0.1)
 
-            print("market sell done. sell price: ", sell_price)
-            return sell_price
-        except:
-            pass
-        sleep(0.1)
+    print("market sell done. sell price: ", sell_price, "sell_cnt", sell_cnt, "gain", gain)
+    return sell_price, gain
 
 def get_account_info(ticker):
     rgParams = {
         "currency" : ticker,
     };
     result = api.xcoinApiCall("/info/account/", rgParams);
+    print_err(result)
     err = int(result['status'])
+    while err != 0:
+        result = api.xcoinApiCall("/info/account/", rgParams);
+        print_err(result)
+        err = int(result['status'])
+    
     assert(err == 0)
     return float(result['data']['balance'])
 
@@ -162,29 +172,34 @@ def market_buy_sub(ticker,cnt):
     result = api.xcoinApiCall("/trade/market_buy/", rgParams);
     print_err(result)
     r = int(result['status'])
-    if r != 0: return -1, r
+    if r == 0: print(result)
+    else: return -1, -1, -1, r
     assert(r==0)
     fill_cnt = len(result['data'])
     # print('market buy fill_cnt', fill_cnt)
-    price = 0.0
+    price_sum = 0.0
+    unit_sum = 0.0
+    cost_sum = 0.0
     for x in result['data']:
-        price += float(x['price'])
-    return price / fill_cnt, r
+        price_sum += float(x['price']) * (float(x['units']) - float(x['fee']))
+        unit_sum += (float(x['units']) - float(x['fee']))
+        cost_sum += float(x['total'])
+    return price_sum / unit_sum, unit_sum, cost_sum, r
 
 def market_buy(ticker, buy_cnt):
     while True:
         print("market_buy..", ticker, buy_cnt)
         try:
-            buy_price, err = market_buy_sub(ticker, buy_cnt)
-            print(buy_price, err)
+            buy_price, buy_cnt, cost, err = market_buy_sub(ticker, buy_cnt)
+            print(buy_price, buy_cnt, err)
             while err != 0:
                 if err != 5600:
                     print('['+err+']')
                     return 0, err
-                buy_price, err = market_buy_sub(ticker, buy_cnt)
+                buy_price, buy_cnt, cost, err = market_buy_sub(ticker, buy_cnt)
 
-            print("market buy done. buy price: ", buy_price)
-            return buy_price, err
+            print("market buy done. buy price: ", buy_price, "buy cnt", buy_cnt)
+            return buy_price, buy_cnt, cost, err
         except:
             pass
 
@@ -221,18 +236,55 @@ def buy_all_sub(ticker, flag_use_last_fill_price):
     max_buy_cnt *= 0.9999  #margin
     max_buy_cnt = round(max_buy_cnt, 4)
     print('free krw', "{:,.0f}".format(free_krw), ticker, 'price', "{:,.0f}".format(price), 'max_buy_cnt', "{:,.4f}".format(max_buy_cnt))
-    buy_price, err = market_buy_sub(ticker, max_buy_cnt)
-    return buy_price, err
+    buy_price, buy_cnt, cost, err = market_buy_sub(ticker, max_buy_cnt)
+    return buy_price, buy_cnt, cost, err
 
 
 def buy_all(ticker, flag_use_last_fill_price = True):
     err = 1
     while err != 0:
-        buy_price, err = buy_all_sub(ticker, flag_use_last_fill_price)
-    print('buy_all done.', 'buy_price', buy_price)
+        buy_price, buy_cnt, cost, err = buy_all_sub(ticker, flag_use_last_fill_price)
+    print('buy_all done.', 'buy_price', buy_price, 'buy_cnt', buy_cnt, 'cost', cost)
     krw = get_krw_info()
     krw = ', '.join('{{{}: ￦{:,.0f}}}'.format(k,v) for k,v in krw.items())
     print('KRW info', krw)
 
+def buy_some_sub(ticker, money, flag_use_last_fill_price):
+    free_krw = money
+    if flag_use_last_fill_price:
+        date, updown, price, volume = get_lastest_transaction(ticker)
+    else:
+        r = get_quote(ticker)
+        # print(r)
+        ask1_price = int(r['data']['asks'][0]['price'])
+        price = ask1_price
+
+    max_buy_cnt = 1.0 * free_krw / price
+    max_buy_cnt *= 0.9999  #margin
+    max_buy_cnt = round(max_buy_cnt, 4)
+    print('try.. money', "{:,.0f}".format(free_krw), ticker, 'unit_price', "{:,.0f}".format(price), 'buy_cnt', "{:,.4f}".format(max_buy_cnt))
+    buy_price, buy_cnt, cost, err = market_buy_sub(ticker, max_buy_cnt)
+    return buy_price, buy_cnt, cost, err
+
+def buy_some(ticker, money, flag_use_last_fill_price = True):
+    print('buy_some', ticker, money)
+    err = 1
+    while err != 0:
+        buy_price, buy_cnt, cost, err = buy_some_sub(ticker, money, flag_use_last_fill_price)
+    print('buy_some done.', 'cost', cost, 'unit_price', buy_price, 'buy_cnt', buy_cnt)
+    return buy_price, buy_cnt, cost
+
+
 def rate_change(before_price, after_price):
     return "{:+}%".format(round(100 * (after_price - before_price) / before_price, 2))
+
+
+def sell_all(ticker):
+    cnt = round(get_account_info(ticker)-0.00005, 4)  # down
+    print('sell_all', ticker)
+    sell_price, gain = market_sell(ticker, cnt)
+    print('sell_all done.', 'sell_price', sell_price, 'sell_cnt', cnt, 'gain', gain)
+    krw = get_krw_info()
+    krw = ', '.join('{{{}: ￦{:,.0f}}}'.format(k,v) for k,v in krw.items())
+    print('KRW info', krw)
+    return sell_price, cnt, gain

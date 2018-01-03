@@ -13,11 +13,15 @@ cnt = 50        # min cnt : (BTC: 0.001 | ETH: 0.01 | DASH: 0.01 | LTC: 0.1 | ET
     #market_buy('XRP', 500)
 #market_sell('EOS', 1)
 
-
 #market_buy('EOS', 100)
-order_new('QTUM', 75920, 5.977, 'ask')
+#order_new('QTUM', 75920, 5.977, 'ask')
 #buy_all('EOS', False)
 
+#price, cnt, cost = buy_some('XRP', 40000)
+#print('result', 'unit_price', price, 'buy_cnt', cnt, 'cost', cost)
+
+print(get_account_info('XRP'))
+sell_all('XRP')
 
 #print(rate_change(10364,10364), rate_change(1818100, 1856700))
 

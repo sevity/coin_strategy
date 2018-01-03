@@ -77,7 +77,8 @@ class Monitor:
         self.lb = []
 
 def one_turn():
-    list_monitor = [Monitor('XRP')]
+    list_monitor = [Monitor('XRP'),Monitor('BTC'),Monitor('LTC'),Monitor('QTUM'),Monitor('ZEC')]
+    # BTC: 0.001 | ETH: 0.01 | DASH: 0.01 | LTC: 0.1 | ETC: 0.1 | XRP: 10 | BCH: 0.001 | XMR: 0.01 | ZEC: 0.001 | QTUM: 0.1 | BTG: 0.01 | EOS: 1
     while True:
         for monitor in list_monitor:
             ch, d, p, v, pd, vd, puc, pdc, vuc, vdc, usp, dsp, usv, dsv, ppd, ap = monitor.get()

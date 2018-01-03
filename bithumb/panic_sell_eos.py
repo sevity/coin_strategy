@@ -93,7 +93,7 @@ def one_turn(cnt):
 
         if edsp - ep >= eos_delta_only_panic_delta:
             print('EOS delta only panic!!'); panic_cnt = 1
-            sell_cnt = (edsp - ep) / 10
+            sell_cnt = int((edsp - ep) / 10)
             sell_price = panic_sell(sell_cnt)
             buy_price = sell_price - 60  # should be revised
             buy_back(sell_price, sell_cnt, buy_price)

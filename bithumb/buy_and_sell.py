@@ -4,7 +4,7 @@ from sevity_coin_api import *
 
 # options ########################################
 unit_money = 40000  # krw
-buy_delta = 0.0055    # 1.5%
+buy_delta = 0.0075    # 1.5%
 losscut = 0.01      # 1.0%
 gaincut = 0.02
 ##################################################
@@ -87,24 +87,29 @@ def one_turn():
                 lc = ap * (1.0 - losscut)
                 gc = ap * (1.0 + gaincut)
 
-                print(d, monitor.ticker, "￦{:,}({:>+2.2f}%)".format(int(p), ppd*100), "V{:<5,.0f}({:>+4,.0f})".format(v, vd), "ap: {:.4f}".format(ap), "gc: {:.4f}".format(gc), "lc: {:.4f}".format(lc))
+                print(d, monitor.ticker, "￦{:,}({:>+2.2f}%)".format(int(p), ppd*100), "\t\t\tV{:<5,.0f}({:>+4,.0f})".format(v, vd), "ap: {:.4f}".format(ap), "gc: {:.4f}".format(gc), "lc: {:.4f}".format(lc))
+                if ap > 0:
+                    if p <= lc:
+                        print('stoploss!')
+                        sell_price, cnt, gain = sell_all(self.ticker)
+                        print('loss_unit_price', ap-lc, 'cnt', cnt, 'total loss', cnt * (ap-lc))
+                        monitor.clear_buy_record()
+                        continue
+                    if p >= gc:
+                        print('gain cut!!')
+                        sell_price, cnt, gain = sell_all(self.ticker)
+                        print('gain_unit_price', gc-ap, 'cnt', cnt, 'total gain', cnt * (gc-ap))
+                        monitor.clear_buy_record()
+                        continue
+
+
                 if ppd >= buy_delta:
                     price, cnt, cost = buy_some(monitor.ticker, unit_money)
                     print('result', 'unit_price', price, 'buy_cnt', cnt, 'cost', cost, 'real_unit_price', cost / cnt)
                     monitor.record_buy(cost, cnt)
                     monitor.clear()
+                    continue
 
-                if ap > 0:
-                    if p <= lc:
-                        print('stoploss!')
-                        sell_price, cnt, gain = sell_all(ticker)
-                        print('loss_unit_price', ap-lc, 'cnt', cnt, 'total loss', cnt * (ap-lc))
-                        monitor.clear_buy_record()
-                    if p >= gc:
-                        print('gain cut!!')
-                        sell_price, cnt, gain = sell_all(ticker)
-                        print('gain_unit_price', gc-ap, 'cnt', cnt, 'total gain', cnt * (gc-ap))
-                        monitor.clear_buy_record()
             else:
                 continue
 

@@ -3,7 +3,7 @@ from sevity_coin_api import *
 
 
 # options ########################################
-panic_sell_cnt = 6
+panic_sell_cnt = 5
 real_panic_sell_cnt = 20
 price_count_threshold = 3
 volume_count_threshold = 3
@@ -20,7 +20,8 @@ eos_delta_only_panic_delta = 80
 
 
 def panic_sell(sell_cnt):
-    return market_sell('EOS', sell_cnt)
+    sell_price, gain = market_sell('EOS', sell_cnt)
+    return sell_price
 
 def buy_back(sell_price, sell_cnt, buy_price):
     if buy_price >= sell_price - min_price_drop: buy_price = sell_price - min_price_drop
@@ -93,9 +94,9 @@ def one_turn(cnt):
 
         if edsp - ep >= eos_delta_only_panic_delta:
             print('EOS delta only panic!!'); panic_cnt = 1
-            sell_cnt = int((edsp - ep) / 10)
+            sell_cnt = int((edsp - ep) / 7)
             sell_price = panic_sell(sell_cnt)
-            buy_price = sell_price - 60  # should be revised
+            buy_price = sell_price - 70  # should be revised
             buy_back(sell_price, sell_cnt, buy_price)
             break
 
@@ -112,7 +113,7 @@ def one_turn(cnt):
                     sell_price = panic_sell(panic_sell_cnt)
                     buy_price = sell_price - min_price_drop - (panic_cnt - 1) * panic_price_offset
                     buy_back(sell_price, panic_sell_cnt, buy_price)
-                    continue
+                    break
             if epdc >= eos_only_price_count_threshold:
                     print('EOS only panic!!'); panic_cnt += 1
                     sell_price = panic_sell(panic_sell_cnt)

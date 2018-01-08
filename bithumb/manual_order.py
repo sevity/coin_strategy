@@ -20,9 +20,12 @@ cnt = 50        # min cnt : (BTC: 0.001 | ETH: 0.01 | DASH: 0.01 | LTC: 0.1 | ET
 #price, cnt, cost = buy_some('XRP', 40000)
 #print('result', 'unit_price', price, 'buy_cnt', cnt, 'cost', cost)
 
-print(get_account_info('XRP'))
-sell_all('XRP')
+#print(get_account_info('XRP'))
+#sell_all('XRP')
 
 #print(rate_change(10364,10364), rate_change(1818100, 1856700))
-
+print(rate_change(70000,88000))
+print(rate_change(440,572))
+print(rate_change(2396,2657))
+print(rate_change(91,154))
 sys.exit()

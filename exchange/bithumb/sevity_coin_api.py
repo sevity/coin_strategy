@@ -10,6 +10,10 @@ from sevity_key import *
 
 api = XCoinAPI(api_key, api_secret);
 
+def get_price(ticker, currency):
+    assert currency == 'KRW'
+    return float(get_lastest_transaction(ticker)[2])
+
 def print_err(result):
     r = int(result['status'])
     m = None

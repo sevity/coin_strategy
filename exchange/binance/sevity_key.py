@@ -1,3 +1,0 @@
-api_key = "i77Pm0irxQ2LN1pE83pw2ZHhRabukdSruvePBonvS26r7HBqQ22zAtvUFjGI5XQf";
-api_secret = "TbGd0VGsrqHLoqELLRzErroEuCSSBvMZVCi3FlTNuRyKMTuUqAaY1sH3HqE3OxrV";
-

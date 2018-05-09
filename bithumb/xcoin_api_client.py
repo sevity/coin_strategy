@@ -11,7 +11,12 @@ import time
 import math
 import base64
 import hmac, hashlib
-import urllib.parse
+PY3 = sys.version_info[0] > 2;
+if PY3:
+    import urllib.parse
+else:
+    import urllib
+
 import pycurl
 import json
 
@@ -52,12 +57,14 @@ class XCoinAPI:
 		};
 
 		uri_array = dict(endpoint_item_array, **rgParams); # Concatenate the two arrays.
-
-		str_data = urllib.parse.urlencode(uri_array);
+		if PY3:
+		    e_uri_data = urllib.parse.urlencode(uri_array);
+		else:
+		    e_uri_data = urllib.urlencode(uri_array);
 
 		nonce = self.usecTime();
 
-		data = endpoint + chr(0) + str_data + chr(0) + nonce;
+		data = endpoint + chr(0) + e_uri_data + chr(0) + nonce;
 		utf8_data = data.encode('utf-8');
 
 		key = self.api_secret;
@@ -74,7 +81,7 @@ class XCoinAPI:
 		curl_handle = pycurl.Curl();
 		curl_handle.setopt(pycurl.POST, 1);
 		#curl_handle.setopt(pycurl.VERBOSE, 1); # vervose mode :: 1 => True, 0 => False
-		curl_handle.setopt(pycurl.POSTFIELDS, str_data);
+		curl_handle.setopt(pycurl.POSTFIELDS, e_uri_data);
 
 		url = self.api_url + endpoint;
 		curl_handle.setopt(curl_handle.URL, url);

@@ -1,5 +1,5 @@
-import bithumb.sevity_coin_api
-import binance.sevity_coin_api
+import exchange.bithumb.sevity_coin_api
+import exchange.binance.sevity_coin_api
 
 class Coin:
     def __init__(self, exchange_name):

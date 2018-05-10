@@ -16,8 +16,8 @@ TRADE_CNT = 1
 bt = Coin('bithumb')
 bn = Coin('binance')
 
-print 'KRW info', bt.get_krw_info()
-print 'my coins', bt.get_balance_all()
+print('KRW info', bt.get_krw_info())
+print('my coins', bt.get_balance_all())
 
 avg_gap = 0
 skip_turn = 10
@@ -38,7 +38,7 @@ while True:
     avg_gap = gap_sum / cnt
     adj_gap = gap - avg_gap
 
-    print datetime.now().strftime("%m-%d %H:%M:%S"), 'EOS price..', 'bithumb', a, 'binance', b*c, 'gap', gap, 'avg_gap', avg_gap, 'adj_gap', adj_gap
+    print(datetime.now().strftime("%m-%d %H:%M:%S"), 'EOS price..', 'bithumb', a, 'binance', b*c, 'gap', gap, 'avg_gap', avg_gap, 'adj_gap', adj_gap)
     if skip_turn <= 0:
         if adj_gap >= THRESHOLD:
             bt.market_buy('EOS', TRADE_CNT)
@@ -48,5 +48,5 @@ while True:
             skip_turn = COOL_TIME
     else:
         skip_turn -= 1
-        print 'skip...'
+        print('skip...')
     time.sleep(1)

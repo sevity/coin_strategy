@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 #! /usr/bin/env python
+
+import os
 import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+from sevity_key import *
 from xcoin_api_client import *
+
 import pprint
 import time
 
-from sevity_key import *
+
 
 
 api = XCoinAPI(api_key, api_secret);

@@ -1,3 +1,0 @@
-api_key = "e3653ee4a58434abf5fba29f2797de9a";
-api_secret = "29119c1739d8e9451b461f5238353700";
-

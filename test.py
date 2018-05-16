@@ -5,9 +5,10 @@ from datetime import datetime
 
 
 # param #######################################################################
-THRESHOLD = 50
+THRESHOLD = 80
 COOL_TIME = 10
 TRADE_CNT = 1
+FEE = 0.0015
 ###############################################################################
 
 
@@ -16,13 +17,21 @@ TRADE_CNT = 1
 bt = Coin('bithumb')
 bn = Coin('binance')
 
-print('KRW info', bt.get_krw_info())
-print('my coins', bt.get_balance_all())
-
 avg_gap = 0
 skip_turn = 10
 gap_sum = 0
 cnt = 0
+
+def check_account():
+    a = bt.get_krw_info()
+    b = bt.get_balance_all()
+    money = float(a['free'])
+    coin = float(b['EOS'])
+    print('KRW info', a)
+    print('my coins', b)
+    return money, coin
+
+money, coin = check_account()
 while True:
     try:
         a = bt.get_price('EOS', 'KRW')
@@ -41,11 +50,19 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'EOS price..', 'bithumb', a, 'binance', b*c, 'gap', gap, 'avg_gap', avg_gap, 'adj_gap', adj_gap)
     if skip_turn <= 0:
         if adj_gap >= THRESHOLD:
-            bt.market_buy('EOS', TRADE_CNT)
-            skip_turn = COOL_TIME
+            if money - FEE * TRADE_CNT >= a * 1.1: #need to fix
+                bt.market_buy('EOS', TRADE_CNT)
+                skip_turn = COOL_TIME
+                money, coin = check_account()
+            else:
+                print("not enough money!")
         elif adj_gap <= -THRESHOLD:
-            bt.market_sell('EOS', TRADE_CNT)
-            skip_turn = COOL_TIME
+            if coin - FEE * TRADE_CNT >= TRADE_CNT:
+                bt.market_sell('EOS', TRADE_CNT)
+                skip_turn = COOL_TIME
+                money, coin = check_account()
+            else:
+                print("not enough coin!")
     else:
         skip_turn -= 1
         print('skip...')

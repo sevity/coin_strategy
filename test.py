@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 # param #######################################################################
-THRESHOLD = 80
+THRESHOLD = 100
 COOL_TIME = 10
 TRADE_CNT = 1
 FEE = 0.0015
@@ -35,8 +35,8 @@ money, coin = check_account()
 while True:
     try:
         a = bt.get_price('EOS', 'KRW')
-        b = bn.get_price('EOS', 'BTC')
-        c = bt.get_price('BTC', 'KRW')
+        b = bn.get_price('EOS', 'ETH')
+        c = bt.get_price('ETH', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)

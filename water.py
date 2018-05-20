@@ -7,8 +7,8 @@ from coin import *
 # param #######################################################################
 THRESHOLD = 200
 CUT_OFF = 100
-WAIT_TIME_SEC = 60 * 60 * 1
-COOL_TIME_SEC = 60 * 10
+WAIT_TIME_SEC = 60 * 10
+COOL_TIME_SEC = 60 * 3
 TRADE_CNT = 1
 FEE = 0.00158
 ###############################################################################
@@ -29,15 +29,12 @@ def check_account():
     return money, coin
 
 money, coin = check_account()
-rcnt = [0, 0]
-origin_cnt = TRADE_CNT
-origin_wait = WAIT_TIME_SEC
 
 
-def Go(sell_price):
-    global TRADE_CNT
-    global WAIT_TIME_SEC
-    cnt = WAIT_TIME_SEC
+def Go(sell_price, sell_cnt, wait_sec):
+    cnt = wait_sec
+    avg_sell_price = 1.0 * sell_price / sell_cnt
+    print('Go! avg_sell_price..', avg_sell_price, 'sell_cnt..', sell_cnt, 'wait_sec..', wait_sec)
     while True:
         try:
             price = bt.get_price('EOS', 'KRW')
@@ -50,35 +47,27 @@ def Go(sell_price):
 
         if price <= sell_price - THRESHOLD:
             print('success!')
-            rcnt[0] += 1
-            buy_try = round(1.0 * (TRADE_CNT * (1 - FEE) * sell_price) / price, 4)
+            buy_try = round(1.0 * (sell_cnt * (1 - FEE) * sell_price) / price, 4)
             bt.market_buy('EOS', buy_try * (1.0 + 0))[0]
-            TRADE_CNT = origin_cnt
-            WAIT_TIME_SEC = origin_wait
             return
         if price >= sell_price + CUT_OFF:
             print('cutoff fail!')
-            rcnt[1] += 1
-            buy_try = round(1.0 * (TRADE_CNT * (1 - FEE) * sell_price) / price, 4)
-            bt.market_buy('EOS', buy_try * (1.0 + 0))[0]
-            TRADE_CNT *= 2
-            WAIT_TIME_SEC *= 2
+
+            sell_more_price = bt.market_sell('EOS', sell_cnt)[0]
+            Go(1.0 * (sell_price + sell_more_price) / 2, sell_cnt * 2, wait_sec * 2)
             return
 
         time.sleep(1)
         cnt -= 1
         if cnt == 0:
             print('timeout fail!')
-            rcnt[1] += 1
-            buy_try = round(1.0 * (TRADE_CNT * (1 - FEE) * sell_price) / price, 4)
-            bt.market_buy('EOS', buy_try * (1.0 + 0))[0]
 
             if price <= sell_price - 50:
-                TRADE_CNT = origin_cnt
-                WAIT_TIME_SEC = origin_wait
+                buy_try = round(1.0 * (sell_cnt * (1 - FEE) * sell_price) / price, 4)
+                bt.market_buy('EOS', buy_try * (1.0 + 0))[0]
             else:
-                TRADE_CNT *= 1.5
-                WAIT_TIME_SEC *= 1.5
+                sell_more_price = bt.market_sell('EOS', sell_cnt)[0]
+                Go(1.0 * (sell_price + sell_more_price) / 2, sell_cnt * 2, wait_sec * 2)
             return
 
 while True:
@@ -91,8 +80,7 @@ while True:
     
     sell_price = bt.market_sell('EOS', TRADE_CNT)[0]
     buy_cnt = sell_price
-    Go(sell_price)
-    print('win rate..', 1.0 * rcnt[0] / (rcnt[0] + rcnt[1]), 'win..', rcnt[0], 'lose..', rcnt[1])
+    Go(sell_price, TRADE_CNT, WAIT_TIME_SEC)
     print('wating cool time...', COOL_TIME_SEC)
     time.sleep(COOL_TIME_SEC)
 

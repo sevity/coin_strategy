@@ -67,19 +67,34 @@ def order_new_sub(ticker, price, cnt, askbid):
     print_err(result)
     r = int(result['status'])
     # if r == 0: print(result)
+    m = None
+    if 'message' in result:
+        m = result['message']
+    if m is not None and m == '매수금액이 사용가능 KRW 를 초과하였습니다.':
+        r = -1
+    elif m is not None and m == '주문량이 사용가능 EOS을 초과하였습니다.':
+        r = -2
     return r
 
 
 def order_new(ticker, price, cnt, askbid):
     print('order_new...', ticker, price, cnt, askbid)
-    err = order_new_sub(ticker, price, cnt, askbid)
+    err = 1
     while err!=0:  #please try again
         #if err != 5600:
         #    print(err)
         #    assert False
         err = order_new_sub(ticker, price, cnt, askbid)
+        if err < 0:
+            return err
         time.sleep(0.1)
+    return err
 
+def limit_buy(ticker, price, cnt):
+    return order_new(ticker, price, cnt, 'bid')
+
+def limit_sell(ticker, price, cnt):
+    return order_new(ticker, price, cnt, 'ask')
 
 def market_sell_sub(ticker,cnt):
     rgParams = {

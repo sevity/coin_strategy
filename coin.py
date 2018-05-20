@@ -25,3 +25,9 @@ class Coin:
 
     def market_sell(self, ticker, cnt):
         return self._api.market_sell(ticker, cnt)
+
+    def limit_buy(self, ticker, price, cnt):
+        return self._api.limit_buy(ticker, price, cnt)
+
+    def limit_sell(self, ticker, price, cnt):
+        return self._api.limit_sell(ticker, price, cnt)

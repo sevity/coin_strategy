@@ -5,10 +5,10 @@ from datetime import datetime
 
 
 # param #######################################################################
-THRESHOLD = 100
+THRESHOLD = 200
 COOL_TIME = 60 * 10
-TRADE_CNT = 0.5
-FEE = 0.0015
+TRADE_CNT = 1
+FEE = 0.002
 ###############################################################################
 
 
@@ -21,31 +21,34 @@ skip_turn = 10
 gap_sum = 0
 cnt = 0
 
-def check_account():
-    a = bt.get_krw_info()
-    b = bt.get_balance_all()
-    money = float(a['free'])
-    coin = float(b['EOS'])
-    print('KRW info', a)
-    print('my coins', b)
-    return money, coin
-
 
 while True:
-    money, coin = check_account()
     try:
         a = bt.get_price('EOS', 'KRW')
+        b = bt.get_asset_info('KRW')
+        c = bt.get_asset_info('EOS')
     except Exception as e:
         print('err', e)
         time.sleep(1)
         continue
 
+    print('KRW..', b)
+    print('EOS..', c)
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'EOS price..', 'bithumb', a)
+    a = round(a, -1) # minimum 10 won
     
-    # money, coin = check_account()
-    # if money - FEE * TRADE_CNT >= a * 1.1: #need to fix
+    if b['free'] > (a - THRESHOLD) * TRADE_CNT:
+        pass
+    else:
+        print('not enough KRW!')
+        time.sleep(COOL_TIME)
+        continue
 
-    bt.limit_buy('EOS', a - THRESHOLD, TRADE_CNT)
-    bt.limit_sell('EOS', a + THRESHOLD, TRADE_CNT)
+    if c['free'] > TRADE_CNT:
+        bt.limit_buy('EOS', a - THRESHOLD, TRADE_CNT)
+        bt.limit_sell('EOS', a + THRESHOLD, TRADE_CNT)
+    else:
+        print('not enough EOS!')
+        time.sleep(COOL_TIME)
 
     time.sleep(COOL_TIME)

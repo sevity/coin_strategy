@@ -14,8 +14,8 @@ class Coin:
     def get_price(self, ticker, currency):
         return self._api.get_price(ticker, currency)
 
-    def get_krw_info(self):
-        return self._api.get_krw_info()
+    def get_asset_info(self, currency):
+        return self._api.get_asset_info(currency)
 
     def get_balance_all(self):
         return self._api.get_balance_all(False)

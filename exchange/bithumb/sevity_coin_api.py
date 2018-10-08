@@ -17,7 +17,10 @@ api = XCoinAPI(api_key, api_secret);
 
 def get_price(ticker, currency):
     assert currency == 'KRW'
-    return float(get_lastest_transaction(ticker)[2])
+    r = get_quote(ticker)
+    a = float(r['data']['asks'][0]['price'])
+    b = float(r['data']['bids'][0]['price'])
+    return (a+b)/2
 
 def print_err(result):
     r = int(result['status'])
@@ -63,18 +66,24 @@ def order_new_sub(ticker, price, cnt, askbid):
         "price" : int(price),
         "type" : askbid,
     };
-    result = api.xcoinApiCall("/trade/place/", rgParams);
-    print_err(result)
-    r = int(result['status'])
-    # if r == 0: print(result)
-    m = None
-    if 'message' in result:
-        m = result['message']
-    if m is not None and m == '매수금액이 사용가능 KRW 를 초과하였습니다.':
-        r = -1
-    elif m is not None and m == '주문량이 사용가능 EOS을 초과하였습니다.':
-        r = -2
-    return r
+    while True:
+        try:
+            result = api.xcoinApiCall("/trade/place/", rgParams);
+            print_err(result)
+            r = int(result['status'])
+            # if r == 0: print(result)
+            m = None
+            if 'message' in result:
+                m = result['message']
+            if m is not None and m == '매수금액이 사용가능 KRW 를 초과하였습니다.':
+                r = -1
+            elif m is not None and m == '주문량이 사용가능 EOS을 초과하였습니다.':
+                r = -2
+            return r
+        except:
+            print('e')
+            time.sleep(0.05)
+            pass 
 
 
 def order_new(ticker, price, cnt, askbid):
@@ -188,6 +197,13 @@ def get_krw_info():
     r['free'] = float(rk['data']['available_krw'])
     return r
 
+def get_asset_info(currency):
+    rk = get_balance_info()
+    r = {}
+    r['total'] = float(rk['data']['total_' + currency.lower()])
+    r['inuse'] = float(rk['data']['in_use_' + currency.lower()])
+    r['free'] = float(rk['data']['available_' + currency.lower()])
+    return r
 
 def market_buy_sub(ticker,cnt):
     rgParams = {

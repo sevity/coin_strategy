@@ -6,11 +6,11 @@ from datetime import datetime
 # param #######################################################################
 TICK_MIN = 5
 COINS = ['XRP', 'EOS', 'BTC', 'ETH']
-DOWN_ENOUGH_TIMES = 3
-BOUNCE_CNT = 4
+DOWN_ENOUGH_TIMES = 2
+BOUNCE_CNT = 3
 TRADE_COIN = 'XRP'
-GOAL_PERCENT = 5
-LOSS_CUT_PERCENT = 2
+GOAL_PERCENT = 3
+LOSS_CUT_PERCENT = 1
 ###############################################################################
 # This strategy checks every TICK_MIN
 # and buys TRADE_COIN when all prices of COINS goes DOWN_ENOUGH_TIMES and atleast BOUNCE_CNT of coins' price are starting to goes up
@@ -25,7 +25,7 @@ for coin in COINS:
     LAST_PRICES.append(a)
 
 STAGES = ['CHECK_DOWN', 'CHECK_BOUNCE', 'TRY_TO_SELL']
-STAGE = STAGES[0]
+STAGE = STAGES[1]
 
 
 def buy_all(ticker):
@@ -39,7 +39,8 @@ def buy_all(ticker):
 
 
 def sell_all(ticker):
-    cnt = round(bt.get_asset_info(ticker)['free'], 4)
+    cnt = bt.get_asset_info(ticker)['free']
+    cnt = int(cnt * 10000) / 10000
     sell_price = bt.market_sell(ticker, cnt)[0]
     print('sell_all..', ticker, ' cnt:', cnt, 'sell_price', sell_price)
     return sell_price
@@ -83,6 +84,7 @@ while True:
                     UPDOWN = 'UP!!!!!!!!!!!!!!!!!!'
                 else:
                     UPDOWN = 'DN_HOLD'
+                LAST_PRICES[ix] = a
                 print('{}..'.format(coin), b, 'price..', a, UPDOWN)
             print('bounce cnt..', UP_CNT)
             if UP_CNT >= BOUNCE_CNT:
@@ -94,11 +96,9 @@ while True:
             sell_price = BUY_PRICE * (100.0 + GOAL_PERCENT) / 100.0
             cut_loss_price = BUY_PRICE * (100.0 - LOSS_CUT_PERCENT) / 100.0
             print('buy price: ', BUY_PRICE, 'sell_price: ', sell_price, 'cut_loss_price: ', cut_loss_price)
-            for coin in COINS:
-                ix = COINS.index(coin)
-                a = bt.get_price(coin, 'KRW')
-                b = bt.get_asset_info(coin)
-                print('{}..'.format(coin), b, 'price..', a, UPDOWN)
+            a = bt.get_price(TRADE_COIN, 'KRW')
+            b = bt.get_asset_info(TRADE_COIN)
+            print('{}..'.format(TRADE_COIN), b, 'price..', a)
             p = bt.get_price(TRADE_COIN, 'KRW')
             if p >= sell_price:
                 print('GOOD~ reached the goal price')

@@ -25,7 +25,7 @@ for coin in COINS:
     LAST_PRICES.append(a)
 
 STAGES = ['CHECK_DOWN', 'CHECK_BOUNCE', 'TRY_TO_SELL']
-STAGE = STAGES[1]
+STAGE = STAGES[0]
 
 
 def buy_all(ticker):

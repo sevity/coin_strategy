@@ -72,6 +72,7 @@ while True:
             print('continuous down cnt..', CONTINUOUS_DOWN_CNT)
             if CONTINUOUS_DOWN_CNT >= DOWN_ENOUGH_TIMES:
                 print('DOWN HIT!')
+                CONTINUOUS_DOWN_CNT = 0
                 STAGE = STAGES[1]
         elif STAGE == STAGES[1]:
             UP_CNT = 0

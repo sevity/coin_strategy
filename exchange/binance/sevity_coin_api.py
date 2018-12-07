@@ -6,10 +6,16 @@ import pprint
 import time
 
 from binance.client import Client
-from .sevity_key import *
+# from .sevity_key import *
+g_api_key = ""
+g_secret_key = ""
 
+def set_key(api_key, secret_key):
+    global g_api_key, g_api_secret
+    g_api_key = api_key
+    g_secret_key = secret_key
 
-api = Client(api_key, api_secret);
+api = Client(g_api_key, g_secret_key);
 
 
 def get_price(ticker, currency):

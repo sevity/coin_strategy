@@ -2,7 +2,7 @@ import exchange.bithumb.sevity_coin_api
 import exchange.binance.sevity_coin_api
 
 class Coin:
-    def __init__(self, exchange_name):
+    def __init__(self, exchange_name, api_key, secret_key):
         self._api = None
         if exchange_name == 'bithumb':
             self._api = exchange.bithumb.sevity_coin_api
@@ -10,6 +10,7 @@ class Coin:
             self._api = exchange.binance.sevity_coin_api
         else:
             assert False
+        self._api.set_key(api_key, secret_key)
 
     def get_price(self, ticker, currency):
         return self._api.get_price(ticker, currency)

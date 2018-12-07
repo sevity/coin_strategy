@@ -4,16 +4,24 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-from sevity_key import *
+# from ../../key import *
+g_api_key = ""
+g_secret_key = ""
 from xcoin_api_client import *
 
 import pprint
 import time
 
+api = None
 
+def set_key(api_key, secret_key):
+    global g_api_key, g_api_secret, api
+    g_api_key = api_key
+    g_secret_key = secret_key
+    api = XCoinAPI(g_api_key, g_secret_key);
 
+# api = XCoinAPI(g_api_key, g_secret_key);
 
-api = XCoinAPI(api_key, api_secret);
 
 def get_price(ticker, currency):
     assert currency == 'KRW'
@@ -200,9 +208,9 @@ def get_krw_info():
 def get_asset_info(currency):
     rk = get_balance_info()
     r = {}
-    r['total'] = float(rk['data']['total_' + currency.lower()])
-    r['inuse'] = float(rk['data']['in_use_' + currency.lower()])
-    r['free'] = float(rk['data']['available_' + currency.lower()])
+    r['total'] = round(float(rk['data']['total_' + currency.lower()]), 4)
+    r['inuse'] = round(float(rk['data']['in_use_' + currency.lower()]), 4)
+    r['free'] = round(float(rk['data']['available_' + currency.lower()]), 4)
     return r
 
 def market_buy_sub(ticker,cnt):

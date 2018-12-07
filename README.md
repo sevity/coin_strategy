@@ -1,4 +1,4 @@
-## coin_strategy
+### coin_strategy
 Coin trade library and strategies which supports bithumb and binance. 
 
 ## setup

@@ -3,7 +3,7 @@ Coin trade library and strategies which supports bithumb and binance.
 
 ## setup
 # dependency
-pip install binance
+pip install python-binance
 
-# key setup
-see sample.py
+# sample ( you need to set your api_key and secret_key in sample.py)
+python sample.py

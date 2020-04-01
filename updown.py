@@ -27,7 +27,6 @@ while True:
         a = bt.get_price('EOS', 'KRW')
         b = bt.get_asset_info('KRW')
         c = bt.get_asset_info('EOS')
-        a = bt.get_price('EOS', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)

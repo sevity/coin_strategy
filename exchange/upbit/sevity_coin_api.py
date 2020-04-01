@@ -34,7 +34,6 @@ def get_price(ticker, currency):
 
 def get_asset_info(currency):
     url = server_url + "/v1/accounts"
-    server_url = os.environ['UPBIT_OPEN_API_SERVER_URL']
 
     payload = {
         'access_key': g_api_key,

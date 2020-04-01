@@ -1,4 +1,5 @@
 import exchange.bithumb.sevity_coin_api
+import exchange.upbit.sevity_coin_api
 import exchange.binance.sevity_coin_api
 
 class Coin:
@@ -6,6 +7,8 @@ class Coin:
         self._api = None
         if exchange_name == 'bithumb':
             self._api = exchange.bithumb.sevity_coin_api
+        elif exchange_name == 'upbit':
+            self._api = exchange.upbit.sevity_coin_api
         elif exchange_name == 'binance':
             self._api = exchange.binance.sevity_coin_api
         else:

@@ -4,8 +4,9 @@
     "\\CoinStrategy",
     "\\exchange",
     "\\exchange\\binance",
-    "\\exchange\\bithumb"
+    "\\exchange\\bithumb",
+    "\\exchange\\upbit"
   ],
-  "SelectedNode": "\\test.py",
+  "SelectedNode": "\\exchange\\bithumb\\panic_sell_eos.py",
   "PreviewInSolutionExplorer": false
 }

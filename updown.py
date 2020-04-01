@@ -11,22 +11,23 @@ TRADE_CNT = 1
 FEE = 0.002
 ###############################################################################
 
+api_key = "e3653ee4a58434abf5fba29f2797de9a"
+secret_key = ""
 
-
-
-bt = Coin('bithumb')
+bt = Coin('bithumb',api_key,secret_key)
+# bt = Coin('bithumb')
 
 avg_gap = 0
 skip_turn = 10
 gap_sum = 0
 cnt = 0
 
-
 while True:
     try:
         a = bt.get_price('EOS', 'KRW')
         b = bt.get_asset_info('KRW')
         c = bt.get_asset_info('EOS')
+        a = bt.get_price('EOS', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)

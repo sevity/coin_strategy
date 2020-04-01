@@ -5,8 +5,6 @@ from coin import *
 import time
 from datetime import datetime
 
-
-
 # param #######################################################################
 FEE = 0.003  # 수수료는 0.3%겠지?
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 0.7%먹는 게임?

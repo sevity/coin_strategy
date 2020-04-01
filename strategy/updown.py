@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from coin import *
 import time
 from datetime import datetime
@@ -11,12 +14,11 @@ TRADE_CNT = 1
 FEE = 0.002
 ###############################################################################
 
-f = open("../bithumb_api_key.txt", 'r')
-api_key = f.readline().rstrip()
+f = open("../upbit_api_key.txt", 'r')
+access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
 f.close()
-
-bt = Coin('bithumb',api_key,secret_key)
+coin = Coin('upbit',access_key,secret_key)
 
 avg_gap = 0
 skip_turn = 10

@@ -11,11 +11,12 @@ TRADE_CNT = 1
 FEE = 0.002
 ###############################################################################
 
-api_key = "e3653ee4a58434abf5fba29f2797de9a"
-secret_key = ""
+f = open("../bithumb_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
 
 bt = Coin('bithumb',api_key,secret_key)
-# bt = Coin('bithumb')
 
 avg_gap = 0
 skip_turn = 10

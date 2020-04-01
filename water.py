@@ -15,15 +15,21 @@ FEE = 0.00158
 
 
 
+f = open("../bithumb_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
 
-bt = Coin('bithumb')
+bt = Coin('bithumb',api_key,secret_key)
 
 
 def check_account():
-    a = bt.get_krw_info()
-    b = bt.get_balance_all()
+    a = bt.get_asset_info('KRW')
+    b = bt.get_asset_info('EOS')
+    #b = bt.get_balance_all()
     money = float(a['free'])
-    coin = float(b['EOS'])
+    # coin = float(b['EOS'])
+    coin = float(b['free'])
     print('KRW info', a)
     print('my coins', b)
     return money, coin

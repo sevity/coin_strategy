@@ -21,9 +21,6 @@ from xcoin_api_client import *
 import pprint
 
 
-api_key = "e3653ee4a58434abf5fba29f2797de9a";
-api_secret = "";
-
 api = XCoinAPI(api_key, api_secret);
 
 rgParams = {

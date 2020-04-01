@@ -12,10 +12,17 @@ FEE = 0.0015
 ###############################################################################
 
 
+f = open("../bithumb_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
+bt = Coin('bithumb', api_key, secret_key)
 
-
-bt = Coin('bithumb')
-bn = Coin('binance')
+f = open("../binance_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
+bn = Coin('binance', api_key, secret_key)
 
 avg_gap = 0
 skip_turn = 10
@@ -23,10 +30,12 @@ gap_sum = 0
 cnt = 0
 
 def check_account():
-    a = bt.get_krw_info()
-    b = bt.get_balance_all()
+    a = bt.get_asset_info('KRW')
+    b = bt.get_asset_info('EOS')
+    #b = bt.get_balance_all()
     money = float(a['free'])
-    coin = float(b['EOS'])
+    # coin = float(b['EOS'])
+    coin = float(b['free'])
     print('KRW info', a)
     print('my coins', b)
     return money, coin

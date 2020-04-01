@@ -2,8 +2,10 @@ from coin import *
 import time
 from datetime import datetime
 
-api_key = "e3653ee4a58434abf5fba29f2797de9a"
-secret_key = ""
+f = open("../bithumb_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
 
 coin = Coin('bithumb',api_key,secret_key)
 xrp = coin.get_asset_info('XRP') # ripple

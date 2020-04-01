@@ -116,7 +116,8 @@ def limit_sell(ticker, price, cnt):
 def market_sell_sub(ticker,cnt):
     rgParams = {
         "units" : cnt,
-        "currency" : ticker
+        "order_currency" : ticker,
+        "payment_currency" : 'KRW'
     };
     # print('market_sell_sub', ticker, cnt)
     result = api.xcoinApiCall("/trade/market_sell/", rgParams);
@@ -144,7 +145,7 @@ def market_sell(ticker, sell_cnt):
     print("market_sell..", ticker, sell_cnt)
     sell_price, gain, err = market_sell_sub(ticker, sell_cnt)
     while err != 0:
-        if err != 5600: print('['+err+']')
+        if int(err) != 5600: print('['+str(err)+']')
         assert(err==5600)
         sell_price, gain, err = market_sell_sub(ticker, sell_cnt)
         time.sleep(0.1)

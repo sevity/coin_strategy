@@ -16,7 +16,11 @@ LOSS_CUT_PERCENT = 1
 # and buys TRADE_COIN when all prices of COINS goes DOWN_ENOUGH_TIMES and atleast BOUNCE_CNT of coins' price are starting to goes up
 # and sell it when it reaches the GOAL_PERCENT and must set LOSS_CUT_PERCENT!
 
-bt = Coin('bithumb')
+f = open("../bithumb_api_key.txt", 'r')
+api_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
+bt = Coin('bithumb',api_key,secret_key)
 
 CONTINUOUS_DOWN_CNT = 0
 LAST_PRICES = []

@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\CoinStrategy",
+    "\\exchange",
+    "\\exchange\\binance",
+    "\\exchange\\bithumb"
+  ],
+  "SelectedNode": "\\test.py",
+  "PreviewInSolutionExplorer": false
+}

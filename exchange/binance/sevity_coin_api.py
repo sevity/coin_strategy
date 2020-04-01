@@ -6,7 +6,6 @@ import pprint
 import time
 
 from binance.client import Client
-# from .sevity_key import *
 g_api_key = ""
 g_secret_key = ""
 

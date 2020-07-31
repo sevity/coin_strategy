@@ -1,5 +1,5 @@
 # coin_strategy
-Coin trade library and strategies which supports bithumb and binance. 
+Coin trade library and strategies which supports bithumb and binance and upbit. 
 
 # setup
 ## dependency

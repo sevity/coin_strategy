@@ -11,6 +11,7 @@ import jwt
 import uuid
 import hashlib
 from urllib.parse import urlencode
+from datetime import datetime, timezone, timedelta
 
 server_url = 'https://api.upbit.com'
 
@@ -120,3 +121,69 @@ def limit_buy(ticker, price, cnt):
 
 def limit_sell(ticker, price, cnt):
     return order_new(ticker, price, cnt, 'ask', 'limit')
+
+def cancel(oid):
+    print('order_cancel...', oid)
+    query = {
+        'uuid': oid,
+    }
+    query_string = urlencode(query).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string)
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
+    return res
+
+
+def get_live_orders(ticker, currency):
+    query = {
+        'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+        'state': 'wait',
+    }
+    query_string = urlencode(query)
+
+    uuids = [
+        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+        #...
+    ]
+    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+    #query['uuids[]'] = uuids
+    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string.encode())
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+    r = []
+    for ord in res.json():
+        ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+        if ord['market']!='{}-{}'.format(currency, ticker):
+            continue
+        r.append((ord['uuid'], ct))
+    return r

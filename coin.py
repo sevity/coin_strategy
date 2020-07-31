@@ -35,3 +35,9 @@ class Coin:
 
     def limit_sell(self, ticker, price, cnt):
         return self._api.limit_sell(ticker, price, cnt)
+
+    def cancel(self, oid):
+        return self._api.cancel(oid)
+
+    def get_live_orders(self, ticker, currency):
+        return self._api.get_live_orders(ticker, currency)

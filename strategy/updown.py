@@ -10,7 +10,7 @@ FEE = 0.003  # 수수료는 0.3%겠지?
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 0.7%먹는 게임?
 BETTING = 50000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 10  # 초단위
-TIMEOUT_DAYS = 5
+TIMEOUT_DAYS = 2
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')
@@ -44,18 +44,14 @@ while True:
     ask_cnt = float(BETTING) / ask_price 
     bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
-        pass
+        if btc['free'] > ask_cnt:
+            oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
+            oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
+            print("oid:", {oid1, oid2})
+        else:
+            print('not enough BTC!')
     else:
         print('not enough KRW!')
-        time.sleep(COOL_TIME)
-        continue
-
-    if btc['free'] > ask_cnt:
-        oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
-        oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
-        print("oid:", {oid1, oid2})
-    else:
-        print('not enough BTC!')
 
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
@@ -65,7 +61,10 @@ while True:
         for (oid,odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
+            hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
+            print(oid, odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
+            #if hour_diff >= 33:
                 r = coin.cancel(oid)
                 print(r)
     except Exception as e:

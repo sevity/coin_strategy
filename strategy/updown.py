@@ -36,6 +36,7 @@ while True:
 
     print('KRW..', money)
     print('BTC..', btc)
+    print('free BTC in KRW..', btc['free']*a)
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', a)
     #a = round(a, -1) # minimum 10 won
 
@@ -58,11 +59,12 @@ while True:
         print("cancel pending orders...")
         l = coin.get_live_orders('BTC', 'KRW')
         KST = timezone(timedelta(hours=9))
-        for (oid,odt) in l:
+        print("{} orders alive...".format(len(l)))
+        for (oid, askbid, odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-            print(oid, odt, hour_diff, 'hours')
+            print(oid, askbid, odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 r = coin.cancel(oid)

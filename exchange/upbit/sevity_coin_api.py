@@ -185,5 +185,5 @@ def get_live_orders(ticker, currency):
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
         if ord['market']!='{}-{}'.format(currency, ticker):
             continue
-        r.append((ord['uuid'], ct))
+        r.append((ord['uuid'], ord['side'], ct))
     return r

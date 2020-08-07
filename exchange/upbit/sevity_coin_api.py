@@ -33,6 +33,37 @@ def get_price(ticker, currency):
     bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
     return (ask1+bid1)/2
 
+def get_info(ticker, currency):
+    query = {
+        'market': '{}-{}'.format(currency, ticker),
+    }
+    query_string = urlencode(query).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string)
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/orders/chance", params=query, headers=headers)
+    a = res.json()
+    r = {}
+    r['ask_fee'] = float(a['ask_fee'])
+    r['bid_fee'] = float(a['bid_fee'])
+    r['tick_size'] = a['market']['ask']['price_unit']
+    return r
+
+    print(res.json())
+
 def get_asset_info(currency):
     url = server_url + "/v1/accounts"
 
@@ -95,6 +126,13 @@ def order_new(ticker, price, cnt, askbid, ord_type):
         'price': price,
         'ord_type': ord_type,
     }
+    if ord_type=='market':
+        query = {
+            'market': 'KRW-{}'.format(ticker),
+            'side': askbid,
+            'volume': cnt,
+            'ord_type': ord_type,
+        }
     query_string = urlencode(query).encode()
 
     m = hashlib.sha512()
@@ -113,6 +151,8 @@ def order_new(ticker, price, cnt, askbid, ord_type):
     headers = {"Authorization": authorize_token}
 
     res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
+    if res.ok == False:
+        print(res, res.reason)
     oid = json.loads(res.content)['uuid']
     return oid
 
@@ -121,6 +161,12 @@ def limit_buy(ticker, price, cnt):
 
 def limit_sell(ticker, price, cnt):
     return order_new(ticker, price, cnt, 'ask', 'limit')
+
+def market_buy(ticker, cnt):
+    return order_new(ticker, 0, cnt, 'bid', 'price')
+
+def market_sell(ticker, cnt):
+    return order_new(ticker, 0, cnt, 'ask', 'market')
 
 def cancel(oid):
     print('order_cancel...', oid)
@@ -150,7 +196,7 @@ def cancel(oid):
 
 def get_live_orders2(ticker, currency):
     query = {
-        'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+        'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
         'state': 'wait',
     }
     query_string = urlencode(query)
@@ -183,8 +229,6 @@ def get_live_orders2(ticker, currency):
     r = []
     for ord in res.json():
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-        if ord['market']!='{}-{}'.format(currency, ticker):
-            continue
         r.append((ord['uuid'], ord['side'], ord['price'], ct))
     return r
 

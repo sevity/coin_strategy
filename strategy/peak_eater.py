@@ -3,16 +3,19 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from coin import *
 import time
+import math
 from datetime import datetime, timezone, timedelta
 
 # param #######################################################################
-tickers = ['XRP', 'XLM', 'ADA', 'MLK', 'POWR', 'ONG', 'VTC', 'STEEM', 'ICX', 'HIVE']
-# tickers = ['XRP']
+tickers = ['MOC', 'ORBS', 'DCR', 'IQ', 'WAVES', 'EMC2', 'MTL', 'SC', 'PXL','CVC']
+tick_sizes = [0.1, 0.1, 10, 0.01, 10, 0.1, 1, 0.01, 0.1, 0.1]
+# tickers = ['RP']
 FEE = 0.003
-DOWN = 0.03
+DOWN = 0.02
 UP = 0.01
 BETTING = 100000
-COOL_TIME = 60 * 2
+COOL_TIME_ORDER = 60 * 5
+COOL_TIME_CANCEL = 10
 ASK_TIME = 60 * 30
 ###############################################################################
 
@@ -22,27 +25,32 @@ secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
 
+def format_numbers(dict, rnd):
+    for key, val in dict.items():
+        dict[key] = '{:,}'.format(round(val, rnd) if rnd!=0 else int(val))
+
 while True:
+    z = dict(zip(tickers,  [-int(math.log(x, 10) + (-0.5 if x<1 else 0.5)) for x in tick_sizes]))
     price_dict = {}
+    money = coin.get_asset_info('KRW')
+    format_numbers(money, 0)
+    print('KRW..', money)
+    money = coin.get_asset_info('KRW')  # to float
     for ticker in tickers:
-        a = coin.get_price(ticker, 'KRW')
-        money = coin.get_asset_info('KRW')
+        cp = round(coin.get_price(ticker, 'KRW'), z[ticker])
+        print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'price..', cp)
 
-        print('KRW..', money)
-        print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'price..', 'upbit', '{:,}'.format(a))
-
-        ask_price = a + a * DOWN;ask_price = round(ask_price, 0) # minimum 1 won
-        bid_price = a - a * DOWN;bid_price = round(bid_price, 0) # minimum 1 won
+        ask_price = cp + cp * DOWN;ask_price = round(ask_price, z[ticker])
+        bid_price = cp - cp * DOWN;bid_price = round(bid_price, z[ticker])
         ask_cnt = float(BETTING) / ask_price 
         bid_cnt = float(BETTING) / bid_price
         if money['free'] > bid_price * bid_cnt :
             oid = coin.limit_buy(ticker, bid_price, bid_cnt)
-            print("oid:", oid)
-            price_dict[ticker] = bid_price
+            price_dict[ticker] = cp
         else:
             print('not enough KRW!')
 
-    time.sleep(COOL_TIME)
+    time.sleep(COOL_TIME_ORDER)
 
     l = coin.get_live_orders('KRW')
     KST = timezone(timedelta(hours=9))
@@ -53,20 +61,21 @@ while True:
         now = datetime.now(KST)
         date_diff = (now-odt).days
         hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-        price = coin.get_price(ticker, 'KRW')
-        price = int(float(price))
-        price_dict[ticker] = int(float(price_dict[ticker]))
-        print(oid, askbid, '{:,}'.format(int(float(price))), odt, 'price change..', (price-price_dict[ticker])*100.0/price_dict[ticker])
+        price = round(coin.get_price(ticker, 'KRW'), z[ticker])
+        print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 
+              'price change..', round((price-price_dict[ticker])*100.0/price_dict[ticker],1))
         del price_dict[ticker]
         r = coin.cancel(oid)
         print(r)
+
+    time.sleep(COOL_TIME_CANCEL)
+
     if len(price_dict)>0:
         print("{} hits...".format(len(price_dict)))
         for ticker,price in price_dict.items():
             print('selling..', ticker)
-            ask_price = price + price * UP;ask_price = round(ask_price, 0) # minimum 1 won
+            ask_price = price - price * UP;ask_price = round(ask_price, z[ticker])
             oid = coin.limit_sell(ticker, ask_price, bid_cnt)
-            print("oid:", oid)
         time.sleep(ASK_TIME)
         l = coin.get_live_orders('KRW')
         assert len(l)==0

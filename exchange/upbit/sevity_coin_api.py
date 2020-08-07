@@ -148,7 +148,7 @@ def cancel(oid):
     return res
 
 
-def get_live_orders(ticker, currency):
+def get_live_orders2(ticker, currency):
     query = {
         'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
         'state': 'wait',
@@ -186,4 +186,44 @@ def get_live_orders(ticker, currency):
         if ord['market']!='{}-{}'.format(currency, ticker):
             continue
         r.append((ord['uuid'], ord['side'], ord['price'], ct))
+    return r
+
+
+def get_live_orders(currency):
+    query = {
+        #'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+        'state': 'wait',
+    }
+    query_string = urlencode(query)
+
+    uuids = [
+        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+        #...
+    ]
+    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+    #query['uuids[]'] = uuids
+    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string.encode())
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+    r = []
+    for ord in res.json():
+        ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+        ticker = ord['market'].split('-')[1]
+        r.append((ticker, ord['uuid'], ord['side'], ord['price'], ct))
     return r

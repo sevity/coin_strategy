@@ -39,5 +39,8 @@ class Coin:
     def cancel(self, oid):
         return self._api.cancel(oid)
 
-    def get_live_orders(self, ticker, currency):
-        return self._api.get_live_orders(ticker, currency)
+    def get_live_orders2(self, ticker, currency):
+        return self._api.get_live_orders2(ticker, currency)
+
+    def get_live_orders(self, currency):
+        return self._api.get_live_orders(currency)

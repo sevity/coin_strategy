@@ -152,7 +152,7 @@ def order_new(ticker, price, cnt, askbid, ord_type):
 
     res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
     if res.ok == False:
-        print(res, res.reason)
+        print(res, res.text)
     oid = json.loads(res.content)['uuid']
     return oid
 
@@ -191,6 +191,8 @@ def cancel(oid):
     headers = {"Authorization": authorize_token}
 
     res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
+    if res.ok == False:
+        print(res, res.text)
     return res
 
 

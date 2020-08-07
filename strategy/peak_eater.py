@@ -4,12 +4,60 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from coin import *
 import time
 import math
+import random
+import copy
 from datetime import datetime, timezone, timedelta
 
 # param #######################################################################
-tickers = ['MOC', 'ORBS', 'GTO', 'BORA', 'WAVES', 'EMC2', 'MTL', 'SC', 'SPND','CVC']
-tick_sizes = [0.1, 0.1, 0.1, 0.1, 10, 0.1, 1, 0.01, 0.01, 0.1]
-# tickers = ['RP']
+total_tickers = [
+    ('NPXS', 0.01),
+    ('BTT', 0.01),
+    ('MFT', 0.01),
+    ('IQ', 0.01),
+    ('CRE', 0.01),
+    ('MBL', 0.01),
+    ('STMX', 0.01),
+    ('SC', 0.01),
+    ('MED', 0.01),
+    ('EDR', 0.01),
+    ('TSHP', 0.01),
+    ('SPND', 0.01),
+    ('TT', 0.01),
+    ('IOST', 0.01),
+    ('AHT', 0.01),
+    ('QKC', 0.01),
+    ('ANKR', 0.01),
+    ('TFUEL', 0.1),
+    ('OST', 0.1),
+    ('PXL', 0.1),
+    ('SRN', 0.1),
+    ('CHZ', 0.1),
+    ('GTO', 0.1),
+    ('ORBS', 0.1),
+    ('UPP', 0.1),
+    ('MOC', 0.1),
+    ('STPT', 0.1),
+    ('VET', 0.1),
+    ('TRX', 0.1),
+    ('ZIL', 0.1),
+    ('LOOM', 0.1),
+    ('IGNIS', 0.1),
+    ('TTC', 0.1),
+    ('SNT', 0.1),
+    ('CVC', 0.1),
+    ('POLY', 0.1),
+    ('BORA', 0.1),
+    ('HBAR', 0.1),
+    ('AERGO', 0.1),
+    ('DKA', 0.1),
+    ('WAXP', 0.1),
+    ('EMC2', 0.1),
+    ('XEM', 0.1),
+    ('GNT', 0.1),
+    ('MANA', 0.1),
+    ('ARDR', 0.1),
+    ]
+
 FEE = 0.003
 DOWN = 0.010
 UP = 0.005
@@ -34,30 +82,41 @@ def format_numbers(dict, rnd):
 #    info = coin.get_info(ticker, 'KRW')
 #    print(ticker, info)
 
-print('cancel possible pending bid orders of previous run')
-l = coin.get_live_orders('KRW')
-for (ticker, oid, askbid, price, odt) in l:
-    if ticker not in tickers or askbid == 'ask':
-        continue
-    r = coin.cancel(oid)
+
+
+
 
 while True:
+    print('cancel pending bids..')
+    l = coin.get_live_orders('KRW')
+    for (ticker, oid, askbid, price, odt) in l:
+        if ticker=='BTC' or askbid == 'ask':
+            continue
+        r = coin.cancel(oid)
+
+    krw = coin.get_asset_info('KRW')['free']
+    cnt = int(krw / BETTING *2 / 3)
+    print('free krw..', krw, 'cnt of tickers this time..', cnt)
+    tickers = []
+    tick_sizes = []
+    random.shuffle(total_tickers)
+    for i in range(cnt):
+        tickers.append(total_tickers[i][0])
+        tick_sizes.append(total_tickers[i][1])
+    z = dict(zip(tickers,  [-int(math.log(x, 10) + (-0.5 if x<1 else 0.5)) for x in tick_sizes]))
+    print('pick random tickers..', tickers)
+
     print('cancel pending ask orders and clear them with market sell')
     l = coin.get_live_orders('KRW')
     for (ticker, oid, askbid, price, odt) in l:
-        if ticker not in tickers or askbid == 'bid':
+        if ticker == 'BTC' or askbid == 'bid':
             continue
         r = coin.cancel(oid)
-    for ticker in tickers:
+    for ticker, tick_size in total_tickers:
         ass = coin.get_asset_info(ticker)
         if 'free' in ass and ass['free'] > 0:
             coin.market_sell(ticker, ass['free'])
-
-    z = dict(zip(tickers,  [-int(math.log(x, 10) + (-0.5 if x<1 else 0.5)) for x in tick_sizes]))
     price_dict = {}
-    money = coin.get_asset_info('KRW')
-    format_numbers(money, 0)
-    print('KRW..', money)
     money = coin.get_asset_info('KRW')  # to float
 
     for ticker in tickers:
@@ -72,29 +131,35 @@ while True:
         else:
             print('not enough KRW!')
 
-    time.sleep(COOL_TIME_ORDER)
+    for i in range(int(COOL_TIME_ORDER/10)):
+        l = coin.get_live_orders('KRW')
+        print("orders alive...")
+        pd = copy.deepcopy(price_dict)
+        for (ticker, oid, askbid, price, odt) in l:
+            if ticker not in pd or askbid == 'ask':
+                continue
+            del pd[ticker]
+        if len(pd) > 0:
+            print("{} hits...".format(len(pd)))
+            print("cancel pending bids..")
+            for (ticker, oid, askbid, price, odt) in l:
+                if ticker == 'BTC' or askbid == 'ask':
+                    continue
+                r = coin.cancel(oid)
 
-    l = coin.get_live_orders('KRW')
-    KST = timezone(timedelta(hours=9))
-    print("{} orders alive...".format(len(l)))
-    for (ticker, oid, askbid, price, odt) in l:
-        if ticker not in price_dict or askbid == 'ask':
-            continue
-        now = datetime.now(KST)
-        date_diff = (now-odt).days
-        hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-        price = round(coin.get_price(ticker, 'KRW'), z[ticker])
-        print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 
-              'price change..', round((price-price_dict[ticker])*100.0/price_dict[ticker],1))
-        del price_dict[ticker]
-        r = coin.cancel(oid)
-        print(r)
+            for ticker,price in pd.items():
+                print('selling..', ticker)
+                ask_price = price - price * UP;ask_price = round(ask_price, z[ticker])
+                ass = coin.get_asset_info(ticker)
+                oid = coin.limit_sell(ticker, ask_price, ass['free'])
+            time.sleep(COOL_TIME_HIT)
+            break
 
-    if len(price_dict)>0:
-        print("{} hits...".format(len(price_dict)))
-        for ticker,price in price_dict.items():
-            print('selling..', ticker)
-            price = price_dict[ticker]
-            ask_price = price - price * UP;ask_price = round(ask_price, z[ticker])
-            oid = coin.limit_sell(ticker, ask_price, bid_cnt)
-        time.sleep(COOL_TIME_HIT)
+        for (ticker, oid, askbid, price, odt) in l:
+            if ticker not in price_dict or askbid == 'ask':
+                continue
+            price = round(coin.get_price(ticker, 'KRW'), z[ticker])
+            print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 
+                  'price change..', round((price-price_dict[ticker])*100.0/price_dict[ticker],1))
+        time.sleep(10)
+

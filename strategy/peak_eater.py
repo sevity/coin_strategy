@@ -18,10 +18,10 @@ total_tickers = [
     'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 
     ]
 
-FEE = 0.003
-DOWN = 0.025  # 2%
-UP = 0.015
-BETTING = 100000
+FEE = 0.0005  # 0.05%
+DOWN = 0.01   # 2%
+UP = 0.005
+BETTING = 50000
 COOL_TIME_ORDER = 60 * 2
 COOL_TIME_HIT = 60 * 20
 ###############################################################################
@@ -59,7 +59,26 @@ def tick_round(price):
     t = get_tick_size(price)
     return int(price / t) * t
 
+def on_hit_check_fill(ticker):
+    print("check fill..", ticker)
+    for i in range(int(COOL_TIME_HIT/10)):
+        l = coin.get_live_orders(ticker, 'KRW')
+        found = False
+        for (oid, askbid, price, odt) in l:
+            if askbid == 'bid':
+                continue
+            found = True
+            if i == 0:
+                print('waiting..', oid, askbid, '{:,}'.format(int(float(price))), odt)
+            break
+        if found == False:
+            return True
+        time.sleep(10)
+    return False
+
+total_gain = 0
 while True:
+    print('-=-=-= new start.. total_gain: {:,}원 =-=-=-'.format(int(total_gain)))
     print('cancel pending bids..')
     l = coin.get_live_orders('KRW')
     for (ticker, oid, askbid, price, odt) in l:
@@ -112,18 +131,24 @@ while True:
                 continue
             del pd[ticker]
         if len(pd) > 0:
-            print("{} hits...".format(len(pd)))
-            print("cancel pending bids..")
+            print("-=-= {} hits... =-=-".format(len(pd)))
+            print("cancel pending bids before selling..")
             for (ticker, oid, askbid, price, odt) in l:
                 if ticker == 'BTC' or askbid == 'ask':
                     continue
                 r = coin.cancel(oid)
 
-            for ticker,price in pd.items():
-                print('selling..', ticker)
+            for t,price in pd.items():
+                print('selling..', t)
                 ask_price = price - price * UP;ask_price = tick_round(ask_price)
-                oid = coin.limit_sell(ticker, ask_price, cnt_dict[ticker])
-            time.sleep(COOL_TIME_HIT)
+                oid = coin.limit_sell(t, ask_price, cnt_dict[t])
+                r = on_hit_check_fill(t)
+                if r:
+                    bid_price = price_dict[t] - price_dict[t] * DOWN;bid_price = tick_round(bid_price)
+                    gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
+                    total_gain += gain
+                    print(ticker, "sold!", "gain:..", "buy:", bid_price, "sell:", ask_price,
+                          "<< gain:{} >>".format(gain))
             break
 
         for (ticker, oid, askbid, price, odt) in l:

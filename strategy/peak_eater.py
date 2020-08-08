@@ -10,8 +10,6 @@ from datetime import datetime, timezone, timedelta
 
 # param #######################################################################
 total_tickers = [
-    ('NPXS', 0.01),
-    ('BTT', 0.01),
     ('MFT', 0.01),
     ('IQ', 0.01),
     ('CRE', 0.01),
@@ -26,7 +24,7 @@ total_tickers = [
     ('IOST', 0.01),
     ('AHT', 0.01),
     ('QKC', 0.01),
-    ('ANKR', 0.01),
+    ('ANKR', 0.1),
     ('TFUEL', 0.1),
     ('OST', 0.1),
     ('PXL', 0.1),
@@ -59,12 +57,11 @@ total_tickers = [
     ]
 
 FEE = 0.003
-DOWN = 0.010
-UP = 0.005
+DOWN = 0.025  # 2%
+UP = 0.015
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 2
-COOL_TIME_HIT = 60 * 5
-ASK_TIME = 60 * 5
+COOL_TIME_HIT = 60 * 20
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')
@@ -83,9 +80,6 @@ def format_numbers(dict, rnd):
 #    print(ticker, info)
 
 
-
-
-
 while True:
     print('cancel pending bids..')
     l = coin.get_live_orders('KRW')
@@ -95,8 +89,8 @@ while True:
         r = coin.cancel(oid)
 
     krw = coin.get_asset_info('KRW')['free']
-    cnt = int(krw / BETTING *2 / 3)
-    print('free krw..', krw, 'cnt of tickers this time..', cnt)
+    cnt = int(krw / BETTING *4 / 5)
+    print('free krw..', '{:,}'.format(krw), 'cnt of tickers this time..', cnt)
     tickers = []
     tick_sizes = []
     random.shuffle(total_tickers)
@@ -117,6 +111,7 @@ while True:
         if 'free' in ass and ass['free'] > 0:
             coin.market_sell(ticker, ass['free'])
     price_dict = {}
+    cnt_dict = {}
     money = coin.get_asset_info('KRW')  # to float
 
     for ticker in tickers:
@@ -128,6 +123,7 @@ while True:
         if money['free'] > bid_price * bid_cnt :
             oid = coin.limit_buy(ticker, bid_price, bid_cnt)
             price_dict[ticker] = cp
+            cnt_dict[ticker] = bid_cnt
         else:
             print('not enough KRW!')
 
@@ -150,8 +146,7 @@ while True:
             for ticker,price in pd.items():
                 print('selling..', ticker)
                 ask_price = price - price * UP;ask_price = round(ask_price, z[ticker])
-                ass = coin.get_asset_info(ticker)
-                oid = coin.limit_sell(ticker, ask_price, ass['free'])
+                oid = coin.limit_sell(ticker, ask_price, cnt_dict[ticker])
             time.sleep(COOL_TIME_HIT)
             break
 
@@ -159,7 +154,8 @@ while True:
             if ticker not in price_dict or askbid == 'ask':
                 continue
             price = round(coin.get_price(ticker, 'KRW'), z[ticker])
-            print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 
-                  'price change..', round((price-price_dict[ticker])*100.0/price_dict[ticker],1))
+            change = round((price-price_dict[ticker])*100.0/price_dict[ticker],1)
+            if change < -0.5:
+                print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 'price change..', change)
         time.sleep(10)
 

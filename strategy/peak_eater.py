@@ -41,13 +41,16 @@ def format_numbers(dict, rnd):
 #    info = coin.get_info(ticker, 'KRW')
 #    print(ticker, info)
 
+# https://upbit.com/service_center/guide
 def get_tick_size(price):
     if price < 10: return 0.01
     if price < 100: return 0.1
     if price < 1000: return 1
     if price < 10000: return 5
     if price < 100000: return 10
-    if price < 1000000: return 50
+    if price < 500000: return 50
+    if price < 1000000: return 100
+    if price < 2000000: return 500
     return 1000 # BTC
 
 # return price multiple of ticksize

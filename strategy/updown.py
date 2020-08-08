@@ -12,6 +12,7 @@ BETTING = 50000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 30  # 초단위
 TIMEOUT_DAYS = 3
 ###############################################################################
+# 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -69,7 +70,6 @@ while True:
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 r = coin.cancel(oid)
-                print(r)
                 if askbid=='ask':
                     oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
                     print("oid:", oid2)

@@ -42,6 +42,7 @@ def format_numbers(dict, rnd):
 #    print(ticker, info)
 
 # https://upbit.com/service_center/guide
+# https://docs.upbit.com/docs/market-info-trade-price-detail
 def get_tick_size(price):
     if price < 10: return 0.01
     if price < 100: return 0.1
@@ -131,6 +132,6 @@ while True:
             price = tick_round(coin.get_price(ticker, 'KRW'))
             change = round((price-price_dict[ticker])*100.0/price_dict[ticker],1)
             if change < -0.5:
-                print(ticker, 'price from..', price_dict[ticker], 'price now..', price, 'price change..', change)
+                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%'.format(price_dict[ticker], price, change))
         time.sleep(10)
 

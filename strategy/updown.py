@@ -58,7 +58,7 @@ while True:
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
         print("cancel pending orders...")
-        l = coin.get_live_orders2('BTC', 'KRW')
+        l = coin.get_live_orders('BTC', 'KRW')
         KST = timezone(timedelta(hours=9))
         print("{} orders alive...".format(len(l)))
         for (oid, askbid, price, odt) in l:

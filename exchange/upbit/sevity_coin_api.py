@@ -12,6 +12,7 @@ import uuid
 import hashlib
 from urllib.parse import urlencode
 from datetime import datetime, timezone, timedelta
+from multipledispatch import dispatch # https://www.geeksforgeeks.org/python-method-overloading/
 
 server_url = 'https://api.upbit.com'
 
@@ -31,7 +32,7 @@ def get_price(ticker, currency):
             querystring = {"markets":"{}-{}".format(currency, ticker)}
             response = requests.request("GET", url, params=querystring)
             if response.ok == False:
-                print(response.reason, response.text)
+                print(response.url, response.reason, response.text)
             j = json.loads(response.text)
             ask1 = float(j[0]["orderbook_units"][0]["ask_price"])
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
@@ -175,8 +176,8 @@ def cancel(oid):
         print(res, res.text)
     return res
 
-
-def get_live_orders2(ticker, currency):
+@dispatch(str, str) 
+def get_live_orders(ticker, currency):
     query = {
         'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
         'state': 'wait',
@@ -214,7 +215,7 @@ def get_live_orders2(ticker, currency):
         r.append((ord['uuid'], ord['side'], ord['price'], ct))
     return r
 
-
+@dispatch(str) 
 def get_live_orders(currency):
     query = {
         #'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네

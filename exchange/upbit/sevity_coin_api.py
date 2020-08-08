@@ -37,8 +37,7 @@ def get_price(ticker, currency):
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
             return (ask1+bid1)/2
         except:
-            print('e')
-            time.sleep(0.05)
+            time.sleep(1.0)
 
 def get_info(ticker, currency):
     query = {
@@ -93,36 +92,10 @@ def get_asset_info(currency):
             break
     return r
 
-def order_new_sub(ticker, price, cnt, askbid):
-    rgParams = {
-        "order_currency" : ticker,
-        "payment_currency" : "KRW",
-        "units" : float(cnt),
-        "price" : int(price),
-        "type" : askbid,
-    };
-    while True:
-        try:
-            result = api.xcoinApiCall("/trade/place/", rgParams);
-            print_err(result)
-            r = int(result['status'])
-            # if r == 0: print(result)
-            m = None
-            if 'message' in result:
-                m = result['message']
-            if m is not None and m == '매수금액이 사용가능 KRW 를 초과하였습니다.':
-                r = -1
-            elif m is not None and m == '주문량이 사용가능 EOS을 초과하였습니다.':
-                r = -2
-            return r
-        except:
-            print('e')
-            time.sleep(0.05)
-            pass 
 
 
 def order_new(ticker, price, cnt, askbid, ord_type):
-    print('order_new...', ticker, price, cnt, askbid)
+    print('order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 

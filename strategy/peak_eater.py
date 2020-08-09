@@ -129,7 +129,7 @@ while True:
                 gain = 0
                 if r:
                     gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
-                    print(ticker, "sold!", "buy:", bid_price, "sell:", ask_price,
+                    print(t, "sold!", "buy:", bid_price, "sell:", ask_price,
                           "<< gain:{} >>".format(gain))
                 else:
                     coin.cancel(oid)
@@ -142,7 +142,7 @@ while True:
                     if f > 0:
                         ask_amount = coin.market_sell(t, f)
                         gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
-                        print(ticker, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
+                        print(t, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
                               "<< gain:{} >>".format(gain))
                 total_gain += gain
 

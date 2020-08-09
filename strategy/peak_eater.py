@@ -136,11 +136,14 @@ while True:
                     f = 0
                     while f == 0:
                         ass = coin.get_asset_info(t)
+                        if 'free' not in ass:
+                            break;
                         f = ass['free']
-                    ask_amount = coin.market_sell(t, ass['free'])
-                    gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
-                    print(ticker, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
-                          "<< gain:{} >>".format(gain))
+                    if f > 0:
+                        ask_amount = coin.market_sell(t, f)
+                        gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
+                        print(ticker, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
+                              "<< gain:{} >>".format(gain))
                 total_gain += gain
 
             break

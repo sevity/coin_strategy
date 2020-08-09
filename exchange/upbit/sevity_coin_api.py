@@ -35,7 +35,7 @@ def get_price(ticker, currency):
             response = requests.request("GET", url, params=querystring)
             if response.ok == False:
                 if response.status_code != 429:  # too many api requeists
-                    print(response.url, response.text)
+                    print(  response.url, response.text)
             j = json.loads(response.text)
             ask1 = float(j[0]["orderbook_units"][0]["ask_price"])
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
@@ -72,8 +72,6 @@ def get_info(ticker, currency):
     r['tick_size'] = a['market']['ask']['price_unit']
     return r
 
-    print(res.json())
-
 def get_asset_info(currency):
     url = server_url + "/v1/accounts"
 
@@ -99,7 +97,7 @@ def get_asset_info(currency):
 
 
 def order_new(ticker, price, cnt, askbid, ord_type):
-    print('order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
+    print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -136,7 +134,7 @@ def order_new(ticker, price, cnt, askbid, ord_type):
 
     res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
     if res.ok == False:
-        print(res, res.text)
+        print(  res, res.text)
     oid = json.loads(res.content)['uuid']
     return (oid,res)
 
@@ -156,11 +154,13 @@ def market_buy(ticker, cnt):
 
 def market_sell(ticker, cnt):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')
-    r = get_fill_order(oid)
+    r = {}
+    while 'final_amount' not in r:
+        r = get_fill_order(oid)
     return r['final_amount']
 
 def cancel(oid):
-    print('order_cancel...', oid)
+    print('  order_cancel...', oid)
     query = {
         'uuid': oid,
     }
@@ -183,7 +183,7 @@ def cancel(oid):
 
     res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
     if res.ok == False:
-        print(res, res.text)
+        print(  res, res.text)
     return res
 
 @dispatch(str, str) 
@@ -283,24 +283,19 @@ def get_fill_order(oid):
     m.update(query_string)
     query_hash = m.hexdigest()
 
-    for i in range(10):
-        payload = {
-            'access_key': g_api_key,
-            'nonce': str(uuid.uuid4()),
-            'query_hash': query_hash,
-            'query_hash_alg': 'SHA512',
-        }
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
 
-        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-        authorize_token = 'Bearer {}'.format(jwt_token)
-        headers = {"Authorization": authorize_token}
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
 
-        res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-        j = res.json()
-        if len(j) == 1:
-           break
-        time.sleep(1)
-
+    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+    j = res.json()
     if len(j) == 0:
         return {}
 

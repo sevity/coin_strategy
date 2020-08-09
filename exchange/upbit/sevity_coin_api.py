@@ -136,19 +136,26 @@ def order_new(ticker, price, cnt, askbid, ord_type):
     if res.ok == False:
         print(res, res.text)
     oid = json.loads(res.content)['uuid']
-    return oid
+    return (oid,res)
 
 def limit_buy(ticker, price, cnt):
-    return order_new(ticker, price, cnt, 'bid', 'limit')
+    return order_new(ticker, price, cnt, 'bid', 'limit')[0]
 
 def limit_sell(ticker, price, cnt):
-    return order_new(ticker, price, cnt, 'ask', 'limit')
+    return order_new(ticker, price, cnt, 'ask', 'limit')[0]
 
 def market_buy(ticker, cnt):
-    return order_new(ticker, 0, cnt, 'bid', 'price')
+    (oid, res) =  order_new(ticker, 0, cnt, 'bid', 'price')
+    a = json.loads(res.content)
+    r = {}
+    r['price'] = 0
+    r['volume'] = float(a['volume'])
+    return r
 
 def market_sell(ticker, cnt):
-    return order_new(ticker, 0, cnt, 'ask', 'market')
+    (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')
+    r = get_fill_order(oid)
+    return r['final_amount']
 
 def cancel(oid):
     print('order_cancel...', oid)
@@ -219,7 +226,6 @@ def get_live_orders(ticker, currency):
 @dispatch(str) 
 def get_live_orders(currency):
     query = {
-        #'markets': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
         'state': 'wait',
     }
     query_string = urlencode(query)
@@ -254,4 +260,49 @@ def get_live_orders(currency):
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
         ticker = ord['market'].split('-')[1]
         r.append((ticker, ord['uuid'], ord['side'], ord['price'], ct))
+    return r
+
+def get_fill_order(oid):
+    query = {
+        'state': 'done',
+    }
+    query_string = urlencode(query)
+
+    uuids = [
+        oid,
+        #...
+    ]
+    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+    query['uuids[]'] = uuids
+    query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string)
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+    j = res.json()
+    assert(len(j)==1)
+
+    r = {}
+    r['askbid'] = j[0]['side']
+    r['price'] = float(j[0]['price'])
+    r['volume'] = float(j[0]['executed_volume'])
+    r['fee'] = float(j[0]['paid_fee'])
+    if r['askbid']=='ask':
+        r['final_amount'] = r['price'] * r['volume'] - r['fee']
+    else:
+        r['final_amount'] = r['price'] * r['volume'] + r['fee']
     return r

@@ -35,27 +35,10 @@ def format_numbers(dict, rnd):
     for key, val in dict.items():
         dict[key] = '{:,}'.format(round(val, rnd) if rnd!=0 else int(val))
 
-# get fee and tick_size
-#for ticker in tickers:
-#    info = coin.get_info(ticker, 'KRW')
-#    print(ticker, info)
-
-# https://upbit.com/service_center/guide
-# https://docs.upbit.com/docs/market-info-trade-price-detail
-def get_tick_size(price):
-    if price < 10: return 0.01
-    if price < 100: return 0.1
-    if price < 1000: return 1
-    if price < 10000: return 5
-    if price < 100000: return 10
-    if price < 500000: return 50
-    if price < 1000000: return 100
-    if price < 2000000: return 500
-    return 1000 # BTC
 
 # return price multiple of ticksize
 def tick_round(price):
-    t = get_tick_size(price)
+    t = coin.get_tick_size(price)
     return int(price / t) * t
 
 def on_hit_check_fill(ticker):
@@ -156,7 +139,7 @@ while True:
                         f = ass['free']
                     ask_amount = coin.market_sell(t, ass['free'])
                     gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
-                    print(ticker, "failed to sold!", "buy:", bid_price, "sell:", ask_price,
+                    print(ticker, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
                           "<< gain:{} >>".format(gain))
                 total_gain += gain
 

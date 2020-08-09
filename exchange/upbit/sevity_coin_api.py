@@ -18,6 +18,8 @@ server_url = 'https://api.upbit.com'
 
 g_api_key = ""
 g_api_secret = ""
+g_ask_fee = -1
+g_bid_fee = -1
 
 def set_key(api_key, secret_key):
     global g_api_key, g_api_secret
@@ -281,26 +283,39 @@ def get_fill_order(oid):
     m.update(query_string)
     query_hash = m.hexdigest()
 
-    payload = {
-        'access_key': g_api_key,
-        'nonce': str(uuid.uuid4()),
-        'query_hash': query_hash,
-        'query_hash_alg': 'SHA512',
-    }
+    for i in range(10):
+        payload = {
+            'access_key': g_api_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
 
-    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-    authorize_token = 'Bearer {}'.format(jwt_token)
-    headers = {"Authorization": authorize_token}
+        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
 
-    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-    j = res.json()
-    assert(len(j)==1)
+        res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+        j = res.json()
+        if len(j) == 1:
+           break
+        time.sleep(1)
+
+    if len(j) == 0:
+        return {}
 
     r = {}
     r['askbid'] = j[0]['side']
-    r['price'] = float(j[0]['price'])
     r['volume'] = float(j[0]['executed_volume'])
     r['fee'] = float(j[0]['paid_fee'])
+    global g_ask_fee, g_bid_fee
+    if g_ask_fee == -1 or g_bid_fee == -1:
+        ticker = j[0]['market'].split('-')[1]
+        info = get_info(ticker, 'KRW')
+        g_ask_fee = info['ask_fee']
+        g_bid_fee = info['bid_fee']
+    fee = g_ask_fee if r['askbid']=='ask' else g_bid_fee
+    r['price'] = r['fee']/fee/r['volume'] if j[0]['price'] is None else float(j[0]['price'])
     if r['askbid']=='ask':
         r['final_amount'] = r['price'] * r['volume'] - r['fee']
     else:

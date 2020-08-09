@@ -31,7 +31,6 @@ access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
-r = coin.get_fill_order('2ef01eef-9cc4-4d42-b068-2de9ee5e40c9')
 def format_numbers(dict, rnd):
     for key, val in dict.items():
         dict[key] = '{:,}'.format(round(val, rnd) if rnd!=0 else int(val))
@@ -143,15 +142,18 @@ while True:
                 ask_price = price - price * UP;ask_price = tick_round(ask_price)
                 oid = coin.limit_sell(t, ask_price, cnt_dict[t])
                 r = on_hit_check_fill(t)
+                bid_price = price_dict[t] - price_dict[t] * DOWN;bid_price = tick_round(bid_price)
                 gain = 0
                 if r:
-                    bid_price = price_dict[t] - price_dict[t] * DOWN;bid_price = tick_round(bid_price)
                     gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
                     print(ticker, "sold!", "buy:", bid_price, "sell:", ask_price,
                           "<< gain:{} >>".format(gain))
                 else:
                     coin.cancel(oid)
-                    ass = coin.get_asset_info(t)
+                    f = 0
+                    while f == 0:
+                        ass = coin.get_asset_info(t)
+                        f = ass['free']
                     ask_amount = coin.market_sell(t, ass['free'])
                     gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
                     print(ticker, "failed to sold!", "buy:", bid_price, "sell:", ask_price,

@@ -15,16 +15,23 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'MCO', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH',
     ]
 
+# MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
+# KAVA는 가격변화가 심해서 peak eat가 아니라 다른 경우가 자주 생김
+ban_tickers = []
+
 FEE = 0.0005  # 0.05%
-DOWN = 0.01   # 2%
-UP = 0.0005
+DOWN = 0.03   # 4%
+UP   = 0.02
 BETTING = 40000
 COOL_TIME_ORDER = 60 * 2
-COOL_TIME_HIT = 60 * 1
+COOL_TIME_HIT = 60 * 1.5
 ###############################################################################
+
+for ticker in ban_tickers:
+    total_tickers.remove(ticker)
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -72,10 +79,12 @@ def sell(pd):
     global total_gain
     for t,price in pd.items():
         print('selling..', t)
+        bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
+        bid_price_plus1 = bid_price - coin.get_tick_size(bid_price)
+        ask_price=max(ask_price, bid_price_plus1)
         oid = coin.limit_sell(t, ask_price, cnt_dict[t])
         r = on_hit_check_fill(t)
-        bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         gain = 0
         if r:
             gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
@@ -90,19 +99,26 @@ def sell(pd):
                     break;
                 f = ass['free']
             if f > 0:
-                ask_amount = coin.market_sell(t, f)
+                r = coin.market_sell(t, f)
+                ask_amount = r['final_amount']
                 gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
-                print(t, "limit order fail!", "buy:", bid_price, "market sell:", ask_price,
+                print('debug info..', 'ask_amount..', ask_amount, 'cnt..', cnt_dict[t])
+                print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                         "<< gain:{} >>".format(gain))
         total_gain += gain
 
-
+hit=False
 while True:
-    print('-=-=-= new start.. total_gain KRW: {:,} =-=-=-'.format(int(total_gain)))
+    if hit or DOWN<0.01:
+        DOWN=0.03
+        hit = False
+    DOWN-=0.003
+    UP=DOWN*2/3
+    print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
 
     krw = coin.get_asset_info('KRW')['free']
-    cnt = int(krw / BETTING *4 / 5)
+    cnt = int((krw - 60000)/ BETTING)
     print('free krw..', '{:,}'.format(krw), 'cnt of tickers this time..', cnt)
     tickers = []
     random.shuffle(total_tickers)
@@ -150,6 +166,7 @@ while True:
 
         if len(pd) > 0:
             print("-=-= {} hits... =-=-".format(len(pd)))
+            hit = True
             print("cancel pending bids before selling..")
             for (ticker, oid, askbid, price, odt) in l:
                 if ticker == 'BTC' or askbid == 'ask':

@@ -23,7 +23,7 @@ total_tickers = [
 ban_tickers = []
 
 FEE = 0.0005  # 0.05%
-DOWN = 0.03   # 4%
+DOWN = 0.02   # 4%
 UP   = 0.02
 BETTING = 40000
 COOL_TIME_ORDER = 60 * 2
@@ -81,14 +81,14 @@ def sell(pd):
         print('selling..', t)
         bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
-        bid_price_plus1 = bid_price - coin.get_tick_size(bid_price)
+        bid_price_plus1 = tick_round(bid_price + bid_price*FEE*2 + coin.get_tick_size(bid_price))
         ask_price=max(ask_price, bid_price_plus1)
         oid = coin.limit_sell(t, ask_price, cnt_dict[t])
         r = on_hit_check_fill(t)
         gain = 0
         if r:
             gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
-            print(t, "sold!", "buy:", bid_price, "sell:", ask_price,
+            print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
         else:
             coin.cancel(oid)
@@ -110,16 +110,18 @@ def sell(pd):
 hit=False
 while True:
     if hit or DOWN<0.01:
-        DOWN=0.03
+        DOWN=0.02
         hit = False
-    DOWN-=0.003
+    #DOWN-=0.003
+    DOWN *= (1-0.2)
     UP=DOWN*2/3
     print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
 
     krw = coin.get_asset_info('KRW')['free']
-    cnt = int((krw - 60000)/ BETTING)
-    print('free krw..', '{:,}'.format(krw), 'cnt of tickers this time..', cnt)
+    cnt = len(total_tickers)
+    BETTING = int((krw - 60000)/ cnt)
+    print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', BETTING)
     tickers = []
     random.shuffle(total_tickers)
     for i in range(cnt):

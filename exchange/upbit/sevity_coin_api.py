@@ -302,20 +302,31 @@ def get_fill_order(oid):
     if len(j) == 0:
         return {}
 
-    r = {}
-    r['askbid'] = j[0]['side']
-    r['volume'] = float(j[0]['executed_volume'])
-    r['fee'] = float(j[0]['paid_fee'])
     global g_ask_fee, g_bid_fee
     if g_ask_fee == -1 or g_bid_fee == -1:
         ticker = j[0]['market'].split('-')[1]
         info = get_info(ticker, 'KRW')
         g_ask_fee = info['ask_fee']
         g_bid_fee = info['bid_fee']
+
+    r = {}
+    r['askbid'] = j[0]['side']
+    r['fee'] = float(j[0]['paid_fee'])
     fee = g_ask_fee if r['askbid']=='ask' else g_bid_fee
-    r['price'] = r['fee']/fee/r['volume'] if j[0]['price'] is None else float(j[0]['price'])
-    if r['askbid']=='ask':
-        r['final_amount'] = r['price'] * r['volume'] - r['fee']
-    else:
-        r['final_amount'] = r['price'] * r['volume'] + r['fee']
+    price=0
+    volume=0
+    r['price']=0
+    r['volume']=0
+    r['final_amount']=0
+    for k in j:
+        volume += float(k['executed_volume'])
+        price = r['fee']/fee/volume if k['price'] is None else float(k['price'])
+        if r['askbid']=='ask':
+            r['final_amount'] += price * volume - r['fee']
+        else:
+            r['final_amount'] += price * volume + r['fee']
+        r['volume'] += volume
+        r['price'] += price*volume
+    r['final_amount']/=len(j)
+    r['price']/=r['volume']
     return r

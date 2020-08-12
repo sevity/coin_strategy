@@ -134,7 +134,9 @@ def order_new(ticker, price, cnt, askbid, ord_type):
 
     res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
     if res.ok == False:
-        print(  res, res.text)
+        print(res, res.text)
+        if res.status_code != 400:  # 최소 주문 금액은 500.0 KRW입니다.
+            return (-1, None)
     oid = json.loads(res.content)['uuid']
     return (oid,res)
 

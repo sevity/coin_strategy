@@ -93,7 +93,9 @@ def sell(pd, bPartial = False):
         r = on_hit_check_fill(t)
         gain = 0
         if r:
-            gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
+            r2 = coin.get_fill_order(oid)
+            ask_price = r2['price']
+            gain = int(r2['final_amount'] - bid_price*cnt_dict[t]*(1.0+FEE))
             if bPartial: gain = 0
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))

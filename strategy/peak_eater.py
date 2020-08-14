@@ -15,7 +15,7 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'MCO', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH',
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -23,9 +23,9 @@ total_tickers = [
 ban_tickers = []
 
 FEE = 0.0005  # 0.05%
-DOWN = 0.02   # 4%
-UP   = 0.02
-BETTING = 40000
+DOWN = 0.0
+UP   = 0.0
+BETTING = 100000
 COOL_TIME_ORDER = 60 * 2
 COOL_TIME_HIT = 60 * 1.5
 ###############################################################################
@@ -51,7 +51,6 @@ def tick_round(price):
     return int(price / t) * t
 
 def on_hit_check_fill(ticker):
-    print("check fill..", ticker)
     for i in range(int(COOL_TIME_HIT/10)):
         l = coin.get_live_orders(ticker, 'KRW')
         found = False
@@ -75,10 +74,17 @@ def cancel_pending_bids():
             continue
         r = coin.cancel(oid)
 
-def sell(pd):
+def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
+    a = float(a)
+    b = float(b)
+    if abs(a-b)<diff:
+        return True
+    return False
+
+def sell(pd, bPartial = False):
     global total_gain
     for t,price in pd.items():
-        print('selling..', t)
+        print('selling..', t) if bPartial == False else print('partial selling..', t)
         bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
         bid_price_plus1 = tick_round(bid_price + bid_price*FEE*2 + coin.get_tick_size(bid_price))
@@ -88,9 +94,15 @@ def sell(pd):
         gain = 0
         if r:
             gain = int(ask_price*cnt_dict[t]*(1.0-FEE) - bid_price*cnt_dict[t]*(1.0+FEE))
+            if bPartial: gain = 0
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
         else:
+            # check partial fills
+            r = coin.get_fill_order(oid)
+            ask_amount = 0
+            if 'final_amount' in r:
+                ask_amount = r['final_amount']
             coin.cancel(oid)
             f = 0
             while f == 0:
@@ -100,8 +112,9 @@ def sell(pd):
                 f = ass['free']
             if f > 0:
                 r = coin.market_sell(t, f)
-                ask_amount = r['final_amount']
+                ask_amount += r['final_amount']
                 gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
+                if bPartial: gain = 0
                 print('debug info..', 'ask_amount..', ask_amount, 'cnt..', cnt_dict[t])
                 print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                         "<< gain:{} >>".format(gain))
@@ -109,8 +122,8 @@ def sell(pd):
 
 hit=False
 while True:
-    if hit or DOWN<0.01:
-        DOWN=0.02
+    if hit or DOWN<0.015:
+        DOWN=0.04
         hit = False
     #DOWN-=0.003
     DOWN *= (1-0.2)
@@ -119,8 +132,10 @@ while True:
     cancel_pending_bids()
 
     krw = coin.get_asset_info('KRW')['free']
-    cnt = len(total_tickers)
-    BETTING = int((krw - 60000)/ cnt)
+    #cnt = len(total_tickers)
+    #BETTING = int((krw - 60000)/ cnt)
+
+    cnt = int((krw - 60000)/ BETTING)
     print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', BETTING)
     tickers = []
     random.shuffle(total_tickers)
@@ -197,4 +212,4 @@ while True:
             cnt_dict[t] = round(cnt_dict[t], 5)
             if cnt_dict[t] > 0:
                 pd[t] = base_price_dict[t]
-    sell(pd)
+    sell(pd, True)

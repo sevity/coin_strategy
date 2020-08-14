@@ -85,7 +85,11 @@ def sell(pd, bPartial = False):
     global total_gain
     for t,price in pd.items():
         print('selling..', t) if bPartial == False else print('partial selling..', t)
-        bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
+        rb = coin.get_fill_order(bid_oid_dict[t])
+        bid_price = rb['price']
+        cnt_dict[t] = rb['volume']
+        bid_amount = rb['final_amount']
+        # bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
         bid_price_plus1 = tick_round(bid_price + bid_price*FEE*2 + coin.get_tick_size(bid_price))
         ask_price=max(ask_price, bid_price_plus1)
@@ -95,7 +99,7 @@ def sell(pd, bPartial = False):
         if r:
             r2 = coin.get_fill_order(oid)
             ask_price = r2['price']
-            gain = int(r2['final_amount'] - bid_price*cnt_dict[t]*(1.0+FEE))
+            gain = int(r2['final_amount'] - bid_amount)
             if bPartial: gain = 0
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
@@ -115,7 +119,7 @@ def sell(pd, bPartial = False):
             if f > 0:
                 r = coin.market_sell(t, f)
                 ask_amount += r['final_amount']
-                gain = int(ask_amount - bid_price*cnt_dict[t]*(1.0+FEE))
+                gain = int(ask_amount - bid_amount)
                 if bPartial: gain = 0
                 print('debug info..', 'ask_amount..', ask_amount, 'cnt..', cnt_dict[t])
                 print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],

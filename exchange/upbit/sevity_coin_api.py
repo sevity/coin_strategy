@@ -138,6 +138,7 @@ def order_new(ticker, price, cnt, askbid, ord_type):
         if res.status_code != 400:  # 최소 주문 금액은 500.0 KRW입니다.
             return (-1, None)
     oid = json.loads(res.content)['uuid']
+    print(' ', oid)
     return (oid,res)
 
 def limit_buy(ticker, price, cnt):
@@ -185,8 +186,8 @@ def cancel(oid):
     headers = {"Authorization": authorize_token}
 
     res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
-    if res.ok == False:
-        print(  res, res.text)
+    if res.ok == False or res.status_code != 200:
+        print('  ', res.ok, res, res.text)
     return res
 
 @dispatch(str, str) 

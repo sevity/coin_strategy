@@ -100,7 +100,6 @@ def sell(pd, bPartial = False):
             r2 = coin.get_fill_order(oid)
             ask_price = r2['price']
             gain = int(r2['final_amount'] - bid_amount)
-            if bPartial: gain = 0
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
         else:
@@ -120,7 +119,6 @@ def sell(pd, bPartial = False):
                 r = coin.market_sell(t, f)
                 ask_amount += r['final_amount']
                 gain = int(ask_amount - bid_amount)
-                if bPartial: gain = 0
                 print('debug info..', 'ask_amount..', ask_amount, 'cnt..', cnt_dict[t])
                 print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                         "<< gain:{} >>".format(gain))
@@ -131,8 +129,8 @@ while True:
     if hit or DOWN<0.015:
         DOWN=0.04
         hit = False
-    #DOWN-=0.003
     DOWN *= (1-0.2)
+    # DOWN = 0.005
     UP=DOWN*2/3
     print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
@@ -209,13 +207,11 @@ while True:
         time.sleep(10)
 
     cancel_pending_bids()
-    print("check parial fills...")
+    print("check partial fills...")
     pd = {}
     for t, oid in bid_oid_dict.items():
         r = coin.get_fill_order(oid)
+        print(t, oid, r)
         if 'final_amount' in r:
-            cnt_dict[t]-=r['volume']
-            cnt_dict[t] = round(cnt_dict[t], 5)
-            if cnt_dict[t] > 0:
-                pd[t] = base_price_dict[t]
+            pd[t] = base_price_dict[t]
     sell(pd, True)

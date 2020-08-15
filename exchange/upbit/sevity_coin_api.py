@@ -164,7 +164,7 @@ def market_sell(ticker, cnt):
     return r
 
 def cancel(oid):
-    print('  order_cancel...', oid)
+    # print('  order_cancel...', oid)
     query = {
         'uuid': oid,
     }

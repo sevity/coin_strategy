@@ -129,11 +129,12 @@ def sell(pd, bPartial = False):
 hit=False
 while True:
     if hit or DOWN<0.012:
-        DOWN=0.025
+        DOWN=0.023
         hit = False
     DOWN *= (1-0.2)
     # DOWN = 0.005
     UP=DOWN*2/3
+    print(datetime.now().strftime("%m-%d %H:%M:%S"))
     print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
 
@@ -165,7 +166,7 @@ while True:
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
-        print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'market mid price..', cp)
+        # print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'market mid price..', cp)
 
         bid_price = cp - cp * DOWN;bid_price = tick_round(bid_price)
         bid_cnt = float(BETTING) / bid_price
@@ -208,11 +209,11 @@ while True:
         time.sleep(10)
 
     cancel_pending_bids()
-    print("check partial fills...")
+    print("check partial bid fills...")
     pd = {}
     for t, oid in bid_oid_dict.items():
         r = coin.get_fill_order(oid)
-        print(t, oid, r)
         if 'final_amount' in r:
+            print(t, oid, r)
             pd[t] = base_price_dict[t]
     sell(pd, True)

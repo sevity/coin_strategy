@@ -26,7 +26,7 @@ FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
 BETTING = 100000
-COOL_TIME_ORDER = 60 * 2
+COOL_TIME_ORDER = 60 * 1
 COOL_TIME_HIT = 60 * 1.5
 ###############################################################################
 
@@ -85,15 +85,17 @@ def sell(pd, bPartial = False):
     global total_gain
     for t,price in pd.items():
         print('selling..', t) if bPartial == False else print('partial selling..', t)
+
+        #bid fill 상황체크
         rb = coin.get_fill_order(bid_oid_dict[t])
         bid_price = rb['price']
-        cnt_dict[t] = rb['volume']
+        bid_volume = rb['volume']
         bid_amount = rb['final_amount']
         # bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
         bid_price_plus1 = tick_round(bid_price + bid_price*FEE*2 + coin.get_tick_size(bid_price))
         ask_price=max(ask_price, bid_price_plus1)
-        oid = coin.limit_sell(t, ask_price, cnt_dict[t])
+        oid = coin.limit_sell(t, ask_price, bid_volume)
         r = on_hit_check_fill(t)
         gain = 0
         if r:
@@ -119,15 +121,15 @@ def sell(pd, bPartial = False):
                 r = coin.market_sell(t, f)
                 ask_amount += r['final_amount']
                 gain = int(ask_amount - bid_amount)
-                print('debug info..', 'ask_amount..', ask_amount, 'cnt..', cnt_dict[t])
+                print('debug info..', 'ask_amount..', ask_amount, 'cnt..', bid_volume)
                 print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                         "<< gain:{} >>".format(gain))
         total_gain += gain
 
 hit=False
 while True:
-    if hit or DOWN<0.015:
-        DOWN=0.04
+    if hit or DOWN<0.012:
+        DOWN=0.025
         hit = False
     DOWN *= (1-0.2)
     # DOWN = 0.005
@@ -140,7 +142,7 @@ while True:
     #BETTING = int((krw - 60000)/ cnt)
 
     cnt = int((krw - 60000)/ BETTING)
-    print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', BETTING)
+    print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', '{:,}'.format(BETTING))
     tickers = []
     random.shuffle(total_tickers)
     for i in range(cnt):
@@ -158,7 +160,6 @@ while True:
         if 'free' in ass and ass['free'] > 0:
             coin.market_sell(ticker, ass['free'])
     base_price_dict = {}
-    cnt_dict = {}
     bid_oid_dict = {}
     money = coin.get_asset_info('KRW')  # to float
 
@@ -171,7 +172,6 @@ while True:
         if money['free'] > bid_price * bid_cnt :
             oid = coin.limit_buy(ticker, bid_price, bid_cnt)
             base_price_dict[ticker] = cp
-            cnt_dict[ticker] = bid_cnt
             bid_oid_dict[ticker] = oid
         else:
             print('not enough KRW!')
@@ -194,6 +194,7 @@ while True:
                     continue
                 r = coin.cancel(oid)
             sell(pd)
+            del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
             break
 
         print("orders alive...")

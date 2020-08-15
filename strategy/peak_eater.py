@@ -26,7 +26,7 @@ FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
 BETTING = 100000
-COOL_TIME_ORDER = 60 * 1
+COOL_TIME_ORDER = 60 * 1.5
 COOL_TIME_HIT = 60 * 1.5
 ###############################################################################
 
@@ -73,6 +73,21 @@ def cancel_pending_bids():
         if ticker=='BTC' or askbid == 'ask':
             continue
         r = coin.cancel(oid)
+
+def cancel_pending_asks():
+    l = coin.get_live_orders('KRW')
+    print('cancel pending asks..')
+    for (ticker, oid, askbid, price, odt) in l:
+        if ticker=='BTC' or askbid == 'ask':
+            continue
+        r = coin.cancel(oid)
+
+def market_sell(tickers):
+    print('clear {} tickers with market sell'.format(len(tickers)))
+    for ticker in tickers:
+        ass = coin.get_asset_info(ticker)
+        if 'free' in ass and ass['free'] > 0:
+            coin.market_sell(ticker, ass['free'])
 
 def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     a = float(a)
@@ -126,6 +141,10 @@ def sell(pd, bPartial = False):
                         "<< gain:{} >>".format(gain))
         total_gain += gain
 
+cancel_pending_asks()
+market_sell(total_tickers)
+
+tickers = []
 hit=False
 while True:
     if hit or DOWN<0.012:
@@ -137,6 +156,8 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"))
     print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
+    cancel_pending_asks()
+    market_sell(tickers)
 
     krw = coin.get_asset_info('KRW')['free']
     #cnt = len(total_tickers)
@@ -144,22 +165,12 @@ while True:
 
     cnt = int((krw - 60000)/ BETTING)
     print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', '{:,}'.format(BETTING))
-    tickers = []
     random.shuffle(total_tickers)
+    tickers = []
     for i in range(cnt):
         tickers.append(total_tickers[i])
     print('pick random tickers..', tickers)
 
-    print('cancel pending ask orders and clear them with market sell')
-    l = coin.get_live_orders('KRW')
-    for (ticker, oid, askbid, price, odt) in l:
-        if ticker == 'BTC' or askbid == 'bid':
-            continue
-        r = coin.cancel(oid)
-    for ticker in total_tickers:
-        ass = coin.get_asset_info(ticker)
-        if 'free' in ass and ass['free'] > 0:
-            coin.market_sell(ticker, ass['free'])
     base_price_dict = {}
     bid_oid_dict = {}
     money = coin.get_asset_info('KRW')  # to float

@@ -189,11 +189,7 @@ while True:
         if len(pd) > 0:
             print("-=-= {} hits... =-=-".format(len(pd)))
             hit = True
-            print("cancel pending bids before selling..")
-            for (ticker, oid, askbid, price, odt) in l:
-                if ticker == 'BTC' or askbid == 'ask':
-                    continue
-                r = coin.cancel(oid)
+            cancel_pending_bids()
             sell(pd)
             del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
             break
@@ -216,4 +212,6 @@ while True:
         if 'final_amount' in r:
             print(t, oid, r)
             pd[t] = base_price_dict[t]
-    sell(pd, True)
+    if len(pd)>0:
+        print("-=-= {} partial hits... =-=-".format(len(pd)))
+        sell(pd, True)

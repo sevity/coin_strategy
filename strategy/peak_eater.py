@@ -97,7 +97,7 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     return False
 
 def sell(pd, bPartial = False):
-    global total_gain
+    global total_gain, bid_oid_dict
     for t,price in pd.items():
         print('selling..', t) if bPartial == False else print('partial selling..', t)
 
@@ -140,6 +140,8 @@ def sell(pd, bPartial = False):
                 print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                         "<< gain:{} >>".format(gain))
         total_gain += gain
+        if t in bid_oid_dict:
+            del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
 
 cancel_pending_asks()
 market_sell(total_tickers)
@@ -147,8 +149,8 @@ market_sell(total_tickers)
 tickers = []
 hit=False
 while True:
-    if hit or DOWN<0.012:
-        DOWN=0.023
+    if hit or DOWN<0.013:
+        DOWN=0.025
         hit = False
     DOWN *= (1-0.2)
     # DOWN = 0.005
@@ -202,7 +204,6 @@ while True:
             hit = True
             cancel_pending_bids()
             sell(pd)
-            del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
             break
 
         print("orders alive...")

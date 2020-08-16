@@ -115,6 +115,13 @@ def order_new(ticker, price, cnt, askbid, ord_type):
             'volume': cnt,
             'ord_type': ord_type,
         }
+    if ord_type=='price':
+        query = {
+            'market': 'KRW-{}'.format(ticker),
+            'side': askbid,
+            'price': price,
+            'ord_type': ord_type,
+        }
     query_string = urlencode(query).encode()
 
     m = hashlib.sha512()
@@ -135,8 +142,11 @@ def order_new(ticker, price, cnt, askbid, ord_type):
     res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
     if res.ok == False:
         print(res, res.text)
-        if res.status_code != 400:  # 최소 주문 금액은 500.0 KRW입니다.
+        en = json.loads(res.text)['error']['name']
+        if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
+            market_buy(ticker, 550)
             return (-1, None)
+        return (-1, None)
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
     return (oid,res)
@@ -147,13 +157,8 @@ def limit_buy(ticker, price, cnt):
 def limit_sell(ticker, price, cnt):
     return order_new(ticker, price, cnt, 'ask', 'limit')[0]
 
-def market_buy(ticker, cnt):
-    (oid, res) =  order_new(ticker, 0, cnt, 'bid', 'price')
-    a = json.loads(res.content)
-    r = {}
-    r['price'] = 0
-    r['volume'] = float(a['volume'])
-    return r
+def market_buy(ticker, price):
+    (oid, res) =  order_new(ticker, price, 0, 'bid', 'price')
 
 def market_sell(ticker, cnt):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')

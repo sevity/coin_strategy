@@ -7,6 +7,7 @@ import math
 import random
 import copy
 from datetime import datetime, timezone, timedelta
+import telegram
 
 # param #######################################################################
 total_tickers = [
@@ -29,6 +30,13 @@ BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_TIME_HIT = 60 * 1.5
 ###############################################################################
+
+token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
+bot = telegram.Bot(token=token)
+
+def send_telegram(msg):
+    print(msg)
+    bot.sendMessage(chat_id=170583240, text=msg)
 
 for ticker in ban_tickers:
     total_tickers.remove(ticker)
@@ -149,14 +157,13 @@ market_sell(total_tickers)
 tickers = []
 hit=False
 while True:
-    if hit or DOWN<0.013:
-        DOWN=0.025
+    if hit or DOWN<0.014:
+        DOWN=0.033
         hit = False
     DOWN *= (1-0.2)
     # DOWN = 0.005
     UP=DOWN*2/3
     print(datetime.now().strftime("%m-%d %H:%M:%S"))
-    print('-=-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, total_gain KRW: {:,} =-=-=-'.format(DOWN, UP, int(total_gain)))
     cancel_pending_bids()
     cancel_pending_asks()
     market_sell(tickers)
@@ -166,12 +173,16 @@ while True:
     #BETTING = int((krw - 60000)/ cnt)
 
     cnt = int((krw - 60000)/ BETTING)
-    print('free krw..', '{:,}'.format(krw), 'cnt..' , cnt, 'betting..', '{:,}'.format(BETTING))
+    print('free krw..{:,} cnt..{} betting.. {:,}'.format(int(krw), cnt, BETTING))
+    send_telegram('-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, cnt:{}, total_gain KRW: {:,} =-=-'.format(DOWN, UP, cnt, int(total_gain)))
     random.shuffle(total_tickers)
     tickers = []
     for i in range(cnt):
         tickers.append(total_tickers[i])
-    print('pick random tickers..', tickers)
+    msg = 'pick random tickers..{}'.format(tickers)
+    # send_telegram(msg)
+    print(msg)
+
 
     base_price_dict = {}
     bid_oid_dict = {}
@@ -200,7 +211,7 @@ while True:
             del pd[ticker]
 
         if len(pd) > 0:
-            print("-=-= {} hits... =-=-".format(len(pd)))
+            send_telegram("-=-= {} hits... {}=-=-".format(len(pd), pd))
             hit = True
             cancel_pending_bids()
             sell(pd)

@@ -162,6 +162,7 @@ def market_buy(ticker, price):
 
 def market_sell(ticker, cnt):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')
+    if oid == -1: return {}
     r = {}
     while 'final_amount' not in r:
         r = get_fill_order(oid)

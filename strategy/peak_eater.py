@@ -142,11 +142,15 @@ def sell(pd, bPartial = False):
                 f = ass['free']
             if f > 0:
                 r = coin.market_sell(t, f)
-                ask_amount += r['final_amount']
-                gain = int(ask_amount - bid_amount)
-                print('debug info..', 'ask_amount..', ask_amount, 'cnt..', bid_volume)
-                print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
-                        "<< gain:{} >>".format(gain))
+                if 'final_amount' in r:
+                    ask_amount += r['final_amount']
+                    gain = int(ask_amount - bid_amount)
+                    print('debug info..', 'ask_amount..', ask_amount, 'cnt..', bid_volume)
+                    print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
+                            "<< gain:{} >>".format(gain))
+                    if fsame(bid_volume, r['volume'], 0.1) == False:
+                        send_telegram('gain fail!')
+                        gain = 0
         total_gain += gain
         if t in bid_oid_dict:
             del bid_oid_dict[t]  # 완판 했기 때문에 지워줌

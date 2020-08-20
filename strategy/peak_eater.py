@@ -15,7 +15,7 @@ total_tickers = [
     'SRN', 'CHZ', 'GTO', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS', 'TTC', 'SNT', 'CVC', 'POLY', 
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
-    'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'MCO', 'ETC',
+    'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
     'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST'
     ]
 
@@ -36,7 +36,11 @@ bot = telegram.Bot(token=token)
 
 def send_telegram(msg):
     print(msg)
-    bot.sendMessage(chat_id=170583240, text=msg)
+    try:
+        bot.sendMessage(chat_id=170583240, text=msg)
+    except:
+        pass
+
 
 for ticker in ban_tickers:
     total_tickers.remove(ticker)
@@ -111,6 +115,7 @@ def sell(pd, bPartial = False):
 
         #bid fill 상황체크
         rb = coin.get_fill_order(bid_oid_dict[t])
+        assert('price' in rb)
         bid_price = rb['price']
         bid_volume = rb['volume']
         bid_amount = rb['final_amount']
@@ -161,7 +166,7 @@ market_sell(total_tickers)
 tickers = []
 hit=False
 while True:
-    if hit or DOWN<0.014:
+    if hit or DOWN<0.017:
         DOWN=0.033
         hit = False
     DOWN *= (1-0.2)

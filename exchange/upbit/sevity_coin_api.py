@@ -265,8 +265,13 @@ def get_live_orders(currency):
     jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
     authorize_token = 'Bearer {}'.format(jwt_token)
     headers = {"Authorization": authorize_token}
-
-    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+    ok = False
+    while ok == False:
+        try:
+            res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+            ok = True
+        except:
+            pass
     r = []
     for ord in res.json():
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')

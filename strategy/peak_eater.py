@@ -16,7 +16,7 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST'
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -26,6 +26,7 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
+RESET_DOWN = 0.015
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_TIME_HIT = 60 * 1.5
@@ -90,7 +91,7 @@ def cancel_pending_asks():
     l = coin.get_live_orders('KRW')
     print('cancel pending asks..')
     for (ticker, oid, askbid, price, odt) in l:
-        if ticker=='BTC' or askbid == 'ask':
+        if ticker=='BTC' or askbid == 'bid':
             continue
         r = coin.cancel(oid)
 
@@ -109,7 +110,7 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     return False
 
 def sell(pd, bPartial = False):
-    global total_gain, bid_oid_dict
+    global total_gain, bid_oid_dict, RESET_DOWN
     for t,price in pd.items():
         print('selling..', t) if bPartial == False else print('partial selling..', t)
 
@@ -132,7 +133,9 @@ def sell(pd, bPartial = False):
             gain = int(r2['final_amount'] - bid_amount)
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
+            RESET_DOWN += 0.001
         else:
+            RESET_DOWN += 0.003
             # check partial fills
             r = coin.get_fill_order(oid)
             ask_amount = 0
@@ -166,11 +169,12 @@ market_sell(total_tickers)
 tickers = []
 hit=False
 while True:
-    if hit or DOWN<0.017:
-        DOWN=0.033
-        hit = False
-    DOWN *= (1-0.2)
+    #if hit or DOWN<0.025:
+    #    DOWN=0.060
+    #    hit = False
+    # DOWN *= (1-0.2)
     # DOWN = 0.005
+    DOWN = RESET_DOWN
     UP=DOWN*2/3
     print(datetime.now().strftime("%m-%d %H:%M:%S"))
     cancel_pending_bids()
@@ -183,11 +187,12 @@ while True:
 
     cnt = int((krw - 60000)/ BETTING)
     print('free krw..{:,} cnt..{} betting.. {:,}'.format(int(krw), cnt, BETTING))
-    send_telegram('-=-= new start.. DOWN:{:.3f}, UP:{:.3f}, cnt:{}, total_gain KRW: {:,} =-=-'.format(DOWN, UP, cnt, int(total_gain)))
+    send_telegram('-=-= new start.. DOWN:{:.4f}, UP:{:.4f}, cnt:{}, total_gain KRW: {:,} =-=-'.format(DOWN, UP, cnt, int(total_gain)))
     random.shuffle(total_tickers)
     tickers = []
     for i in range(cnt):
         tickers.append(total_tickers[i])
+    # tickers = ['CRO']
     msg = 'pick random tickers..{}'.format(tickers)
     # send_telegram(msg)
     print(msg)
@@ -247,3 +252,4 @@ while True:
     if len(pd)>0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
+    RESET_DOWN -= 0.0003

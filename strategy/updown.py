@@ -6,9 +6,9 @@ import time
 from datetime import datetime, timezone, timedelta
 
 # param #######################################################################
-FEE = 0.003  # 수수료는 0.3%겠지?
-UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 0.7%먹는 게임?
-BETTING = 50000  # 한번에 거는 돈의 크기
+FEE = 0.0005  # 수수료는 0.05%
+UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
+BETTING = 100000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 30  # 초단위
 TIMEOUT_DAYS = 3
 ###############################################################################
@@ -69,6 +69,7 @@ while True:
             print(oid, askbid, '{:,}'.format(int(float(price))), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
+                print("cancel order.. {}".format(oid))
                 r = coin.cancel(oid)
                 if askbid=='ask':
                     oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)

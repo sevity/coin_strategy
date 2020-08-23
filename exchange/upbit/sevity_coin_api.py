@@ -163,6 +163,7 @@ def market_buy(ticker, price):
 def market_sell(ticker, cnt):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')
     if oid == -1: return {}
+    print("market sell done..", ticker, cnt)
     r = {}
     while 'final_amount' not in r:
         r = get_fill_order(oid)
@@ -193,7 +194,7 @@ def cancel(oid):
 
     res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
     if res.ok == False or res.status_code != 200:
-        print('  ', res.ok, res, res.text)
+        print('  cancel fail...', oid, res.ok, res, res.text)
     return res
 
 @dispatch(str, str) 
@@ -232,7 +233,7 @@ def get_live_orders(ticker, currency):
     r = []
     for ord in res.json():
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-        r.append((ord['uuid'], ord['side'], ord['price'], ct))
+        r.append((ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
     return r
 
 @dispatch(str) 
@@ -276,7 +277,7 @@ def get_live_orders(currency):
     for ord in res.json():
         ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
         ticker = ord['market'].split('-')[1]
-        r.append((ticker, ord['uuid'], ord['side'], ord['price'], ct))
+        r.append((ticker, ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
     return r
 
 def get_fill_order(oid):

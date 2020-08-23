@@ -62,11 +62,11 @@ while True:
         l = coin.get_live_orders('BTC', 'KRW')
         KST = timezone(timedelta(hours=9))
         print("{} orders alive...".format(len(l)))
-        for (oid, askbid, price, odt) in l:
+        for (oid, askbid, price, cnt, odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-            print(oid, askbid, '{:,}'.format(int(float(price))), odt, hour_diff, 'hours')
+            print(oid, askbid, '{:,} {:.4f}'.format(int(float(price)), float(cnt)), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))

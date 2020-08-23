@@ -26,7 +26,8 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.015
+RESET_DOWN = 0.02
+LIMIT_DOWN = 0.015
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_TIME_HIT = 60 * 1.5
@@ -67,7 +68,7 @@ def on_hit_check_fill(ticker):
     for i in range(int(COOL_TIME_HIT/10)):
         l = coin.get_live_orders(ticker, 'KRW')
         found = False
-        for (oid, askbid, price, odt) in l:
+        for (oid, askbid, price, cnt, odt) in l:
             if askbid == 'bid':
                 continue
             found = True
@@ -82,7 +83,7 @@ def on_hit_check_fill(ticker):
 def cancel_pending_bids():
     l = coin.get_live_orders('KRW')
     print('cancel pending bids..')
-    for (ticker, oid, askbid, price, odt) in l:
+    for (ticker, oid, askbid, price, cnt, odt) in l:
         if ticker=='BTC' or askbid == 'ask':
             continue
         r = coin.cancel(oid)
@@ -90,7 +91,7 @@ def cancel_pending_bids():
 def cancel_pending_asks():
     l = coin.get_live_orders('KRW')
     print('cancel pending asks..')
-    for (ticker, oid, askbid, price, odt) in l:
+    for (ticker, oid, askbid, price, cnt, odt) in l:
         if ticker=='BTC' or askbid == 'bid':
             continue
         r = coin.cancel(oid)
@@ -133,9 +134,9 @@ def sell(pd, bPartial = False):
             gain = int(r2['final_amount'] - bid_amount)
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
-            RESET_DOWN += 0.001
+            RESET_DOWN += 0.0003
         else:
-            RESET_DOWN += 0.003
+            RESET_DOWN += 0.005
             # check partial fills
             r = coin.get_fill_order(oid)
             ask_amount = 0
@@ -174,6 +175,7 @@ while True:
     #    hit = False
     # DOWN *= (1-0.2)
     # DOWN = 0.005
+    if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
     DOWN = RESET_DOWN
     UP=DOWN*2/3
     print(datetime.now().strftime("%m-%d %H:%M:%S"))
@@ -219,7 +221,7 @@ while True:
         l = coin.get_live_orders('KRW')
 
         pd = copy.deepcopy(base_price_dict)
-        for (ticker, oid, askbid, price, odt) in l:
+        for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in pd or askbid == 'ask':
                 continue
             del pd[ticker]
@@ -232,7 +234,7 @@ while True:
             break
 
         print("orders alive...")
-        for (ticker, oid, askbid, price, odt) in l:
+        for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in base_price_dict or askbid == 'ask':
                 continue
             price = tick_round(coin.get_price(ticker, 'KRW'))

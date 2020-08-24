@@ -27,7 +27,7 @@ FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.02
-LIMIT_DOWN = 0.015
+LIMIT_DOWN = 0.017
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_TIME_HIT = 60 * 1.5
@@ -134,7 +134,7 @@ def sell(pd, bPartial = False):
             gain = int(r2['final_amount'] - bid_amount)
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
-            RESET_DOWN += 0.0003
+            RESET_DOWN += 0.0028
         else:
             RESET_DOWN += 0.005
             # check partial fills

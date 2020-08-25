@@ -32,9 +32,9 @@ LIMIT_DOWN = 0.012
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 20
-COOL_TIME_HIT = 60 * 1.5
-STD_CNT = 20
-STD_THRESHOLD = 10.0
+COOL_TIME_HIT = 60 * 2.5
+CV_CNT = 5
+CV_THRESHOLD = 0.003
 MAX_TICKER = 30
 ###############################################################################
 
@@ -121,7 +121,8 @@ def sell(pd, bPartial = False):
 
     # 1. ask first
     for t, price in pd.items():
-        print('selling..', t, 'std..', np.std(prices[t])) if bPartial == False else print('partial selling..', t, 'std..', np.std(prices[t]))
+        cv = np.std(prices[t]) / np.mean(prices[t])
+        print('selling..', t, 'cv..', cv) if bPartial == False else print('partial selling..', t, 'cv..', cv)
         #bid fill 상황체크
         rb = coin.get_fill_order(bid_oid_dict[t])
         bid_price = rb['price']
@@ -218,6 +219,11 @@ while True:
     bid_oid_dict = {}
     money = coin.get_asset_info('KRW')  # to float
 
+    for ticker in total_tickers:
+        price = tick_round(coin.get_price(ticker, 'KRW'))
+        if ticker not in prices: prices[ticker] = []
+        prices[ticker].append(price)
+
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
         # print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'market mid price..', cp)
@@ -225,19 +231,13 @@ while True:
         bid_price = cp - cp * DOWN;bid_price = tick_round(bid_price)
         bid_cnt = float(BETTING) / bid_price
 
-        if ticker not in prices:
-            # print("get last {} prices...".format(STD_CNT), ticker)
-            for i in range(STD_CNT):
-                price = tick_round(coin.get_price(ticker, 'KRW'))
-                if ticker not in prices: prices[ticker] = []
-                prices[ticker].append(price)
-        s = np.std(prices[ticker])
-        if money['free'] > bid_price * bid_cnt and s <= STD_THRESHOLD and len(prices[ticker]) >= STD_CNT:
+        cv = np.std(prices[ticker]) / np.mean(prices[ticker])
+        if money['free'] > bid_price * bid_cnt and cv <= CV_THRESHOLD and len(prices[ticker]) >= CV_CNT:
             oid = coin.limit_buy(ticker, bid_price, bid_cnt)
             base_price_dict[ticker] = cp
             bid_oid_dict[ticker] = oid
         else:
-            print('std of {} : {:.2f}, prices: {}'.format(ticker, s, prices[ticker]))
+            print('cv of {} : {:.5f}, prices: {}'.format(ticker, cv, prices[ticker]))
             # print('maybe not enough KRW!')
 
     # for i in range(int(COOL_TIME_ORDER/10)):
@@ -263,11 +263,11 @@ while True:
             price = tick_round(coin.get_price(ticker, 'KRW'))
             if ticker not in prices: prices[ticker] = []
             prices[ticker].append(price)
-            if len(prices[ticker]) > STD_CNT: prices[ticker].pop(0)
+            if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
             change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
             if change < -0.5:
-                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, std:{:.2f}'.
-                      format(base_price_dict[ticker], price, change, np.std(prices[ticker])))
+                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
+                      format(base_price_dict[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)
 
     print("check partial bid fills...")

@@ -48,7 +48,9 @@ while True:
     bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if btc['free'] > ask_cnt:
+            print('order_new...', 'BTC', 'price:{:,.2f}'.format(bid_price), 'cnt:{:,.4f}'.format(bid_cnt), 'bid')
             oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
+            print('order_new...', 'BTC', 'price:{:,.2f}'.format(ask_price), 'cnt:{:,.4f}'.format(ask_cnt), 'ask')
             oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
             print("oid:", {oid1, oid2})
         else:

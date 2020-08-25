@@ -138,6 +138,7 @@ def sell(pd, bPartial = False):
     cancel_pending_bids()
 
     # 3. check ask fill
+    bSuccess = False
     for t, price in pd.items():
         oid = ask_oid_dict[t]
         r = on_hit_check_fill(t)
@@ -148,7 +149,7 @@ def sell(pd, bPartial = False):
             gain = int(r2['final_amount'] - bid_amount)
             print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
-            RESET_DOWN += 0.0028
+            bSuccess = True
         else:
             RESET_DOWN += 0.005
             # check partial fills
@@ -174,6 +175,7 @@ def sell(pd, bPartial = False):
                     if fsame(bid_volume, r['volume'], 0.1) == False:
                         send_telegram('gain fail!')
                         gain = 0
+        if bSuccess: RESET_DOWN += 0.0028
         total_gain += gain
         if t in bid_oid_dict:
             del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
@@ -222,7 +224,7 @@ while True:
     for ticker in total_tickers:
         price = tick_round(coin.get_price(ticker, 'KRW'))
         if ticker not in prices: prices[ticker] = []
-        prices[ticker].append(price)
+        prices[ticker].append(tick_round(price))
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
@@ -262,7 +264,7 @@ while True:
                 continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
             if ticker not in prices: prices[ticker] = []
-            prices[ticker].append(price)
+            prices[ticker].append(tick_round(price))
             if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
             change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
             if change < -0.5:

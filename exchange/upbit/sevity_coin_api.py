@@ -97,7 +97,7 @@ def get_asset_info(currency):
 
 
 def order_new(ticker, price, cnt, askbid, ord_type):
-    print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
+    # print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -332,7 +332,7 @@ def get_fill_order(oid):
     r['volume']=0
     r['final_amount']=0
     for k in j:
-        print('  debug info..', k)
+        # print('  debug info..', k)
         volume += float(k['executed_volume'])
         price = r['fee']/fee/volume if k['price'] is None else float(k['price'])
         if r['askbid']=='ask':

@@ -8,6 +8,7 @@ import random
 import copy
 from datetime import datetime, timezone, timedelta
 import telegram
+import numpy as np
 
 # param #######################################################################
 total_tickers = [
@@ -16,7 +17,7 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO'
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -26,12 +27,15 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.020
-LIMIT_DOWN = 0.018
-BETTING = 150000
+RESET_DOWN = 0.014
+LIMIT_DOWN = 0.012
+BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 10
+COOL_CNT_ORDER = 20
 COOL_TIME_HIT = 60 * 1.5
+STD_CNT = 20
+STD_THRESHOLD = 10.0
+MAX_TICKER = 30
 ###############################################################################
 
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
@@ -114,9 +118,10 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
 def sell(pd, bPartial = False):
     global total_gain, bid_oid_dict, RESET_DOWN
     ask_oid_dict = {}
+
     # 1. ask first
     for t, price in pd.items():
-        print('selling..', t) if bPartial == False else print('partial selling..', t)
+        print('selling..', t, 'std..', np.std(prices[t])) if bPartial == False else print('partial selling..', t, 'std..', np.std(prices[t]))
         #bid fill 상황체크
         rb = coin.get_fill_order(bid_oid_dict[t])
         bid_price = rb['price']
@@ -176,6 +181,7 @@ cancel_pending_asks()
 market_sell(total_tickers)
 
 tickers = []
+prices = {}
 hit=False
 while True:
     #if hit or DOWN<0.025:
@@ -200,7 +206,7 @@ while True:
     send_telegram('-=-= new start.. DOWN:{:.4f}, UP:{:.4f}, cnt:{}, total_gain KRW: {:,} =-=-'.format(DOWN, UP, cnt, int(total_gain)))
     random.shuffle(total_tickers)
     tickers = []
-    for i in range(min(cnt, len(total_tickers))):
+    for i in range(min(MAX_TICKER, cnt, len(total_tickers))):
         tickers.append(total_tickers[i])
     # tickers = ['CRO']
     msg = 'pick random tickers..{}'.format(tickers)
@@ -218,12 +224,21 @@ while True:
 
         bid_price = cp - cp * DOWN;bid_price = tick_round(bid_price)
         bid_cnt = float(BETTING) / bid_price
-        if money['free'] > bid_price * bid_cnt :
+
+        if ticker not in prices:
+            # print("get last {} prices...".format(STD_CNT), ticker)
+            for i in range(STD_CNT):
+                price = tick_round(coin.get_price(ticker, 'KRW'))
+                if ticker not in prices: prices[ticker] = []
+                prices[ticker].append(price)
+        s = np.std(prices[ticker])
+        if money['free'] > bid_price * bid_cnt and s <= STD_THRESHOLD and len(prices[ticker]) >= STD_CNT:
             oid = coin.limit_buy(ticker, bid_price, bid_cnt)
             base_price_dict[ticker] = cp
             bid_oid_dict[ticker] = oid
         else:
-            print('not enough KRW!')
+            print('std of {} : {:.2f}, prices: {}'.format(ticker, s, prices[ticker]))
+            # print('maybe not enough KRW!')
 
     # for i in range(int(COOL_TIME_ORDER/10)):
     for i in range(COOL_CNT_ORDER):
@@ -241,14 +256,18 @@ while True:
             sell(pd)
             break
 
-        print("orders alive...")
+        # print("orders alive...")
         for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in base_price_dict or askbid == 'ask':
                 continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
+            if ticker not in prices: prices[ticker] = []
+            prices[ticker].append(price)
+            if len(prices[ticker]) > STD_CNT: prices[ticker].pop(0)
             change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
             if change < -0.5:
-                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%'.format(base_price_dict[ticker], price, change))
+                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, std:{:.2f}'.
+                      format(base_price_dict[ticker], price, change, np.std(prices[ticker])))
         # time.sleep(10)
 
     print("check partial bid fills...")
@@ -261,5 +280,5 @@ while True:
     if len(pd)>0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
-    RESET_DOWN -= 0.0003
+    RESET_DOWN -= 0.0002
 

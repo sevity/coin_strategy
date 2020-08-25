@@ -27,14 +27,14 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.014
-LIMIT_DOWN = 0.012
+RESET_DOWN = 0.013
+LIMIT_DOWN = 0.011
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 20
 COOL_TIME_HIT = 60 * 2.5
 CV_CNT = 5
-CV_THRESHOLD = 0.003
+CV_THRESHOLD = 0.005
 MAX_TICKER = 30
 ###############################################################################
 
@@ -122,7 +122,7 @@ def sell(pd, bPartial = False):
     # 1. ask first
     for t, price in pd.items():
         cv = np.std(prices[t]) / np.mean(prices[t])
-        print('selling..', t, 'cv..', cv) if bPartial == False else print('partial selling..', t, 'cv..', cv)
+        print('selling..', t, 'cv..{:.5f}'.format(cv)) if bPartial == False else print('partial selling..', t, 'cv..{:.5f}'.format(cv))
         #bid fill 상황체크
         rb = coin.get_fill_order(bid_oid_dict[t])
         bid_price = rb['price']

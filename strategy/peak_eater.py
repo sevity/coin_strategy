@@ -9,6 +9,7 @@ import copy
 from datetime import datetime, timezone, timedelta
 import telegram
 import numpy as np
+from collections import deque
 
 # param #######################################################################
 total_tickers = [
@@ -29,7 +30,7 @@ DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.018
 LIMIT_DOWN = 0.014
-BETTING = 100000
+BETTING = 10000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
@@ -224,9 +225,8 @@ while True:
 
     for ticker in total_tickers:
         price = tick_round(coin.get_price(ticker, 'KRW'))
-        if ticker not in prices: prices[ticker] = []
+        if ticker not in prices: prices[ticker] = deque(maxlen=CV_CNT)
         prices[ticker].append(price)
-        if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
@@ -241,7 +241,7 @@ while True:
             base_price_dict[ticker] = cp
             bid_oid_dict[ticker] = oid
         else:
-            print('cv of {} : {:.5f}, prices: {}'.format(ticker, cv, prices[ticker]))
+            print('{} 변동계수 : {:.5f}, prices: {}'.format(ticker, cv, list(prices[ticker])))
             # print('maybe not enough KRW!')
 
     # for i in range(int(COOL_TIME_ORDER/10)):
@@ -265,9 +265,8 @@ while True:
             if ticker not in base_price_dict or askbid == 'ask':
                 continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
-            if ticker not in prices: prices[ticker] = []
+            if ticker not in prices: prices[ticker] = deque(maxlen=CV_CNT)
             prices[ticker].append(tick_round(price))
-            if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
             change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
             if change <= -1.0:
                 print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.

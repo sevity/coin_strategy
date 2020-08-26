@@ -28,9 +28,9 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.018
-LIMIT_DOWN = 0.014
-BETTING = 10000
+RESET_DOWN = 0.008
+LIMIT_DOWN = 0.008
+BETTING = 50000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
@@ -57,8 +57,6 @@ access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
-
-total_gain = 0
 
 def format_numbers(dict, rnd):
     for key, val in dict.items():
@@ -116,7 +114,7 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     return False
 
 def sell(pd, bPartial = False):
-    global total_gain, bid_oids, RESET_DOWN
+    global gain, bid_oids, RESET_DOWN
     ask_oid_dict = {}
 
     # 1. ask first
@@ -176,7 +174,6 @@ def sell(pd, bPartial = False):
                         send_telegram('gain fail!')
                         gain = 0
         if bSuccess: RESET_DOWN += 0.0028
-        total_gain += gain
         if t in bid_oids:
             del bid_oids[t]  # 완판 했기 때문에 지워줌
 
@@ -185,6 +182,9 @@ market_sell(total_tickers)
 
 tickers = []
 prices = {}
+krw = -1
+gain = 0
+total_gain = 0
 while True:
     if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
     DOWN = RESET_DOWN
@@ -193,8 +193,13 @@ while True:
     cancel_pending_bids(False)
     cancel_pending_asks(False)
     market_sell(tickers, False)
-    krw = coin.get_asset_info('KRW')['free']
+    tr_krw = coin.get_asset_info('KRW')['free']
+    real_gain =  tr_krw - krw
+    total_gain += real_gain if krw!=-1 or abs(real_gain) < 10000 else gain
+    krw = tr_krw
+    BETTING = round((krw - 110000) / MAX_TICKER, 0)
     cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
+
     send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
                   format(DOWN, int(total_gain), cnt, int(krw), BETTING))
     random.shuffle(total_tickers)

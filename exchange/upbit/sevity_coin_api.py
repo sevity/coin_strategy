@@ -96,8 +96,8 @@ def get_asset_info(currency):
 
 
 
-def order_new(ticker, price, cnt, askbid, ord_type):
-    # print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
+def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
+    if bLog: print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -151,17 +151,17 @@ def order_new(ticker, price, cnt, askbid, ord_type):
     # print(' ', oid)
     return (oid,res)
 
-def limit_buy(ticker, price, cnt):
-    return order_new(ticker, price, cnt, 'bid', 'limit')[0]
+def limit_buy(ticker, price, cnt, bLog=True):
+    return order_new(ticker, price, cnt, 'bid', 'limit', bLog)[0]
 
-def limit_sell(ticker, price, cnt):
-    return order_new(ticker, price, cnt, 'ask', 'limit')[0]
+def limit_sell(ticker, price, cnt, bLog=True):
+    return order_new(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
-def market_buy(ticker, price):
-    (oid, res) =  order_new(ticker, price, 0, 'bid', 'price')
+def market_buy(ticker, price, bLog=True):
+    (oid, res) =  order_new(ticker, price, 0, 'bid', 'price' , bLog)
 
-def market_sell(ticker, cnt):
-    (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market')
+def market_sell(ticker, cnt, bLog=True):
+    (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market', bLog)
     if oid == -1: return {}
     print("market sell done..", ticker, cnt)
     r = {}
@@ -170,8 +170,8 @@ def market_sell(ticker, cnt):
     print('  debug info..', 'get_fill_order..', r)
     return r
 
-def cancel(oid):
-    # print('  order_cancel...', oid)
+def cancel(oid, bLog=True):
+    if bLog: print('  order_cancel...', oid)
     query = {
         'uuid': oid,
     }

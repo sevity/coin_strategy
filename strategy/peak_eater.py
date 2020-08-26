@@ -27,11 +27,11 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.017
-LIMIT_DOWN = 0.013
+RESET_DOWN = 0.018
+LIMIT_DOWN = 0.014
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 20
+COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
 CV_CNT = 5
 CV_THRESHOLD = 0.007
@@ -85,15 +85,15 @@ def on_hit_check_fill(ticker):
         time.sleep(10)
     return False
 
-def cancel_pending_bids(bLog = True):
+def cancel_pending_bids(bLog=True):
     l = coin.get_live_orders('KRW')
     if bLog: print(' cancel pending bids..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
         if ticker=='BTC' or askbid == 'ask':
             continue
-        r = coin.cancel(oid)
+        r = coin.cancel(oid, False)
 
-def cancel_pending_asks(bLog = True):
+def cancel_pending_asks(bLog=True):
     l = coin.get_live_orders('KRW')
     if bLog:print(' cancel pending asks..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
@@ -101,8 +101,8 @@ def cancel_pending_asks(bLog = True):
             continue
         r = coin.cancel(oid)
 
-def market_sell(tickers):
-    print(' clear {} tickers with market sell'.format(len(tickers)))
+def market_sell(tickers, bLog=True):
+    if bLog: print(' clear {} tickers with market sell'.format(len(tickers)))
     for ticker in tickers:
         ass = coin.get_asset_info(ticker)
         if 'free' in ass and ass['free'] > 0:
@@ -147,7 +147,7 @@ def sell(pd, bPartial = False):
             r2 = coin.get_fill_order(oid)
             ask_price = r2['price']
             gain = int(r2['final_amount'] - bid_amount)
-            print("!*!*!*!*!*!*!*!*!", t, "sold!", "buy:", bid_price, "sell:", ask_price,
+            print("==============>", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
             bSuccess = True
         else:
@@ -195,10 +195,10 @@ while True:
     if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
     DOWN = RESET_DOWN
     UP=DOWN*3.0/4
-    print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid)')
+    print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
     cancel_pending_bids(False)
     cancel_pending_asks(False)
-    market_sell(tickers)
+    market_sell(tickers, False)
 
     krw = coin.get_asset_info('KRW')['free']
     #cnt = len(total_tickers)
@@ -206,8 +206,8 @@ while True:
 
     cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
     print()
-    send_telegram('-=-= 잔액:{:,}원 cnt:{} 배팅:{:,}원 DOWN:{:.4f}, 총수익:{:,}원 =-=-'.
-                  format(int(krw), cnt, BETTING, DOWN, int(total_gain)))
+    send_telegram('-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
+                  format(DOWN, int(total_gain), cnt, int(krw), BETTING))
     random.shuffle(total_tickers)
     tickers = []
     for i in range(cnt):
@@ -237,7 +237,7 @@ while True:
 
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
         if money['free'] > bid_price * bid_cnt and cv <= CV_THRESHOLD and len(prices[ticker]) >= CV_CNT:
-            oid = coin.limit_buy(ticker, bid_price, bid_cnt)
+            oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
             base_price_dict[ticker] = cp
             bid_oid_dict[ticker] = oid
         else:
@@ -269,20 +269,21 @@ while True:
             prices[ticker].append(tick_round(price))
             if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
             change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
-            if change < -0.5:
+            if change <= -1.0:
                 print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
                       format(base_price_dict[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)
 
-    print("check partial bid fills...")
+    # print("check partial bid fills...")
+    cancel_pending_bids(False)
     pd = {}
-    for t, oid in bid_oid_dict.items():
-        r = coin.get_fill_order(oid)
-        if 'final_amount' in r:
-            print(t, oid, r)
+    for t in tickers:
+        ass = coin.get_asset_info(t)
+        if 'free' in ass and ass['free'] > 0:
             pd[t] = base_price_dict[t]
     if len(pd)>0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
+
     RESET_DOWN -= 0.0002
 

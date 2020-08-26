@@ -27,14 +27,14 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.013
-LIMIT_DOWN = 0.011
+RESET_DOWN = 0.017
+LIMIT_DOWN = 0.013
 BETTING = 100000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 20
-COOL_TIME_HIT = 60 * 2.5
+COOL_TIME_HIT = 60 * 3.0
 CV_CNT = 5
-CV_THRESHOLD = 0.005
+CV_THRESHOLD = 0.007
 MAX_TICKER = 30
 ###############################################################################
 
@@ -78,31 +78,31 @@ def on_hit_check_fill(ticker):
                 continue
             found = True
             if i == 0:
-                print('waiting..', oid, askbid, '{:,}'.format(int(float(price))), odt)
+                print('waiting..', oid, askbid, '{:,.2f}'.format(float(price)), odt)
             break
         if found == False:
             return True
         time.sleep(10)
     return False
 
-def cancel_pending_bids():
+def cancel_pending_bids(bLog = True):
     l = coin.get_live_orders('KRW')
-    print('cancel pending bids..')
+    if bLog: print(' cancel pending bids..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
         if ticker=='BTC' or askbid == 'ask':
             continue
         r = coin.cancel(oid)
 
-def cancel_pending_asks():
+def cancel_pending_asks(bLog = True):
     l = coin.get_live_orders('KRW')
-    print('cancel pending asks..')
+    if bLog:print(' cancel pending asks..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
         if ticker=='BTC' or askbid == 'bid':
             continue
         r = coin.cancel(oid)
 
 def market_sell(tickers):
-    print('clear {} tickers with market sell'.format(len(tickers)))
+    print(' clear {} tickers with market sell'.format(len(tickers)))
     for ticker in tickers:
         ass = coin.get_asset_info(ticker)
         if 'free' in ass and ass['free'] > 0:
@@ -194,22 +194,23 @@ while True:
     # DOWN = 0.005
     if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
     DOWN = RESET_DOWN
-    UP=DOWN*2/3
-    print(datetime.now().strftime("%m-%d %H:%M:%S"))
-    cancel_pending_bids()
-    cancel_pending_asks()
+    UP=DOWN*3.0/4
+    print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid)')
+    cancel_pending_bids(False)
+    cancel_pending_asks(False)
     market_sell(tickers)
 
     krw = coin.get_asset_info('KRW')['free']
     #cnt = len(total_tickers)
     #BETTING = int((krw - 60000)/ cnt)
 
-    cnt = int((krw - 110000)/ BETTING)
-    print('free krw..{:,} cnt..{} betting.. {:,}'.format(int(krw), cnt, BETTING))
-    send_telegram('-=-= new start.. DOWN:{:.4f}, UP:{:.4f}, cnt:{}, total_gain KRW: {:,} =-=-'.format(DOWN, UP, cnt, int(total_gain)))
+    cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
+    print()
+    send_telegram('-=-= 잔액:{:,}원 cnt:{} 배팅:{:,}원 DOWN:{:.4f}, 총수익:{:,}원 =-=-'.
+                  format(int(krw), cnt, BETTING, DOWN, int(total_gain)))
     random.shuffle(total_tickers)
     tickers = []
-    for i in range(min(MAX_TICKER, cnt, len(total_tickers))):
+    for i in range(cnt):
         tickers.append(total_tickers[i])
     # tickers = ['CRO']
     msg = 'pick random tickers..{}'.format(tickers)
@@ -224,7 +225,8 @@ while True:
     for ticker in total_tickers:
         price = tick_round(coin.get_price(ticker, 'KRW'))
         if ticker not in prices: prices[ticker] = []
-        prices[ticker].append(tick_round(price))
+        prices[ticker].append(price)
+        if len(prices[ticker]) > CV_CNT: prices[ticker].pop(0)
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))

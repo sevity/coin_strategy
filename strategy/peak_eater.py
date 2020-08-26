@@ -30,7 +30,7 @@ DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.018
 LIMIT_DOWN = 0.014
-BETTING = 50000
+BETTING = 10000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
@@ -224,13 +224,13 @@ while True:
             base_prices[ticker] = cp
             bid_oids[ticker] = oid
         else:
-            print('{} 변동계수 : {:.5f}, prices: {}'.format(ticker, cv, list(prices[ticker])))
+            print('{} cv : {:.5f}, prices: {}'.format(ticker, cv, list(prices[ticker])))
 
     # for i in range(int(COOL_TIME_ORDER/10)):
     for i in range(COOL_CNT_ORDER):
         l = coin.get_live_orders('KRW')
 
-        pd = base_prices
+        pd = copy.deepcopy(base_prices)  
         for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in pd or askbid != 'bid': continue
             del pd[ticker]
@@ -242,11 +242,10 @@ while True:
 
         # print("orders alive...")
         for (ticker, oid, askbid, price, cnt, odt) in l:
-            if ticker not in base_prices or askbid == 'ask':
-                continue
+            if ticker not in base_prices or askbid != 'bid': continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
             change = round((price-base_prices[ticker])*100.0/base_prices[ticker],1)
-            if change <= -1.0:
+            if change <= -0.5:
                 print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
                       format(base_prices[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)

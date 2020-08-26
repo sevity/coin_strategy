@@ -30,7 +30,7 @@ DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.018
 LIMIT_DOWN = 0.014
-BETTING = 10000
+BETTING = 50000
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
@@ -48,7 +48,6 @@ def send_telegram(msg):
         bot.sendMessage(chat_id=170583240, text=msg)
     except:
         pass
-
 
 for ticker in ban_tickers:
     total_tickers.remove(ticker)
@@ -117,7 +116,7 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     return False
 
 def sell(pd, bPartial = False):
-    global total_gain, bid_oid_dict, RESET_DOWN
+    global total_gain, bid_oids, RESET_DOWN
     ask_oid_dict = {}
 
     # 1. ask first
@@ -125,7 +124,7 @@ def sell(pd, bPartial = False):
         cv = np.std(prices[t]) / np.mean(prices[t])
         print('selling..', t, 'cv..{:.5f}'.format(cv)) if bPartial == False else print('partial selling..', t, 'cv..{:.5f}'.format(cv))
         #bid fill 상황체크
-        rb = coin.get_fill_order(bid_oid_dict[t])
+        rb = coin.get_fill_order(bid_oids[t])
         bid_price = rb['price']
         bid_volume = rb['volume']
         bid_amount = rb['final_amount']
@@ -178,49 +177,32 @@ def sell(pd, bPartial = False):
                         gain = 0
         if bSuccess: RESET_DOWN += 0.0028
         total_gain += gain
-        if t in bid_oid_dict:
-            del bid_oid_dict[t]  # 완판 했기 때문에 지워줌
+        if t in bid_oids:
+            del bid_oids[t]  # 완판 했기 때문에 지워줌
 
 cancel_pending_asks()
 market_sell(total_tickers)
 
 tickers = []
 prices = {}
-hit=False
 while True:
-    #if hit or DOWN<0.025:
-    #    DOWN=0.060
-    #    hit = False
-    # DOWN *= (1-0.2)
-    # DOWN = 0.005
     if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
     DOWN = RESET_DOWN
-    UP=DOWN*3.0/4
+    UP = DOWN * 3.0 / 4
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
     cancel_pending_bids(False)
     cancel_pending_asks(False)
     market_sell(tickers, False)
-
     krw = coin.get_asset_info('KRW')['free']
-    #cnt = len(total_tickers)
-    #BETTING = int((krw - 60000)/ cnt)
-
     cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
-    print()
-    send_telegram('-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
+    send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
                   format(DOWN, int(total_gain), cnt, int(krw), BETTING))
     random.shuffle(total_tickers)
-    tickers = []
-    for i in range(cnt):
-        tickers.append(total_tickers[i])
-    # tickers = ['CRO']
-    msg = 'pick random tickers..{}'.format(tickers)
-    # send_telegram(msg)
-    print(msg)
+    tickers = total_tickers[:cnt]
+    print('tickers: {}'.format(tickers))
 
-
-    base_price_dict = {}
-    bid_oid_dict = {}
+    base_prices = {}
+    bid_oids = {}
     money = coin.get_asset_info('KRW')  # to float
 
     for ticker in total_tickers:
@@ -230,57 +212,51 @@ while True:
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
-        # print(datetime.now().strftime("%m-%d %H:%M:%S"), ticker, 'market mid price..', cp)
-
-        bid_price = cp - cp * DOWN;bid_price = tick_round(bid_price)
+        bid_price = tick_round(cp - cp * DOWN)
         bid_cnt = float(BETTING) / bid_price
 
+        if money['free'] < bid_price * bid_cnt:
+            print(ticker, 'not enough KRW!')
+            continue
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
-        if money['free'] > bid_price * bid_cnt and cv <= CV_THRESHOLD and len(prices[ticker]) >= CV_CNT:
+        if cv <= CV_THRESHOLD and len(prices[ticker]) >= CV_CNT:
             oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
-            base_price_dict[ticker] = cp
-            bid_oid_dict[ticker] = oid
+            base_prices[ticker] = cp
+            bid_oids[ticker] = oid
         else:
             print('{} 변동계수 : {:.5f}, prices: {}'.format(ticker, cv, list(prices[ticker])))
-            # print('maybe not enough KRW!')
 
     # for i in range(int(COOL_TIME_ORDER/10)):
     for i in range(COOL_CNT_ORDER):
         l = coin.get_live_orders('KRW')
 
-        pd = copy.deepcopy(base_price_dict)
+        pd = base_prices
         for (ticker, oid, askbid, price, cnt, odt) in l:
-            if ticker not in pd or askbid == 'ask':
-                continue
+            if ticker not in pd or askbid != 'bid': continue
             del pd[ticker]
 
         if len(pd) > 0:
             send_telegram("-=-= {} hits... {}=-=-".format(len(pd), pd))
-            hit = True
             sell(pd)
             break
 
         # print("orders alive...")
         for (ticker, oid, askbid, price, cnt, odt) in l:
-            if ticker not in base_price_dict or askbid == 'ask':
+            if ticker not in base_prices or askbid == 'ask':
                 continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
-            if ticker not in prices: prices[ticker] = deque(maxlen=CV_CNT)
-            prices[ticker].append(tick_round(price))
-            change = round((price-base_price_dict[ticker])*100.0/base_price_dict[ticker],1)
+            change = round((price-base_prices[ticker])*100.0/base_prices[ticker],1)
             if change <= -1.0:
                 print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
-                      format(base_price_dict[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
+                      format(base_prices[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)
 
-    # print("check partial bid fills...")
     cancel_pending_bids(False)
     pd = {}
     for t in tickers:
         ass = coin.get_asset_info(t)
-        if 'free' in ass and ass['free'] > 0:
-            pd[t] = base_price_dict[t]
-    if len(pd)>0:
+        if 'free' in ass and ass['free'] > 0: pd[t] = base_prices[t]
+    if len(pd) > 0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
 

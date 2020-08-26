@@ -28,9 +28,9 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.008
-LIMIT_DOWN = 0.008
-BETTING = 50000
+RESET_DOWN = 0.016
+LIMIT_DOWN = 0.0135
+BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 60 * 3.0
@@ -197,7 +197,7 @@ while True:
     real_gain =  tr_krw - krw
     total_gain += real_gain if krw!=-1 or abs(real_gain) < 10000 else gain
     krw = tr_krw
-    BETTING = round((krw - 110000) / MAX_TICKER, 0)
+    if BETTING == 0: BETTING = round((krw - 110000) / MAX_TICKER, 0)
     cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
 
     send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
@@ -264,5 +264,5 @@ while True:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
 
-    RESET_DOWN -= 0.0002
+    RESET_DOWN -= 0.00015
 

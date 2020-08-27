@@ -28,8 +28,8 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.016
-LIMIT_DOWN = 0.0135
+RESET_DOWN = 0.017
+LIMIT_DOWN = 0.014
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
@@ -195,7 +195,8 @@ while True:
     market_sell(tickers, False)
     tr_krw = coin.get_asset_info('KRW')['free']
     real_gain =  tr_krw - krw
-    total_gain += real_gain if krw!=-1 or abs(real_gain) < 10000 else gain
+    total_gain += real_gain if krw!=-1 and abs(real_gain) < 10000 else gain
+    gain = 0
     krw = tr_krw
     if BETTING == 0: BETTING = round((krw - 110000) / MAX_TICKER, 0)
     cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))

@@ -32,7 +32,7 @@ RESET_DOWN = 0.017
 LIMIT_DOWN = 0.014
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 25
+COOL_CNT_ORDER = 30
 COOL_TIME_HIT = 60 * 3.0
 CV_CNT = 5
 CV_THRESHOLD = 0.007
@@ -173,7 +173,7 @@ def sell(pd, bPartial = False):
                     if fsame(bid_volume, r['volume'], 0.1) == False:
                         send_telegram('gain fail!')
                         gain = 0
-        if bSuccess: RESET_DOWN += 0.0028
+        if bSuccess: RESET_DOWN += 0.0018
         if t in bid_oids:
             del bid_oids[t]  # 완판 했기 때문에 지워줌
 
@@ -198,11 +198,15 @@ while True:
     total_gain += real_gain if krw!=-1 and abs(real_gain) < 10000 else gain
     gain = 0
     krw = tr_krw
-    if BETTING == 0: BETTING = round((krw - 110000) / MAX_TICKER, 0)
-    cnt = (min(MAX_TICKER, int((krw - 110000)/ BETTING), len(total_tickers)))
+    if BETTING == 0:
+        bet = round((krw - 110000) / MAX_TICKER, 0)
+        cnt = (min(MAX_TICKER, len(total_tickers)))
+    else:
+        bet = BETTING
+        cnt = (min(MAX_TICKER, int((krw - 110000)/ bet), len(total_tickers)))
 
     send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
-                  format(DOWN, int(total_gain), cnt, int(krw), BETTING))
+                  format(DOWN, int(total_gain), cnt, int(krw), bet))
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
     print('tickers: {}'.format(tickers))
@@ -219,7 +223,7 @@ while True:
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
         bid_price = tick_round(cp - cp * DOWN)
-        bid_cnt = float(BETTING) / bid_price
+        bid_cnt = float(bet) / bid_price
 
         if money['free'] < bid_price * bid_cnt:
             print(ticker, 'not enough KRW!')

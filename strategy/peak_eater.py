@@ -28,13 +28,14 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.017
-LIMIT_DOWN = 0.014
+RESET_DOWN = 0.016
+LIMIT_DOWN = 0.013
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 30
 COOL_TIME_HIT = 60 * 3.0
-CV_CNT = 5
+MIN_CV_CNT = 2
+MAX_CV_CNT = 20
 CV_THRESHOLD = 0.007
 MAX_TICKER = 30
 ###############################################################################
@@ -149,7 +150,7 @@ def sell(pd, bPartial = False):
                     "<< gain:{} >>".format(gain))
             bSuccess = True
         else:
-            RESET_DOWN += 0.005
+            RESET_DOWN += 0.003
             # check partial fills
             r = coin.get_fill_order(oid)
             ask_amount = 0
@@ -215,9 +216,12 @@ while True:
     bid_oids = {}
     money = coin.get_asset_info('KRW')  # to float
 
+    # TODO:
+    # 이렇게 주기적으로 샘플링하는 방식으로는 순간적인 피크를 검출 못해서
+    # cv값이 작게 나와서 걸러야 하는 순간 매수를 하게 될 수 있다. OHLC를 쓰던가, 전체 틱을 보는 식으로 보완필요
     for ticker in total_tickers:
         price = tick_round(coin.get_price(ticker, 'KRW'))
-        if ticker not in prices: prices[ticker] = deque(maxlen=CV_CNT)
+        if ticker not in prices: prices[ticker] = deque(maxlen=MAX_CV_CNT)
         prices[ticker].append(price)
 
     for ticker in tickers:
@@ -229,7 +233,7 @@ while True:
             print(ticker, 'not enough KRW!')
             continue
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
-        if cv <= CV_THRESHOLD and len(prices[ticker]) >= CV_CNT:
+        if cv <= CV_THRESHOLD and len(prices[ticker]) >= MIN_CV_CNT:
             oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
             base_prices[ticker] = cp
             bid_oids[ticker] = oid
@@ -255,7 +259,7 @@ while True:
             if ticker not in base_prices or askbid != 'bid': continue
             price = tick_round(coin.get_price(ticker, 'KRW'))
             change = round((price-base_prices[ticker])*100.0/base_prices[ticker],1)
-            if change <= -0.5:
+            if change <= -1.0:
                 print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
                       format(base_prices[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)

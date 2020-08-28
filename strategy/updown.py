@@ -42,8 +42,10 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
     #a = round(a, -1) # minimum 10 won
 
-    ask_price = a + a * UPDOWN;ask_price = round(ask_price, -3) # minimum 1000 won
-    bid_price = a - a * UPDOWN;bid_price = round(bid_price, -3) # minimum 1000 won
+    ask_price = a + a * UPDOWN;ask_price = round(ask_price, -3)
+    bid_price = a - a * UPDOWN;bid_price = round(bid_price, -3)
+    ask_price2 = a + a * UPDOWN*0.8;ask_price2 = round(ask_price2, -3)
+    bid_price2 = a - a * UPDOWN*0.8;bid_price2 = round(bid_price2, -3)
     ask_cnt = float(BETTING) / ask_price 
     bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
@@ -74,10 +76,10 @@ while True:
                 print("cancel order.. {}".format(oid))
                 r = coin.cancel(oid)
                 if askbid=='ask':
-                    oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
+                    oid2 = coin.limit_sell('BTC', ask_price2, ask_cnt)
                     print("oid:", oid2)
                 else:
-                    oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
+                    oid1 = coin.limit_buy('BTC', bid_price2, bid_cnt)
                     print("oid:", oid1)
 
     except Exception as e:

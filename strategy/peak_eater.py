@@ -28,17 +28,19 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.016
-LIMIT_DOWN = 0.013
+RESET_DOWN = 0.015
+LIMIT_DOWN = 0.012
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 30
 COOL_TIME_HIT = 60 * 3.0
-MIN_CV_CNT = 2
-MAX_CV_CNT = 20
-CV_THRESHOLD = 0.007
+MIN_CV_CNT = 5
+MAX_CV_CNT = 10
+CV_THRESHOLD = 0.010
 MAX_TICKER = 30
 ###############################################################################
+
+# TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
 
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -105,7 +107,12 @@ def market_sell(tickers, bLog=True):
     for ticker in tickers:
         ass = coin.get_asset_info(ticker)
         if 'free' in ass and ass['free'] > 0:
-            coin.market_sell(ticker, ass['free'])
+            while True:
+                try:
+                    coin.market_sell(ticker, ass['free'])
+                    break
+                except:
+                    pass
 
 def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     a = float(a)
@@ -122,8 +129,16 @@ def sell(pd, bPartial = False):
     for t, price in pd.items():
         cv = np.std(prices[t]) / np.mean(prices[t])
         print('selling..', t, 'cv..{:.5f}'.format(cv)) if bPartial == False else print('partial selling..', t, 'cv..{:.5f}'.format(cv))
+        if t not in bid_oids:
+            print(t, 'not in', bid_oids)  # 최소주문금액 500원때문에 생긴 550원 bid의 경우 여기 걸릴 수 있음
+            continue
+
         #bid fill 상황체크
         rb = coin.get_fill_order(bid_oids[t])
+        if 'price' not in rb:
+            gain = 0
+            send_telegram('get_fill_order({}) fail!'.format(t))
+            return
         bid_price = rb['price']
         bid_volume = rb['volume']
         bid_amount = rb['final_amount']
@@ -188,6 +203,8 @@ gain = 0
 total_gain = 0
 while True:
     if RESET_DOWN < LIMIT_DOWN : RESET_DOWN = LIMIT_DOWN
+
+
     DOWN = RESET_DOWN
     UP = DOWN * 3.0 / 4
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
@@ -250,7 +267,7 @@ while True:
             del pd[ticker]
 
         if len(pd) > 0:
-            send_telegram("-=-= {} hits... {}=-=-".format(len(pd), pd))
+            send_telegram("-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
             sell(pd)
             break
 

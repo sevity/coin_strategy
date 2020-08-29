@@ -28,16 +28,16 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.015
-LIMIT_DOWN = 0.012
+RESET_DOWN = 0.016
+LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 30
+COOL_CNT_ORDER = 20
 COOL_TIME_HIT = 60 * 3.0
 MIN_CV_CNT = 5
-MAX_CV_CNT = 10
-CV_THRESHOLD = 0.010
-MAX_TICKER = 30
+MAX_CV_CNT = 13
+CV_THRESHOLD = 0.008
+MAX_TICKER = 50
 ###############################################################################
 
 # TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
@@ -128,7 +128,7 @@ def sell(pd, bPartial = False):
     # 1. ask first
     for t, price in pd.items():
         cv = np.std(prices[t]) / np.mean(prices[t])
-        print('selling..', t, 'cv..{:.5f}'.format(cv)) if bPartial == False else print('partial selling..', t, 'cv..{:.5f}'.format(cv))
+        print('selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t]))) if bPartial == False else print('partial selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t])))
         if t not in bid_oids:
             print(t, 'not in', bid_oids)  # 최소주문금액 500원때문에 생긴 550원 bid의 경우 여기 걸릴 수 있음
             continue
@@ -206,7 +206,7 @@ while True:
 
 
     DOWN = RESET_DOWN
-    UP = DOWN * 3.0 / 4
+    UP = DOWN * 7.0 / 10
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
     cancel_pending_bids(False)
     cancel_pending_asks(False)
@@ -224,7 +224,7 @@ while True:
         cnt = (min(MAX_TICKER, int((krw - 110000)/ bet), len(total_tickers)))
 
     send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
-                  format(DOWN, int(total_gain), cnt, int(krw), bet))
+                  format(DOWN, int(total_gain), cnt, int(krw), int(bet)))
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
     print('tickers: {}'.format(tickers))

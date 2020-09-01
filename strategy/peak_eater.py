@@ -28,19 +28,20 @@ ban_tickers = []
 FEE = 0.0005  # 0.05%
 DOWN = 0.0
 UP   = 0.0
-RESET_DOWN = 0.016
+RESET_DOWN = 0.0155
 LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 20
-COOL_TIME_HIT = 60 * 3.0
+COOL_CNT_ORDER = 35
+COOL_TIME_HIT = 60 * 10.0
 MIN_CV_CNT = 5
-MAX_CV_CNT = 13
+MAX_CV_CNT = 25
 CV_THRESHOLD = 0.008
-MAX_TICKER = 50
+MAX_TICKER = 30
 ###############################################################################
 
 # TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
+# TODO: 코인별로 과거 성공여부 확인해서 파라미터를 코인별로 조정하기
 
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -128,7 +129,7 @@ def sell(pd, bPartial = False):
     # 1. ask first
     for t, price in pd.items():
         cv = np.std(prices[t]) / np.mean(prices[t])
-        print('selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t]))) if bPartial == False else print('partial selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t])))
+        print('selling..' if bPartial == False else 'partial selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t])))
         if t not in bid_oids:
             print(t, 'not in', bid_oids)  # 최소주문금액 500원때문에 생긴 550원 bid의 경우 여기 걸릴 수 있음
             continue
@@ -138,7 +139,7 @@ def sell(pd, bPartial = False):
         if 'price' not in rb:
             gain = 0
             send_telegram('get_fill_order({}) fail!'.format(t))
-            return
+            continue
         bid_price = rb['price']
         bid_volume = rb['volume']
         bid_amount = rb['final_amount']
@@ -150,6 +151,14 @@ def sell(pd, bPartial = False):
 
     # 2. cancel bid
     cancel_pending_bids()
+
+    # log
+    for t, price in pd.items():
+        if t in base_prices:
+            price = tick_round(coin.get_price(t, 'KRW'))
+            change = round((price-base_prices[t])*100.0/base_prices[t],1)
+            print(t, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
+                    format(base_prices[t], price, change, np.std(prices[t])/np.mean(prices[t])))
 
     # 3. check ask fill
     bSuccess = False
@@ -165,7 +174,7 @@ def sell(pd, bPartial = False):
                     "<< gain:{} >>".format(gain))
             bSuccess = True
         else:
-            RESET_DOWN += 0.003
+            RESET_DOWN += 0.002
             # check partial fills
             r = coin.get_fill_order(oid)
             ask_amount = 0
@@ -183,13 +192,13 @@ def sell(pd, bPartial = False):
                 if 'final_amount' in r:
                     ask_amount += r['final_amount']
                     gain = int(ask_amount - bid_amount)
-                    print('debug info..', 'ask_amount..', ask_amount, 'cnt..', bid_volume)
+                    # print('debug info..', 'ask_amount..', ask_amount, 'cnt..', bid_volume)
                     print(t, "limit order fail!", "buy:", bid_price, "market sell:", r['price'],
                             "<< gain:{} >>".format(gain))
                     if fsame(bid_volume, r['volume'], 0.1) == False:
                         send_telegram('gain fail!')
                         gain = 0
-        if bSuccess: RESET_DOWN += 0.0018
+        # if bSuccess: RESET_DOWN += 0.0013
         if t in bid_oids:
             del bid_oids[t]  # 완판 했기 때문에 지워줌
 
@@ -230,6 +239,7 @@ while True:
     print('tickers: {}'.format(tickers))
 
     base_prices = {}
+    bid_prices = {}
     bid_oids = {}
     money = coin.get_asset_info('KRW')  # to float
 
@@ -244,6 +254,7 @@ while True:
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
         bid_price = tick_round(cp - cp * DOWN)
+        bid_prices[ticker] = bid_price
         bid_cnt = float(bet) / bid_price
 
         if money['free'] < bid_price * bid_cnt:
@@ -277,18 +288,17 @@ while True:
             price = tick_round(coin.get_price(ticker, 'KRW'))
             change = round((price-base_prices[ticker])*100.0/base_prices[ticker],1)
             if change <= -1.0:
-                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
-                      format(base_prices[ticker], price, change, np.std(prices[ticker])/np.mean(prices[ticker])))
+                print(ticker, 'price from:{:,.2f} to:{:,.2f}, change:{}%(bid:{:,.2f}), cv:{:.5f}'.
+                      format(base_prices[ticker], price, change, bid_prices[ticker], np.std(prices[ticker])/np.mean(prices[ticker])))
         # time.sleep(10)
 
     cancel_pending_bids(False)
     pd = {}
     for t in tickers:
         ass = coin.get_asset_info(t)
-        if 'free' in ass and ass['free'] > 0: pd[t] = base_prices[t]
+        if 'free' in ass and ass['free'] > 0: pd[t] = 0
     if len(pd) > 0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
 
-    RESET_DOWN -= 0.00015
-
+    RESET_DOWN -= 0.0001

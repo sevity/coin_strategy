@@ -42,23 +42,27 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
     #a = round(a, -1) # minimum 10 won
 
-    ask_price = a + a * UPDOWN;ask_price = round(ask_price, -3)
-    bid_price = a - a * UPDOWN;bid_price = round(bid_price, -3)
-    ask_price2 = a + a * UPDOWN*0.8;ask_price2 = round(ask_price2, -3)
-    bid_price2 = a - a * UPDOWN*0.8;bid_price2 = round(bid_price2, -3)
-    ask_cnt = float(BETTING) / ask_price 
-    bid_cnt = float(BETTING) / bid_price
+    ask_price = round(a + a * UPDOWN, -3); ask_cnt = float(BETTING) / ask_price 
+    bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if btc['free'] > ask_cnt:
             print('order_new...', 'BTC', 'price:{:,.2f}'.format(bid_price), 'cnt:{:,.4f}'.format(bid_cnt), 'bid')
-            oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
+            coin.limit_buy('BTC', bid_price, bid_cnt)
             print('order_new...', 'BTC', 'price:{:,.2f}'.format(ask_price), 'cnt:{:,.4f}'.format(ask_cnt), 'ask')
-            oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
-            print("oid:", {oid1, oid2})
+            coin.limit_sell('BTC', ask_price, ask_cnt)
         else:
-            print('not enough BTC!')
+            print('!!!!!!!!!!!! not enough BTC!')
+            new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 2
+            print('half order_new...', 'BTC', 'price:{:,.2f}'.format(new_bid_price), 'cnt:{:,.4f}'.format(new_bid_cnt), 'bid')
+            coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
+
     else:
-        print('not enough KRW!')
+        print('!!!!!!!!!!!! not enough KRW!')
+        if btc['free'] > ask_cnt:
+            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 2
+            print('half order_new...', 'BTC', 'price:{:,.2f}'.format(new_ask_price), 'cnt:{:,.4f}'.format(new_ask_cnt), 'ask')
+            coin.limit_sell('BTC', new_ask_price, new_ask_price)
+
 
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
@@ -76,10 +80,10 @@ while True:
                 print("cancel order.. {}".format(oid))
                 r = coin.cancel(oid)
                 if askbid=='ask':
-                    oid2 = coin.limit_sell('BTC', ask_price2, ask_cnt)
+                    oid2 = coin.limit_sell('BTC', ask_price, ask_cnt)
                     print("oid:", oid2)
                 else:
-                    oid1 = coin.limit_buy('BTC', bid_price2, bid_cnt)
+                    oid1 = coin.limit_buy('BTC', bid_price, bid_cnt)
                     print("oid:", oid1)
 
     except Exception as e:

@@ -167,7 +167,7 @@ def market_sell(ticker, cnt, bLog=True):
     r = {}
     while 'final_amount' not in r:
         r = get_fill_order(oid)
-    print('  debug info..', 'get_fill_order..', r)
+    # print('  debug info..', 'get_fill_order..', r)
     return r
 
 def cancel(oid, bLog=True):

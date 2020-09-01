@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 import telegram
 import numpy as np
 from collections import deque
+import ast
 
 # param #######################################################################
 total_tickers = [
@@ -25,17 +26,17 @@ total_tickers = [
 # KAVA는 가격변화가 심해서 peak eat가 아니라 다른 경우가 자주 생김
 ban_tickers = []
 
-FEE = 0.0005  # 0.05%
+FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.0155
 LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 35
-COOL_TIME_HIT = 60 * 10.0
+COOL_CNT_ORDER = 25
+COOL_TIME_HIT = 60 * 30.0
 MIN_CV_CNT = 5
-MAX_CV_CNT = 25
+MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
 MAX_TICKER = 30
 ###############################################################################
@@ -159,6 +160,7 @@ def sell(pd, bPartial = False):
             change = round((price-base_prices[t])*100.0/base_prices[t],1)
             print(t, 'price from:{:,.2f} to:{:,.2f}, change:{}%, cv:{:.5f}'.
                     format(base_prices[t], price, change, np.std(prices[t])/np.mean(prices[t])))
+            print('{:<5} cv : {:.5f}, prices: {}'.format(t, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[t])]))
 
     # 3. check ask fill
     bSuccess = False
@@ -266,7 +268,7 @@ while True:
             base_prices[ticker] = cp
             bid_oids[ticker] = oid
         else:
-            print('{} cv : {:.5f}, prices: {}'.format(ticker, cv, list(prices[ticker])))
+            print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 
     # for i in range(int(COOL_TIME_ORDER/10)):
     for i in range(COOL_CNT_ORDER):

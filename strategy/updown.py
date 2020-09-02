@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # param #######################################################################
 FEE = 0.0005  # 수수료는 0.05%
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
-BETTING = 100000  # 한번에 거는 돈의 크기
+BETTING = 10000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 30  # 초단위
 TIMEOUT_DAYS = 3
 BTC_LOCK = 0.1  # 최소 10%는 항상 BTC로 보유
@@ -78,9 +78,9 @@ while True:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))
                 r = coin.cancel(oid)
-                # 나중에 bid만으로 KRW부족이 발생해서, 오래된건 위치조정하지 말고 그냥 버리는걸로 해본다.
-                # if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
-                # else: coin.limit_buy('BTC', bid_price, bid_cnt)
+                # 나중에 bid만으로 KRW부족이 발생해서, 오래된건 위치조정하지 말고 그냥 버리는걸로 해본다. > 근데 KRW부족이 peak eater 때문이어서 원복 ㅋ
+                if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
+                else: coin.limit_buy('BTC', bid_price, bid_cnt)
 
     except Exception as e:
         print('err', e)

@@ -34,7 +34,7 @@ LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
-COOL_TIME_HIT = 60 * 30.0
+COOL_TIME_HIT = 60 * 60.0
 MIN_CV_CNT = 5
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
@@ -165,6 +165,8 @@ def sell(pd, bPartial = False):
     # 3. check ask fill
     bSuccess = False
     for t, price in pd.items():
+        if t not in ask_oid_dict:
+            continue
         oid = ask_oid_dict[t]
         r = on_hit_check_fill(t)
         gain = 0

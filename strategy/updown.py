@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # param #######################################################################
 FEE = 0.0005  # 수수료는 0.05%
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
-BETTING = 10000  # 한번에 거는 돈의 크기
+BETTING = 100000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 30  # 초단위
 TIMEOUT_DAYS = 3
 BTC_LOCK = 0.1  # 최소 10%는 항상 BTC로 보유
@@ -61,7 +61,7 @@ while True:
         print('!!!!!!!!!!!! not enough KRW!')
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
             new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 5
-            coin.limit_sell('BTC', new_ask_price, new_ask_price)
+            coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산

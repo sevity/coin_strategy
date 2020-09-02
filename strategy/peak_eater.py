@@ -34,7 +34,7 @@ LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
-COOL_TIME_HIT = 60 * 60.0
+COOL_TIME_HIT = 5 * 60 * 60.0
 MIN_CV_CNT = 5
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
@@ -81,7 +81,7 @@ def on_hit_check_fill(ticker):
                 continue
             found = True
             if i == 0:
-                print('waiting..', oid, askbid, '{:,.2f}'.format(float(price)), odt)
+                print('waiting..{:,} min.'.format(int(COOL_TIME_HIT/60)), oid, askbid, '{:,.2f}'.format(float(price)), odt)
             break
         if found == False:
             return True

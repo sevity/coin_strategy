@@ -11,9 +11,13 @@ UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
 BETTING = 100000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 30  # 초단위
 TIMEOUT_DAYS = 3
-BTC_LOCK = 0.1  # 최소 10%는 항상 BTC로 보유
+BTC_LOCK = 0.3  # 최소 30%는 항상 BTC로 보유
 ###############################################################################
 # 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
+# TODO: 지금은 가격이 떨어지면 BTC만 남는구조인데 거꾸로 가격이 떨어지면 KRW_LOCK을 늘리고 가격이 오르면 BTC_LOCK을 올리는식으로 해보자.
+# 떨어지는걸 판단하는 기준이 좀 문제인데 
+# 1. 미체결 매수매도 주문수 비율로 판단한다.
+# 2. 가격 이평선 같은걸로 하락추세인지 상승추세인지를 파악한다.
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -79,8 +83,8 @@ while True:
                 print("cancel order.. {}".format(oid))
                 r = coin.cancel(oid)
                 # 나중에 bid만으로 KRW부족이 발생해서, 오래된건 위치조정하지 말고 그냥 버리는걸로 해본다. > 근데 KRW부족이 peak eater 때문이어서 원복 ㅋ
-                if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
-                else: coin.limit_buy('BTC', bid_price, bid_cnt)
+                # if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
+                # else: coin.limit_buy('BTC', bid_price, bid_cnt)
 
     except Exception as e:
         print('err', e)

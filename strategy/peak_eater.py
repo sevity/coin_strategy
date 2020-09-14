@@ -91,11 +91,12 @@ def on_hit_check_fill(ticker):
             return True
         time.sleep(30)
         t = ticker
-        bid_price = base_prices[t] if t in base_prices else -1
+        bid_price = float(base_prices[t] if t in base_prices else -1.0)
         ask_price = float(price)
         cur_price = float(tick_round(coin.get_price(t, 'KRW')))
-        print(t, '{}min. left bid:{:,2f}, ask:{:,.2f} cur:{:,.2f}, cv:{:.5f}'.
-                format((COOL_TIME_HIT - 30 * i) / 60, bid_price, ask_price, cur_price, np.std(prices[t]) / np.mean(prices[t])))
+        left_min = float((COOL_TIME_HIT - 30 * i) / 60)
+        print(t, '{:.2f}min. left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}, cv:{:.5f}'.
+                format(left_min, bid_price, ask_price, cur_price, np.std(prices[t]) / np.mean(prices[t])))
         # print('{:<5} cv : {:.5f}, prices: {}'.format(t, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[t])]))
     return False
 

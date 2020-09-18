@@ -19,7 +19,7 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB'
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -34,7 +34,7 @@ LIMIT_DOWN = 0.0135
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
-COOL_TIME_HIT = 5 * 60 * 60.0
+COOL_TIME_HIT = 72 * 60 * 60.0
 MIN_CV_CNT = 5
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
@@ -43,7 +43,7 @@ MAX_TICKER = 30
 
 # TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.
 # TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
-# TODO: 코인별로 과거 성공여부 확인해서 파라미터를 코인별로 조정하기
+# TODO: 코인별로 과거 성공여부 확인해서 파라미터를 코인별로 조정하기(지금 EOS, XRP, ETH같은건 거의 안걸리는데 이거하면 될지도)
 # TODO: 코인별 로직을 스레드로 분기하기(맨위 TODO하기에도 이게 좋을듯?)
 # TODO: KRW말고 BTC마켓에서도 한번 굴려보자(알트가 영향받는게 BTC마켓인거 같기도 해서 비트폭락시 영향을 적게받을거 같기도 하다), 그리고 BTC많이 있을때 유용
 
@@ -91,11 +91,11 @@ def on_hit_check_fill(ticker):
             return True
         time.sleep(30)
         t = ticker
-        bid_price = float(base_prices[t] if t in base_prices else -1.0)
+        bid_price = float(bid_prices[t] if t in bid_prices else -1.0)
         ask_price = float(price)
         cur_price = float(tick_round(coin.get_price(t, 'KRW')))
         left_min = float((COOL_TIME_HIT - 30 * i) / 60)
-        print(t, '{:.2f}min. left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}, cv:{:.5f}'.
+        print(t, '{:.2f}min.left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}, cv:{:.5f}'.
                 format(left_min, bid_price, ask_price, cur_price, np.std(prices[t]) / np.mean(prices[t])))
         # print('{:<5} cv : {:.5f}, prices: {}'.format(t, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[t])]))
     return False
@@ -151,7 +151,8 @@ def sell(pd, bPartial = False):
         rb = coin.get_fill_order(bid_oids[t])
         if 'price' not in rb:
             gain = 0
-            send_telegram('get_fill_order({}) fail!'.format(t))
+            send_telegram('get_fill_order({}, ) fail!'.format(t, bid_oids[t]))
+            time.sleep(5 * 60)
             continue
         bid_price = rb['price']
         bid_volume = rb['volume']
@@ -238,7 +239,7 @@ while True:
     market_sell(tickers, False)
     tr_krw = coin.get_asset_info('KRW')['free']
     real_gain =  tr_krw - krw
-    total_gain += real_gain if krw!=-1 and abs(real_gain) < 10000 else gain
+    total_gain += real_gain if krw!=-1 and abs(real_gain) < 7000 else gain
     gain = 0
     krw = tr_krw
     if BETTING == 0:

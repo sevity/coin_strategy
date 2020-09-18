@@ -25,6 +25,24 @@ secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
 
+
+def cancel_pending_bids(bLog=True):
+    l = coin.get_live_orders('KRW', 'BTC')
+    if bLog: print(' cancel pending bids..')
+    for (ticker, oid, askbid, price, cnt, odt) in l:
+        if askbid == 'ask':
+            continue
+        r = coin.cancel(oid, False)
+
+def cancel_pending_asks(bLog=True):
+    l = coin.get_live_orders('KRW', 'BTC')
+    if bLog:print(' cancel pending asks..')
+    for (ticker, oid, askbid, price, cnt, odt) in l:
+        if askbid == 'bid':
+            continue
+        r = coin.cancel(oid)
+
+
 avg_gap = 0
 skip_turn = 10
 gap_sum = 0
@@ -57,14 +75,19 @@ while True:
             coin.limit_buy('BTC', bid_price, bid_cnt)
             coin.limit_sell('BTC', ask_price, ask_cnt)
         else:
-            print('!!!!!!!!!!!! not enough BTC! or BTC LOCK!')
-            new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 5
+            if btc_ratio <= BTC_LOCK:
+                print('!!!!!!!!!!!! BTC LOCK!')
+                cancel_pending_asks()
+            else:
+                print('!!!!!!!!!!!! not enough BTC!')
+
+            new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 10
             coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
-            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 5
+            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 10
             coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 
     try:

@@ -139,7 +139,14 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
     authorize_token = 'Bearer {}'.format(jwt_token)
     headers = {"Authorization": authorize_token}
 
-    res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
+    ok = False
+    while ok == False:
+        try:
+            res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
+            ok = True
+        except:
+            pass
+    
     if res.ok == False:
         print(res, res.text)
         en = json.loads(res.text)['error']['name']

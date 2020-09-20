@@ -27,17 +27,17 @@ coin = Coin('upbit',access_key,secret_key)
 
 
 def cancel_pending_bids(bLog=True):
-    l = coin.get_live_orders('KRW', 'BTC')
+    l = coin.get_live_orders('BTC', 'KRW')
     if bLog: print(' cancel pending bids..')
-    for (ticker, oid, askbid, price, cnt, odt) in l:
+    for (oid, askbid, price, cnt, odt) in l:
         if askbid == 'ask':
             continue
         r = coin.cancel(oid, False)
 
 def cancel_pending_asks(bLog=True):
-    l = coin.get_live_orders('KRW', 'BTC')
+    l = coin.get_live_orders('BTC', 'KRW')
     if bLog:print(' cancel pending asks..')
-    for (ticker, oid, askbid, price, cnt, odt) in l:
+    for (oid, askbid, price, cnt, odt) in l:
         if askbid == 'bid':
             continue
         r = coin.cancel(oid)

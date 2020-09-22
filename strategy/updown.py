@@ -19,6 +19,8 @@ BTC_LOCK = 0.3  # 최소 30%는 항상 BTC로 보유
 # 1. 미체결 매수매도 주문수 비율로 판단한다.
 # 2. 가격 이평선 같은걸로 하락추세인지 상승추세인지를 파악한다.
 
+# TODO: 핸들링하고 있는 금액이 얼마인지 로깅을 추가해보자.
+# TODO: file 로깅 기능을 추가해보자.
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
@@ -42,6 +44,15 @@ def cancel_pending_asks(bLog=True):
             continue
         r = coin.cancel(oid)
 
+
+def check_pending_ask(bLog=True):
+    l = coin.get_live_orders('BTC', 'KRW')
+    if bLog:print(' check pending asks..')
+    for (oid, askbid, price, cnt, odt) in l:
+        if askbid == 'bid':
+            continue
+        return True
+    return False
 
 avg_gap = 0
 skip_turn = 10
@@ -81,8 +92,9 @@ while True:
             else:
                 print('!!!!!!!!!!!! not enough BTC!')
 
-            new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 10
-            coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
+            if check_pending_ask() == False:
+                new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 10
+                coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')

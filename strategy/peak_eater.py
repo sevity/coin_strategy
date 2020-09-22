@@ -15,16 +15,19 @@ import ast
 # param #######################################################################
 total_tickers = [
     'MFT','IQ','CRE','MBL','STMX','SC','MED','EDR','TSHP','SPND','TT', 'IOST', 'AHT', 'QKC', 'ANKR', 'TFUEL', 'OST', 'PXL',
-    'SRN', 'CHZ', 'GTO', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS', 'TTC', 'SNT', 'CVC', 'POLY', 
+    'SRN', 'CHZ', 'GTO', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS', 'SNT', 'CVC', 'POLY', 
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT'
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT', 'MARO'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
 # KAVA는 가격변화가 심해서 peak eat가 아니라 다른 경우가 자주 생김
 ban_tickers = []
+
+# 얘네들은 클리어대상에서 제외
+zonber_tickers = ['BTC', 'DKA']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -104,7 +107,7 @@ def cancel_pending_bids(bLog=True):
     l = coin.get_live_orders('KRW')
     if bLog: print(' cancel pending bids..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
-        if ticker=='BTC' or askbid == 'ask':
+        if ticker in zonber_tickers or askbid == 'ask':
             continue
         r = coin.cancel(oid, False)
 
@@ -112,7 +115,7 @@ def cancel_pending_asks(bLog=True):
     l = coin.get_live_orders('KRW')
     if bLog:print(' cancel pending asks..')
     for (ticker, oid, askbid, price, cnt, odt) in l:
-        if ticker=='BTC' or askbid == 'bid':
+        if ticker in zonber_tickers or askbid == 'bid':
             continue
         r = coin.cancel(oid)
 
@@ -187,7 +190,7 @@ def sell(pd, bPartial = False):
             r2 = coin.get_fill_order(oid)
             ask_price = r2['price']
             gain = int(r2['final_amount'] - bid_amount)
-            print("==============>", t, "sold!", "buy:", bid_price, "sell:", ask_price,
+            print("!==============>", t, "sold!", "buy:", bid_price, "sell:", ask_price,
                     "<< gain:{} >>".format(gain))
             bSuccess = True
         else:
@@ -301,7 +304,7 @@ while True:
             del pd[ticker]
 
         if len(pd) > 0:
-            send_telegram("-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
+            send_telegram("\n!-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
             sell(pd)
             break
 

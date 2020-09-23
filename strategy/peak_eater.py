@@ -33,7 +33,7 @@ FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = 0.0155
-LIMIT_DOWN = 0.0135
+LIMIT_DOWN = 0.0140
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
@@ -98,8 +98,8 @@ def on_hit_check_fill(ticker):
         ask_price = float(price)
         cur_price = float(tick_round(coin.get_price(t, 'KRW')))
         left_min = float((COOL_TIME_HIT - 30 * i) / 60)
-        print(t, '{:.2f}min.left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}, cv:{:.5f}'.
-                format(left_min, bid_price, ask_price, cur_price, np.std(prices[t]) / np.mean(prices[t])))
+        print(t, '{:.2f}min.left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}'.
+                format(left_min, bid_price, ask_price, cur_price))
         # print('{:<5} cv : {:.5f}, prices: {}'.format(t, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[t])]))
     return False
 
@@ -155,7 +155,8 @@ def sell(pd, bPartial = False):
         if 'price' not in rb:
             gain = 0
             send_telegram('get_fill_order({}, ) fail!'.format(t, bid_oids[t]))
-            time.sleep(5 * 60)
+            if t not in zonber_tickers:
+                zonber_tickers.append(t)
             continue
         bid_price = rb['price']
         bid_volume = rb['volume']
@@ -288,9 +289,10 @@ while True:
             continue
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
         if cv <= CV_THRESHOLD and len(prices[ticker]) >= MIN_CV_CNT:
-            oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
-            base_prices[ticker] = cp
-            bid_oids[ticker] = oid
+            if ticker not in zonber_tickers:
+                oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
+                base_prices[ticker] = cp
+                bid_oids[ticker] = oid
         else:
             print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 

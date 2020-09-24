@@ -27,11 +27,12 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'DKA']
+zonber_tickers = ['BTC', 'ARK']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
+ZONBER_UP = 0.01  
 RESET_DOWN = 0.0155
 LIMIT_DOWN = 0.0140
 BETTING = 0
@@ -209,6 +210,17 @@ def sell(pd, bPartial = False):
                     break;
                 f = ass['free']
             if f > 0:
+                # A: 존버시키기
+                if t not in zonber_tickers:
+                    zonber_tickers.append(t)
+                # 존버시키면서 매도 지정가 상향하기
+                coin.cancel(ask_oid_dict[t], True)
+                print(t, 'zonbertised! ask_price from {} to {}'.format(ask_price, ask_price*(ZONBER_UP+1)))
+                ask_price *= ZONBER_UP+1  
+                ask_oid_dict[t] = coin.limit_sell(t, ask_price, bid_volume)
+                continue
+
+                # B: 기존코드(시장가에 청산하기)
                 r = coin.market_sell(t, f)
                 if 'final_amount' in r:
                     ask_amount += r['final_amount']

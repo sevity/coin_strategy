@@ -38,7 +38,7 @@ LIMIT_DOWN = 0.0140
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
-COOL_TIME_HIT = 72 * 60 * 60.0
+COOL_TIME_HIT = 1 * 5 * 60.0
 MIN_CV_CNT = 5
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
@@ -123,6 +123,7 @@ def cancel_pending_asks(bLog=True):
 def market_sell(tickers, bLog=True):
     if bLog: print(' clear {} tickers with market sell'.format(len(tickers)))
     for ticker in tickers:
+        if ticker in zonber_tickers: continue
         ass = coin.get_asset_info(ticker)
         if 'free' in ass and ass['free'] > 0:
             while True:

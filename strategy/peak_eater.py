@@ -216,9 +216,10 @@ def sell(pd, bPartial = False):
                     zonber_tickers.append(t)
                 # 존버시키면서 매도 지정가 상향하기
                 coin.cancel(ask_oid_dict[t], True)
-                print(t, 'zonbertised! ask_price from {} to {}'.format(ask_price, ask_price*(ZONBER_UP+1)))
-                ask_price *= ZONBER_UP+1  
-                ask_oid_dict[t] = coin.limit_sell(t, ask_price, bid_volume)
+                pb = ask_price
+                pa = tick_round(ask_price*(ZONBER_UP + 1))
+                print(t, 'zonbertised! ask_price from {} to {}'.format(pa, pb))
+                ask_oid_dict[t] = coin.limit_sell(t, pb, bid_volume)
                 continue
 
                 # B: 기존코드(시장가에 청산하기)

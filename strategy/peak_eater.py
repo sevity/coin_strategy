@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'SPND']
+zonber_tickers = ['BTC']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -78,6 +78,26 @@ def format_numbers(dict, rnd):
 def tick_round(price):
     t = coin.get_tick_size(price)
     return int(price / t) * t
+
+def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
+    a = float(a)
+    b = float(b)
+    if abs(a-b)<diff:
+        return True
+    return False
+
+# 매도주문도 없고, 보유수량도 없으면 존버 풀어준다.
+def zonber_flush():
+    for ticker in zonber_tickers:
+        l = coin.get_live_orders(ticker, 'KRW')
+        found = False
+        for (oid, askbid, price, cnt, odt) in l:
+            if askbid == 'bid':
+                continue
+        ass = coin.get_asset_info(ticker)
+        if 'free' not in ass or fsame(ass['free'], 0):
+            zonber_tickers.remove(ticker)
+    
 
 def on_hit_check_fill(ticker):
     # TODO: 아래부분 시간계산이 정밀하지 않다.
@@ -132,13 +152,6 @@ def market_sell(tickers, bLog=True):
                     break
                 except:
                     pass
-
-def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
-    a = float(a)
-    b = float(b)
-    if abs(a-b)<diff:
-        return True
-    return False
 
 def sell(pd, bPartial = False):
     global gain, bid_oids, RESET_DOWN
@@ -278,6 +291,7 @@ while True:
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
     print('tickers: {}'.format(tickers))
+    zonber_flush()
     print('zonbers: {}'.format(zonber_tickers))
 
     base_prices = {}

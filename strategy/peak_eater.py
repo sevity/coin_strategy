@@ -326,7 +326,7 @@ while True:
             break
 
         # print("orders alive...")
-        print(".", end="")
+        print(".", end="", flush=True)
         for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in base_prices or askbid != 'bid': continue
             price = tick_round(coin.get_price(ticker, 'KRW'))

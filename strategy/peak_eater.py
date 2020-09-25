@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'ARK']
+zonber_tickers = ['BTC', 'SPND']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -149,7 +149,7 @@ def sell(pd, bPartial = False):
         cv = np.std(prices[t]) / np.mean(prices[t])
         print('selling..' if bPartial == False else 'partial selling..', t, 'cv:{:.5f}({})'.format(cv, len(prices[t])))
         if t not in bid_oids:
-            print(t, 'not in', bid_oids)  # 최소주문금액 500원때문에 생긴 550원 bid의 경우 여기 걸릴 수 있음
+            # print(t, 'not in', bid_oids)  # 최소주문금액 500원때문에 생긴 550원 bid의 경우 여기 걸릴 수 있음
             continue
 
         #bid fill 상황체크
@@ -278,6 +278,7 @@ while True:
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
     print('tickers: {}'.format(tickers))
+    print('zonbers: {}'.format(zonber_tickers))
 
     base_prices = {}
     bid_prices = {}

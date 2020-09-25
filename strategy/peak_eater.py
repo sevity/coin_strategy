@@ -94,9 +94,11 @@ def zonber_flush():
         for (oid, askbid, price, cnt, odt) in l:
             if askbid == 'bid':
                 continue
-        ass = coin.get_asset_info(ticker)
-        if 'free' not in ass or fsame(ass['free'], 0):
-            zonber_tickers.remove(ticker)
+            found = True
+        if found == False:
+            ass = coin.get_asset_info(ticker)
+            if 'free' not in ass or fsame(ass['free'], 0):
+                zonber_tickers.remove(ticker)
     
 
 def on_hit_check_fill(ticker):
@@ -231,8 +233,8 @@ def sell(pd, bPartial = False):
                 coin.cancel(ask_oid_dict[t], True)
                 pb = ask_price
                 pa = tick_round(ask_price*(ZONBER_UP + 1))
-                print(t, 'zonbertised! ask_price from {} to {}'.format(pa, pb))
-                ask_oid_dict[t] = coin.limit_sell(t, pb, bid_volume)
+                print(t, 'zonbertised! ask_price from {} to {}'.format(pb, pa))
+                ask_oid_dict[t] = coin.limit_sell(t, pa, bid_volume)
                 continue
 
                 # B: 기존코드(시장가에 청산하기)

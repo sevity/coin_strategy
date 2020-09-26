@@ -230,7 +230,6 @@ def sell(pd, bPartial = False):
                 if t not in zonber_tickers:
                     zonber_tickers.append(t)
                 # 존버시키면서 매도 지정가 상향하기
-                coin.cancel(ask_oid_dict[t], True)
                 pb = ask_price
                 pa = tick_round(ask_price*(ZONBER_UP + 1))
                 print(t, 'zonbertised! ask_price from {} to {}'.format(pb, pa))

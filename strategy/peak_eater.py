@@ -232,8 +232,9 @@ def sell(pd, bPartial = False):
                 # 존버시키면서 매도 지정가 상향하기
                 pb = ask_price
                 pa = tick_round(ask_price*(ZONBER_UP + 1))
-                print(t, 'zonbertised! ask_price from {} to {}'.format(pb, pa))
-                ask_oid_dict[t] = coin.limit_sell(t, pa, bid_volume)
+                send_telegram('{} zonbertised! ask_price from {} to {}'.format(t, pb, pa))
+                ask_oid_dict[t] = coin.limit_sell(t, pa, f)
+                # TODO: 존버타이즈 하고 성공했을때 총수익 계산이 잘 안되고 있다.
                 continue
 
                 # B: 기존코드(시장가에 청산하기)

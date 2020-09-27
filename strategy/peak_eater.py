@@ -27,19 +27,19 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC']
+zonber_tickers = ['BTC', 'STRAT', 'SC']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
 ZONBER_UP = 0.01  
-RESET_DOWN = 0.0155
+RESET_DOWN = 0.0230
 LIMIT_DOWN = 0.0140
 BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 1 * 5 * 60.0
-MIN_CV_CNT = 5
+MIN_CV_CNT = 10
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
 MAX_TICKER = 30
@@ -168,16 +168,20 @@ def sell(pd, bPartial = False):
             continue
 
         #bid fill 상황체크
+        print(t, 'check oid:{}'.format(bid_oids[t]))
         rb = coin.get_fill_order(bid_oids[t])
         if 'price' not in rb:
             gain = 0
             send_telegram('get_fill_order({}, ) fail!'.format(t, bid_oids[t]))
-            if t not in zonber_tickers:
-                zonber_tickers.append(t)
-            continue
-        bid_price = rb['price']
-        bid_volume = rb['volume']
-        bid_amount = rb['final_amount']
+            #if t not in zonber_tickers: zonber_tickers.append(t)
+            #continue
+            bid_price = bid_prices[t]
+            bid_volume = coin.get_asset_info(t)['free']
+            bid_amount = bid_price * bid_volume  # check
+        else:
+            bid_price = rb['price']
+            bid_volume = rb['volume']
+            bid_amount = rb['final_amount']
         # bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         ask_price = price - price * UP;ask_price = tick_round(ask_price)
         bid_price_plus1 = tick_round(bid_price + bid_price*FEE*2 + coin.get_tick_size(bid_price))
@@ -212,7 +216,7 @@ def sell(pd, bPartial = False):
                     "<< gain:{} >>".format(gain))
             bSuccess = True
         else:
-            RESET_DOWN += 0.002
+            RESET_DOWN += 0.010
             # check partial fills
             r = coin.get_fill_order(oid)
             ask_amount = 0
@@ -324,6 +328,7 @@ while True:
                 oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
                 base_prices[ticker] = cp
                 bid_oids[ticker] = oid
+                print(ticker, 'oid:{}'.format(oid))
         else:
             print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 
@@ -355,10 +360,11 @@ while True:
     cancel_pending_bids(False)
     pd = {}
     for t in tickers:
+        if t in zonber_tickers: continue
         ass = coin.get_asset_info(t)
         if 'free' in ass and ass['free'] > 0: pd[t] = 0
     if len(pd) > 0:
         print("-=-= {} partial hits... =-=-".format(len(pd)))
         sell(pd, True)
 
-    RESET_DOWN -= 0.0001
+    RESET_DOWN -= 0.0005

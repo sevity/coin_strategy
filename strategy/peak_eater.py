@@ -19,7 +19,7 @@ total_tickers = [
     'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
     'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
     'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT', 'MARO'
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT', 'MARO', 'PLA'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'STRAT', 'SC']
+zonber_tickers = ['BTC', 'STRAT']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -42,7 +42,7 @@ COOL_TIME_HIT = 1 * 5 * 60.0
 MIN_CV_CNT = 10
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
-MAX_TICKER = 30
+MAX_TICKER = 40
 ###############################################################################
 
 # TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.
@@ -168,7 +168,7 @@ def sell(pd, bPartial = False):
             continue
 
         #bid fill 상황체크
-        print(t, 'check oid:{}'.format(bid_oids[t]))
+        #print(t, 'check oid:{}'.format(bid_oids[t]))
         rb = coin.get_fill_order(bid_oids[t])
         if 'price' not in rb:
             gain = 0
@@ -328,7 +328,7 @@ while True:
                 oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
                 base_prices[ticker] = cp
                 bid_oids[ticker] = oid
-                print(ticker, 'oid:{}'.format(oid))
+                #print(ticker, 'oid:{}'.format(oid))
         else:
             print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 

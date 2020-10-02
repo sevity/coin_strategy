@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'STRAT']
+zonber_tickers = ['BTC', 'STRAT', 'KMD']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -42,7 +42,7 @@ COOL_TIME_HIT = 1 * 5 * 60.0
 MIN_CV_CNT = 10
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
-MAX_TICKER = 40
+MAX_TICKER = 20
 ###############################################################################
 
 # TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.
@@ -262,6 +262,7 @@ market_sell(total_tickers)
 tickers = []
 prices = {}
 krw = -1
+prev_btc_total = -1
 gain = 0
 total_gain = 0
 while True:
@@ -269,16 +270,22 @@ while True:
 
 
     DOWN = RESET_DOWN
-    UP = DOWN * 7.0 / 10
+    UP = DOWN * 8.0 / 10
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
     cancel_pending_bids(False)
     cancel_pending_asks(False)
     market_sell(tickers, False)
     tr_krw = coin.get_asset_info('KRW')['free']
+    btc_total = coin.get_asset_info('BTC')['total']
+    print('btc_total', btc_total)
     real_gain =  tr_krw - krw
     total_gain += real_gain if krw!=-1 and abs(real_gain) < 7000 else gain
     gain = 0
     krw = tr_krw
+    if prev_btc_total != -1 and fsame(prev_btc_total, btc_total, 0.00001) == False and prev_btc_total < btc_total:
+        send_telegram('btc increase detected. will have 30min. break!')
+        time.sleep(30 * 60)
+    prev_btc_total = btc_total
     if BETTING == 0:
         bet = round((krw - 110000) / MAX_TICKER, 0)
         cnt = (min(MAX_TICKER, len(total_tickers)))

@@ -80,19 +80,23 @@ def get_asset_info(currency):
         'nonce': str(uuid.uuid4()),
     }
 
-    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-    authorize_token = 'Bearer {}'.format(jwt_token)
-    headers = {"Authorization": authorize_token}
-    res = requests.get(url, headers=headers)
-    a = res.json()
-    r = {}
-    for i in range(len(a)):
-        if a[i]['currency']==currency:
-            r['free'] = float(a[i]['balance'])
-            r['inuse'] = float(a[i]['locked'])
-            r['total'] = r['free'] + r['inuse']
-            break
-    return r
+    while True:
+        try:
+            jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+            authorize_token = 'Bearer {}'.format(jwt_token)
+            headers = {"Authorization": authorize_token}
+            res = requests.get(url, headers=headers)
+            a = res.json()
+            r = {}
+            for i in range(len(a)):
+                if a[i]['currency']==currency:
+                    r['free'] = float(a[i]['balance'])
+                    r['inuse'] = float(a[i]['locked'])
+                    r['total'] = r['free'] + r['inuse']
+                    break
+            return r
+        except:
+            time.sleep(1.0)
 
 
 

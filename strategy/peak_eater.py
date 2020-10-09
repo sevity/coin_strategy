@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'STRAT', 'KMD']
+zonber_tickers = ['BTC', 'STRAT']
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -42,7 +42,7 @@ COOL_TIME_HIT = 1 * 5 * 60.0
 MIN_CV_CNT = 10
 MAX_CV_CNT = 13
 CV_THRESHOLD = 0.008
-MAX_TICKER = 20
+MAX_TICKER = 40
 ###############################################################################
 
 # TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.

@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC', 'STRAT']
+zonber_tickers = ['BTC'] 
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -39,12 +39,13 @@ BETTING = 0
 COOL_TIME_ORDER = 60 * 1.5
 COOL_CNT_ORDER = 25
 COOL_TIME_HIT = 1 * 5 * 60.0
-MIN_CV_CNT = 10
-MAX_CV_CNT = 13
+MIN_CV_CNT = 15
+MAX_CV_CNT = 25
 CV_THRESHOLD = 0.008
 MAX_TICKER = 40
 ###############################################################################
 
+# TODO: 스프레드도 좀 고려해보자
 # TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.
 # TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
 # TODO: 코인별로 과거 성공여부 확인해서 파라미터를 코인별로 조정하기(지금 EOS, XRP, ETH같은건 거의 안걸리는데 이거하면 될지도)
@@ -176,7 +177,9 @@ def sell(pd, bPartial = False):
             #if t not in zonber_tickers: zonber_tickers.append(t)
             #continue
             bid_price = bid_prices[t]
-            bid_volume = coin.get_asset_info(t)['free']
+            a = coin.get_asset_info(t)
+            if 'free' not in a: continue  # CHECK
+            bid_volume = a['free']
             bid_amount = bid_price * bid_volume  # check
         else:
             bid_price = rb['price']

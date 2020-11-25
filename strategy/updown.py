@@ -8,10 +8,10 @@ from datetime import datetime, timezone, timedelta
 # param #######################################################################
 FEE = 0.0005  # 수수료는 0.05%
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
-BETTING = 100000  # 한번에 거는 돈의 크기
-COOL_TIME = 60 * 30  # 초단위
-TIMEOUT_DAYS = 3
-BTC_LOCK = 0.3  # 최소 30%는 항상 BTC로 보유
+BETTING = 250000  # 한번에 거는 돈의 크기
+COOL_TIME = 60 * 20  # 초단위
+TIMEOUT_DAYS = 1
+BTC_LOCK = 0.30 # 최소 30%는 항상 BTC로 보유
 ###############################################################################
 # 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
 # TODO: 지금은 가격이 떨어지면 BTC만 남는구조인데 거꾸로 가격이 떨어지면 KRW_LOCK을 늘리고 가격이 오르면 BTC_LOCK을 올리는식으로 해보자.
@@ -70,6 +70,7 @@ while True:
         continue
 
     print('KRW..', money)
+    money['free'] = int(money['free'] - 3000000)
     print('BTC..', btc)
     print('free BTC in KRW..', '{:,}'.format(int(btc['free']*a)))
     print('total money..', '{:,}'.format(int(money['total'])+int(btc['total']*a)))
@@ -79,7 +80,7 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
     #a = round(a, -1) # minimum 10 won
 
-    ask_price = round(a + a * UPDOWN, -3); ask_cnt = float(BETTING) / ask_price 
+    ask_price = round(a + a * UPDOWN * 1.5, -3); ask_cnt = float(BETTING) / ask_price 
     bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
@@ -93,13 +94,14 @@ while True:
                 print('!!!!!!!!!!!! not enough BTC!')
 
             if check_pending_ask() == False:
-                new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 10
+                coin.limit_sell('BTC', ask_price, ask_cnt)  # 한 개는 걸어둔다(단 한개만)
+                new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
                 coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
-            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 10
+            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
             coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 
     try:
@@ -112,7 +114,7 @@ while True:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-            print(oid, askbid, '{:,} {:.4f}'.format(int(float(price)), float(cnt)), odt, hour_diff, 'hours')
+            print(oid, askbid, '{:,} {:.2f}m'.format(int(float(price)), float(cnt)*1000), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))

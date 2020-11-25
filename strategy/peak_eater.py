@@ -16,10 +16,10 @@ import ast
 total_tickers = [
     'MFT','IQ','CRE','MBL','STMX','SC','MED','EDR','TSHP','SPND','TT', 'IOST', 'AHT', 'QKC', 'ANKR', 'TFUEL', 'OST', 'PXL',
     'SRN', 'CHZ', 'GTO', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS', 'SNT', 'CVC', 'POLY', 
-    'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'GNT', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
-    'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'VTC', 'XRP', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
-    'STRAT', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
-    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'ETH', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT', 'MARO', 'PLA', 'DOT'
+    'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'MANA', 'ARDR', 'POWR', 'XLM', 'ELF', 'SOLVE', 'ADA', 'DMT',
+    'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'THETA', 'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK',
+    'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS', 'XTZ', 'KAVA', 'ATOM', 'ETC',
+    'LINK', 'BTG', 'NEO', 'DCR', 'REP', 'LTC', 'JST', 'CRO', 'TON', 'SXP', 'LAMB', 'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA'
     ]
 
 # MANA는 틱갭이 너무 커서 UP해도 가격 같은경우가 생김
@@ -27,7 +27,7 @@ total_tickers = [
 ban_tickers = []
 
 # 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC'] 
+zonber_tickers = ['BTC', 'XLM'] 
 
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
@@ -290,11 +290,11 @@ while True:
         time.sleep(30 * 60)
     prev_btc_total = btc_total
     if BETTING == 0:
-        bet = round((krw - 110000) / MAX_TICKER, 0)
+        bet = round((krw - 260000) / MAX_TICKER, 0)
         cnt = (min(MAX_TICKER, len(total_tickers)))
     else:
         bet = BETTING
-        cnt = (min(MAX_TICKER, int((krw - 110000)/ bet), len(total_tickers)))
+        cnt = (min(MAX_TICKER, int((krw - 260000)/ bet), len(total_tickers)))
 
 
     send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.

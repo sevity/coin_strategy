@@ -70,7 +70,7 @@ while True:
         continue
 
     print('KRW..', money)
-    money['free'] = int(money['free'] - 3000000)
+    # money['free'] = int(money['free'] - 3000000)
     print('BTC..', btc)
     print('free BTC in KRW..', '{:,}'.format(int(btc['free']*a)))
     print('total money..', '{:,}'.format(int(money['total'])+int(btc['total']*a)))
@@ -95,13 +95,13 @@ while True:
 
             if check_pending_ask() == False:
                 coin.limit_sell('BTC', ask_price, ask_cnt)  # 한 개는 걸어둔다(단 한개만)
-                new_bid_price = round(a - a * UPDOWN * 0.5, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
+                new_bid_price = round(a - a * UPDOWN * 0.25, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
                 coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
-            new_ask_price = round(a + a * UPDOWN * 0.5, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
+            new_ask_price = round(a + a * UPDOWN * 0.25, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
             coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 
     try:

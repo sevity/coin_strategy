@@ -101,7 +101,7 @@ while True:
     else:
         print('!!!!!!!!!!!! not enough KRW!')
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
-            new_ask_price = round(a + a * UPDOWN * 0.25, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
+            new_ask_price = round(a + a * UPDOWN * 0.75, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
             coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 
     try:

@@ -5,4 +5,4 @@ Coin trade library and strategies which supports bithumb and binance and upbit.
 pip3 install -r requirements.txt
 
 ## sample ( you need to set your api_key and secret_key in sample.py)
-python3 sample.py
+python3 strategy/sample.py

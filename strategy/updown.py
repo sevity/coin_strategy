@@ -8,10 +8,10 @@ from datetime import datetime, timezone, timedelta
 # param #######################################################################
 FEE = 0.0005  # 수수료는 0.05%
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
-BETTING = 250000  # 한번에 거는 돈의 크기
-COOL_TIME = 60 * 20  # 초단위
+BETTING = 400000  # 한번에 거는 돈의 크기
+COOL_TIME = 60 * 15  # 초단위
 TIMEOUT_DAYS = 1
-BTC_LOCK = 0.30 # 최소 30%는 항상 BTC로 보유
+BTC_LOCK = 0.80 # 최소 30%는 항상 BTC로 보유
 ###############################################################################
 # 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
 # TODO: 지금은 가격이 떨어지면 BTC만 남는구조인데 거꾸로 가격이 떨어지면 KRW_LOCK을 늘리고 가격이 오르면 BTC_LOCK을 올리는식으로 해보자.
@@ -80,7 +80,7 @@ while True:
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
     #a = round(a, -1) # minimum 10 won
 
-    ask_price = round(a + a * UPDOWN * 1.5, -3); ask_cnt = float(BETTING) / ask_price 
+    ask_price = round(a + a * UPDOWN * 1.75, -3); ask_cnt = float(BETTING) / ask_price 
     bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
@@ -90,13 +90,14 @@ while True:
             if btc_ratio <= BTC_LOCK:
                 print('!!!!!!!!!!!! BTC LOCK!')
                 cancel_pending_asks()
+                time.sleep(1)
             else:
                 print('!!!!!!!!!!!! not enough BTC!')
 
             if check_pending_ask() == False:
                 coin.limit_sell('BTC', ask_price, ask_cnt)  # 한 개는 걸어둔다(단 한개만)
-                new_bid_price = round(a - a * UPDOWN * 0.25, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
-                coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
+            new_bid_price = round(a - a * UPDOWN * 0.25, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
+            coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')

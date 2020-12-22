@@ -12,6 +12,7 @@ BETTING = 400000  # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 15  # 초단위
 TIMEOUT_DAYS = 1
 BTC_LOCK = 0.80 # 최소 30%는 항상 BTC로 보유
+BTC_LOCK_V = 2.00 # 최소 1.5 BTC 보유
 ###############################################################################
 # 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
 # TODO: 지금은 가격이 떨어지면 BTC만 남는구조인데 거꾸로 가격이 떨어지면 KRW_LOCK을 늘리고 가격이 오르면 BTC_LOCK을 올리는식으로 해보자.
@@ -77,18 +78,23 @@ while True:
     btc_ratio = btc['total']*a / (money['total']+btc['total']*a)
     print('BTC to KRW ratio..', '{:.4f}'.format(btc_ratio))
     if btc_ratio < BTC_LOCK: print('!!!!! less than BTC LOCK! {}'.format(BTC_LOCK))
+    if btc['total'] < BTC_LOCK_V: print('!!!!! less than BTC VOLUME LOCK! {}'.format(BTC_LOCK_V))
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
     #a = round(a, -1) # minimum 10 won
 
     ask_price = round(a + a * UPDOWN * 1.75, -3); ask_cnt = float(BETTING) / ask_price 
     bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
-        if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
+        if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK and btc['total'] > BTC_LOCK_V:
             coin.limit_buy('BTC', bid_price, bid_cnt)
             coin.limit_sell('BTC', ask_price, ask_cnt)
         else:
             if btc_ratio <= BTC_LOCK:
                 print('!!!!!!!!!!!! BTC LOCK!')
+                cancel_pending_asks()
+                time.sleep(1)
+            elif btc['total'] <= BTC_LOCK_V:
+                print('!!!!!!!!!!!! BTC VOLUME LOCK!')
                 cancel_pending_asks()
                 time.sleep(1)
             else:
@@ -101,7 +107,7 @@ while True:
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')
-        if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK:
+        if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK and btc['total'] > BTC_LOCK_V:
             new_ask_price = round(a + a * UPDOWN * 0.75, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
             coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
 

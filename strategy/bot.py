@@ -58,8 +58,6 @@ def send_telegram(msg):
     except:
         pass
 
-for ticker in ban_tickers:
-    total_tickers.remove(ticker)
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()

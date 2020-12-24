@@ -21,7 +21,7 @@ total_tickers = [
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.013
+BOT_DOWN  = 0.012
 BOT_UP    = 0.005
 ZONBER_UP = 0.002  
 MAX_BETTING = 950000

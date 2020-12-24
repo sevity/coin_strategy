@@ -15,38 +15,36 @@ import ast
 # param #######################################################################
 total_tickers = [
     # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
-    'DCR',
+    'XRP'
     ]
 
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.018
-BOT_UP    = 0.009
-ZONBER_UP = 0.005  
+BOT_DOWN  = 0.013
+BOT_UP    = 0.005
+ZONBER_UP = 0.002  
+MAX_BETTING = 950000
 
-BETTING = 0
-COOL_TIME_ORDER = 60 * 1.5
-COOL_CNT_ORDER = 150
+COOL_TIME_ORDER = 40
 COOL_TIME_HIT = 1 * 10 * 60.0
-MIN_CV_CNT = 1
-MAX_CV_CNT = 25
-CV_THRESHOLD = 0.098
-MAX_TICKER = 2
 ###############################################################################
+# legacy or fixed parameters
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
 RESET_DOWN = BOT_DOWN
 LIMIT_DOWN = BOT_DOWN
+BETTING = 0
+MAX_TICKER = len(total_tickers)
+COOL_CNT_ORDER = 150
+MIN_CV_CNT = 1
+MAX_CV_CNT = 25
+CV_THRESHOLD = 0.098
 ###############################################################################
 
-# TODO: 스프레드도 좀 고려해보자
-# TODO: 매번 COOL_TIME_ORDER만큼만 기다리고 bid cancel을 하니 랭크가 내려가서 bid체결이 잘안되니, bid cancel없이 갱신하는거 해보자.
-# TODO: CV대신 체결볼륨을 사용해볼 수 있을것 같다. 거래가 많으면 피하는 식으로..
-# TODO: 코인별로 과거 성공여부 확인해서 파라미터를 코인별로 조정하기(지금 EOS, XRP, ETH같은건 거의 안걸리는데 이거하면 될지도)
-# TODO: 코인별 로직을 스레드로 분기하기(맨위 TODO하기에도 이게 좋을듯?)
-# TODO: KRW말고 BTC마켓에서도 한번 굴려보자(알트가 영향받는게 BTC마켓인거 같기도 해서 비트폭락시 영향을 적게받을거 같기도 하다), 그리고 BTC많이 있을때 유용
+# TODO: 최근가격만 쓰면 변동성 심할때문제가 되니 최근 3번 평균이라던가 써보자  
+
 
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -185,9 +183,7 @@ def sell(pd, bPartial = False):
             bid_amount = rb['final_amount']
         # bid_price = base_price_dict[t] - base_price_dict[t] * DOWN;bid_price = tick_round(bid_price)
         # ask_price = price - price * UP;ask_price = tick_round(ask_price)
-        # ask_price = base_prices[t] - DOWN * 4.0/10;ask_price=tick_round(ask_price)
-        # ask_price = price - price * UP;ask_price = tick_round(ask_price)
-        ask_price = base_prices[t] - BOT_UP;ask_price=tick_round(ask_price)
+        ask_price = base_prices[t] * (1.0 - BOT_UP);ask_price=tick_round(ask_price)
         bid_price_plus1 = tick_round(bid_price + bid_price * FEE * 2 + coin.get_tick_size(bid_price))
         ask_price=max(ask_price, bid_price_plus1)
         ask_oid_dict[t] = coin.limit_sell(t, ask_price, bid_volume)
@@ -234,17 +230,6 @@ def sell(pd, bPartial = False):
                     break;
                 f = ass['free']
             if f > 0:
-                # A: 존버시키기
-                if t not in zonber_tickers:
-                    zonber_tickers.append(t)
-                # 존버시키면서 매도 지정가 상향하기
-                pb = ask_price
-                pa = tick_round(ask_price*(ZONBER_UP + 1))
-                send_telegram('{} zonbertised! ask_price from {} to {}'.format(t, pb, pa))
-                ask_oid_dict[t] = coin.limit_sell(t, pa, f)
-                # TODO: 존버타이즈 하고 성공했을때 총수익 계산이 잘 안되고 있다.
-                continue
-
                 # B: 기존코드(시장가에 청산하기)
                 r = coin.market_sell(t, f)
                 if 'final_amount' in r:
@@ -256,6 +241,18 @@ def sell(pd, bPartial = False):
                     if fsame(bid_volume, r['volume'], 0.1) == False:
                         send_telegram('gain fail!')
                         gain = 0
+                continue
+                # A: 존버시키기
+                if t not in zonber_tickers:
+                    zonber_tickers.append(t)
+                # 존버시키면서 매도 지정가 상향하기
+                pb = ask_price
+                pa = tick_round(ask_price*(ZONBER_UP + 1))
+                send_telegram('{} zonbertised! ask_price from {} to {}'.format(t, pb, pa))
+                ask_oid_dict[t] = coin.limit_sell(t, pa, f)
+                # TODO: 존버타이즈 하고 성공했을때 총수익 계산이 잘 안되고 있다.
+                continue
+
         # if bSuccess: RESET_DOWN += 0.0013
         if t in bid_oids:
             del bid_oids[t]  # 완판 했기 때문에 지워줌
@@ -297,10 +294,11 @@ while True:
     else:
         bet = BETTING
         cnt = (min(MAX_TICKER, int((krw - 0)/ bet), len(total_tickers)))
+    bet = min(bet, MAX_BETTING)
 
 
-    send_telegram('\n-= DOWN:{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
-                  format(DOWN, int(total_gain), cnt, int(krw), int(bet)))
+    send_telegram('\n-= DOWN:-{:.4f}, UP:-{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
+                  format(DOWN, BOT_UP, int(total_gain), cnt, int(krw), int(bet)))
     if bet < 550:
         print("betting too small!")
         time.sleep(COOL_TIME_ORDER)
@@ -345,7 +343,9 @@ while True:
             print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 
     # for i in range(int(COOL_TIME_ORDER/10)):
-    for i in range(COOL_CNT_ORDER):
+    # for i in range(COOL_CNT_ORDER):
+    n = datetime.now()
+    while (datetime.now() - n).seconds < COOL_TIME_ORDER:
         l = coin.get_live_orders('KRW')
 
         pd = copy.deepcopy(base_prices)  
@@ -360,6 +360,7 @@ while True:
 
         # print("orders alive...")
         print(".", end="", flush=True)
+        # print("{}".format((datetime.now()-n).seconds))
         for (ticker, oid, askbid, price, cnt, odt) in l:
             if ticker not in base_prices or askbid != 'bid': continue
             price = tick_round(coin.get_price(ticker, 'KRW'))

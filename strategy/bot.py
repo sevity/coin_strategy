@@ -22,12 +22,12 @@ total_tickers = [
 zonber_tickers = ['BTC']
 
 BOT_DOWN  = 0.012
-BOT_UP    = 0.005
+BOT_UP    = 0.004
 ZONBER_UP = 0.002  
-MAX_BETTING = 950000
+MAX_BETTING = 750000
 
 COOL_TIME_ORDER = 40
-COOL_TIME_HIT = 1 * 10 * 60.0
+COOL_TIME_HIT = 2 * 10 * 60.0
 ###############################################################################
 # legacy or fixed parameters
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯

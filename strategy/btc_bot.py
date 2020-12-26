@@ -13,8 +13,8 @@ from collections import deque
 import ast
 
 # param #######################################################################
-BTC_UP            = 0.001
-BTC_DOWN          = 0.0009
+BTC_UP            = 0.003
+BTC_DOWN          = 0.001
 BTC_BETTING_RATIO = 0.001  # 총 BTC자산의 0.1%를한번에 배팅
 BTC_MAX_BETTING   = 500000
 
@@ -22,11 +22,14 @@ BTC_MAX_UP = BTC_UP * 2
 BTC_MIN_UP = BTC_UP
 BTC_MAX_DOWN = BTC_DOWN * 2
 BTC_MIN_DOWN = BTC_DOWN
-BTC_DELTA_UP   = 0.1   # BTC_UP이 상승하는비율
+BTC_DELTA_UP   = 0.5   # BTC_UP이 상승하는비율
 BTC_DELTA_DOWN = 0.05  # BTC_UP이 상승하는비율
 
-COOL_TIME_ORDER = 3 * 60
-COOL_TIME_HIT = 1 * 5 * 60.0
+BTC_LOCK = 0.85
+BTC_LOCK_V = 1.8
+
+COOL_TIME_ORDER = 10 * 60
+COOL_TIME_HIT = 1 * 20 * 60.0
 ###############################################################################
 # legacy or fixed parameters
 total_tickers = ['BTC']
@@ -183,10 +186,11 @@ def sell(pd, bPartial = False):
         if r:
             print('new_up:', BTC_UP, 'new_down:', BTC_DOWN)
             r2 = coin.get_fill_order(oid)
+            bid_price = r2['price']
             bid_volume = r2['volume']
             gain = bid_volume - ask_volume
             print("!==============>", t, "buy!", "sell:", ask_volume, "buy:", bid_volume,
-                    "<< gain:{:.6f} >>".format(gain))
+                    "<< gain:{:.6f}BTC, {:,}원 >>".format(gain, int(gain*bid_price)))
             bSuccess = True
         else:
             BTC_UP -= BTC_UP * BTC_DELTA_UP
@@ -216,7 +220,9 @@ while True:
     elif BTC_DOWN < BTC_MIN_DOWN : BTC_DOWN = BTC_MIN_DOWN
 
     print('')
-    btc_total = coin.get_asset_info('BTC')['total']
+    mybtc = coin.get_asset_info('BTC')
+    mykrw = coin.get_asset_info('KRW')
+    btc_total = mybtc['total']
     tr_btc = btc_total
     btc_price = int(coin.get_price('BTC', 'KRW'))
     print('\n!', datetime.now().strftime("%m-%d %H:%M:%S"), 'my btc:', '{:.4f}'.format(btc_total), 
@@ -224,7 +230,7 @@ while True:
     bet = min(btc_total * BTC_BETTING_RATIO, BTC_MAX_BETTING)
     # print('bet:', bet)
     real_gain =  tr_btc - btc
-    # print('! tr_btc:', tr_btc, 'btc:', btc, 'real_gain:', real_gain)
+    print('! tr_btc:', tr_btc, 'btc:', btc, 'real_gain:', real_gain)
     total_gain += real_gain if btc > -1 and abs(real_gain*btc_price) < bet/2 else 0
     gain = 0
     btc = tr_btc
@@ -239,13 +245,29 @@ while True:
         time.sleep(COOL_TIME_ORDER)
         continue
 
+    print('my krw:', mykrw)
+    print('my btc:', mybtc)
+    btc_ratio = mybtc['total']*btc_price / (mykrw['total']+mybtc['total']*btc_price)
+    print('BTC to KRW ratio..', '{:.4f}'.format(btc_ratio))
+    if btc_ratio < BTC_LOCK:
+        print('!!!!! less than BTC LOCK! {}'.format(BTC_LOCK))
+        time.sleep(COOL_TIME_ORDER)
+        continue
+
+    if mybtc['total'] < BTC_LOCK_V:
+        print('!!!!! less than BTC VOLUME LOCK! {}'.format(BTC_LOCK_V))
+        time.sleep(COOL_TIME_ORDER)
+        continue
+
     random.shuffle(total_tickers)
     tickers = total_tickers[:1]
 
     base_prices = {}
     ask_prices = {}
     ask_oids = {}
-    btc_money = coin.get_asset_info('BTC')  # to float
+
+
+    # sevity
 
     # TODO:
     # 이렇게 주기적으로 샘플링하는 방식으로는 순간적인 피크를 검출 못해서
@@ -261,7 +283,7 @@ while True:
         ask_prices[ticker] = ask_price
         ask_cnt = bet
 
-        if btc_money['free'] < bet:
+        if mybtc['free'] < bet:
             print(ticker, 'not enough BTC!')
             continue
 

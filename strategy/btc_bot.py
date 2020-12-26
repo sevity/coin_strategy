@@ -13,18 +13,19 @@ from collections import deque
 import ast
 
 # param #######################################################################
-BTC_UP            = 0.003
-BTC_DOWN          = 0.001
+BTC_UP            = 0.001
+BTC_DOWN          = 0.0009
 BTC_BETTING_RATIO = 0.001  # 총 BTC자산의 0.1%를한번에 배팅
 BTC_MAX_BETTING   = 500000
 
 BTC_MAX_UP = BTC_UP * 2
 BTC_MIN_UP = BTC_UP
-BTC_MAX_DOWN = BTC_UP / 2
+BTC_MAX_DOWN = BTC_DOWN * 2
 BTC_MIN_DOWN = BTC_DOWN
-BTC_DELTA_UP = 0.001  # BTC_UP이 상승하는비율
+BTC_DELTA_UP   = 0.1   # BTC_UP이 상승하는비율
+BTC_DELTA_DOWN = 0.05  # BTC_UP이 상승하는비율
 
-COOL_TIME_ORDER = 60
+COOL_TIME_ORDER = 3 * 60
 COOL_TIME_HIT = 1 * 5 * 60.0
 ###############################################################################
 # legacy or fixed parameters
@@ -79,7 +80,7 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     return False
 
 
-def on_hit_check_fill(ticker):
+def on_hit_check_fill(ticker, oid_):
     # TODO: 아래부분 시간계산이 정밀하지 않다.
     for i in range(int(COOL_TIME_HIT / 30)):
         l = coin.get_live_orders(ticker, 'KRW')
@@ -87,7 +88,9 @@ def on_hit_check_fill(ticker):
         for (oid, askbid, price, cnt, odt) in l:
             if askbid == 'ask':
                 continue
-            found = True
+            if oid == oid_ :
+                found = True
+                break
             if i == 0:
                 print('waiting..{:,} min.'.format(int(COOL_TIME_HIT / 60)), oid, askbid, '{:,.2f}'.format(float(price)), odt)
             break
@@ -139,6 +142,7 @@ def sell(pd, bPartial = False):
         #ask fill 상황체크
         print(t, 'check oid:{}'.format(ask_oids[t]))
         rb = coin.get_fill_order(ask_oids[t])
+        print(rb)
         if 'price' not in rb:
             gain = 0
             send_telegram('get_fill_order({}, ) fail!'.format(t, ask_oids[t]))
@@ -148,10 +152,15 @@ def sell(pd, bPartial = False):
             ask_volume = rb['volume']
             ask_amount = rb['final_amount']
         bid_price = base_prices[t] * (1.0 + BTC_DOWN);bid_price=tick_round(bid_price)
-        print('bid price:', bid_price)
-        ask_price_minus1 = tick_round(ask_price - bid_price * FEE * 2 + coin.get_tick_size(ask_price))
+        ask_price_minus1 = tick_round(ask_price - ask_price * FEE * 2 - coin.get_tick_size(ask_price))
+
+        print('bid price:', bid_price, 'ask_price_minus1:', ask_price_minus1)
         bid_price=min(bid_price, ask_price_minus1)
-        bid_oid_dict[t] = coin.limit_buy(t, bid_price, ask_volume)
+        ask_bet = ask_amount * (1.0 + FEE)
+        bid_bet = ask_bet * (1.0 - FEE) / (1.0 + FEE)
+        bid_volume = bid_bet / bid_price
+        print('ask_bet', ask_bet, 'bid_bet', bid_bet, 'bid_volume', bid_volume)
+        bid_oid_dict[t] = coin.limit_buy(t, bid_price, bid_volume)
 
     # log
     for t, price in pd.items():
@@ -168,16 +177,16 @@ def sell(pd, bPartial = False):
         if t not in bid_oid_dict:
             continue
         oid = bid_oid_dict[t]
-        r = on_hit_check_fill(t)
+        print('bid oid:', oid)
+        r = on_hit_check_fill(t, oid)
         gain = 0
         if r:
-            BTC_UP += BTC_UP * BTC_DELTA_UP
-            BTC_DOWN += BTC_DOWN * BTC_DELTA_UP
+            print('new_up:', BTC_UP, 'new_down:', BTC_DOWN)
             r2 = coin.get_fill_order(oid)
-            bid_price = r2['price']
-            gain = int(ask_amount - r2['final_amount'])
-            print("!==============>", t, "buy!", "sell:", ask_price, "buy:", bid_price,
-                    "<< gain:{} >>".format(gain))
+            bid_volume = r2['volume']
+            gain = bid_volume - ask_volume
+            print("!==============>", t, "buy!", "sell:", ask_volume, "buy:", bid_volume,
+                    "<< gain:{:.6f} >>".format(gain))
             bSuccess = True
         else:
             BTC_UP -= BTC_UP * BTC_DELTA_UP
@@ -188,6 +197,8 @@ def sell(pd, bPartial = False):
         if t in ask_oids:
             del ask_oids[t]  # 완판 했기 때문에 지워줌
 
+    return bSuccess
+
 
 tickers = []
 prices = {}
@@ -195,30 +206,33 @@ btc = -1
 prev_btc_total = -1
 gain = 0
 total_gain = 0
+# cancel_pending_bids()
+# cancel_pending_asks()
 while True:
+    cancel_pending_asks()
     if   BTC_UP > BTC_MAX_UP : BTC_UP = BTC_MAX_UP
     elif BTC_UP < BTC_MIN_UP : BTC_UP = BTC_MIN_UP
     if   BTC_DOWN > BTC_MAX_DOWN : BTC_DOWN = BTC_MAX_DOWN
     elif BTC_DOWN < BTC_MIN_DOWN : BTC_DOWN = BTC_MIN_DOWN
 
     print('')
-    cancel_pending_bids()
-    cancel_pending_asks()
     btc_total = coin.get_asset_info('BTC')['total']
     tr_btc = btc_total
     btc_price = int(coin.get_price('BTC', 'KRW'))
     print('\n!', datetime.now().strftime("%m-%d %H:%M:%S"), 'my btc:', '{:.4f}'.format(btc_total), 
         'btc price:', '{:,}'.format(btc_price), 'BTC자산:', '{:,}'.format(int(btc_total*btc_price)))
+    bet = min(btc_total * BTC_BETTING_RATIO, BTC_MAX_BETTING)
+    # print('bet:', bet)
     real_gain =  tr_btc - btc
-    total_gain += real_gain if btc > -1 else 0
+    # print('! tr_btc:', tr_btc, 'btc:', btc, 'real_gain:', real_gain)
+    total_gain += real_gain if btc > -1 and abs(real_gain*btc_price) < bet/2 else 0
     gain = 0
     btc = tr_btc
     
 
-    bet = min(btc_total * BTC_BETTING_RATIO, BTC_MAX_BETTING)
 
-    send_telegram('\n-= UP:-{:.4f}, DOWN:-{:.4f}, 총수익:{:.4f} BTC = {:,}원, 배팅:{:.4f} BTC = {:,}원  =-'.
-                  format(BTC_UP, BTC_DOWN, btc_price*total_gain, int(total_gain), bet, int(bet*btc_price)))
+    send_telegram('\n-= UP:{:.4f}, DOWN:{:.4f}, 총수익:{:.4f} BTC = {:,}원, 배팅:{:.4f} BTC = {:,}원  =-'.
+                  format(BTC_UP, BTC_DOWN, total_gain, int(btc_price*total_gain), bet, int(bet*btc_price)))
 
     if bet*btc_price <= 1000:
         print("betting too small!")
@@ -263,6 +277,7 @@ while True:
 
 
     n = datetime.now()
+    bSuccess = False
     while (datetime.now() - n).seconds < COOL_TIME_ORDER:
         l = coin.get_live_orders('KRW')
         pd = copy.deepcopy(base_prices)  
@@ -272,10 +287,14 @@ while True:
 
         if len(pd) > 0:
             send_telegram("\n!-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
-            sell(pd)
+            bSuccess = sell(pd)
             break
 
         print(".", end="", flush=True)
 
-    BTC_UP -= BTC_UP * BTC_DELTA_UP
-    BTC_DOWN -= BTC_DOWN * BTC_DELTA_UP
+    if bSuccess is True:
+        BTC_UP += BTC_UP * BTC_DELTA_UP
+        BTC_DOWN += BTC_DOWN * BTC_DELTA_DOWN
+    else:
+        BTC_UP -= BTC_UP * BTC_DELTA_UP
+        BTC_DOWN -= BTC_DOWN * BTC_DELTA_DOWN

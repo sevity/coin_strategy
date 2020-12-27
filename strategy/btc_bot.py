@@ -13,23 +13,26 @@ from collections import deque
 import ast
 
 # param #######################################################################
-BTC_UP            = 0.003
-BTC_DOWN          = 0.001
-BTC_BETTING_RATIO = 0.001  # 총 BTC자산의 0.1%를한번에 배팅
-BTC_MAX_BETTING   = 500000
+BTC_UP            = 0.0080
+BTC_DOWN          = 0.0040
+BTC_BETTING_RATIO = 0.0010  # 총 BTC자산의 0.1%를한번에 배팅
+BTC_BETTING_DELTA = 500  # 레버리지, BTC_UP이 증가할수록 베팅도 커지는 구조
+BTC_MAX_BETTING   = 500000 # 그러나 이값보다 커지진 않게 제한
 
-BTC_MAX_UP = BTC_UP * 2
+BTC_MAX_UP = 0.010
 BTC_MIN_UP = BTC_UP
-BTC_MAX_DOWN = BTC_DOWN * 2
+BTC_MAX_DOWN = BTC_MAX_UP * 0.9
 BTC_MIN_DOWN = BTC_DOWN
-BTC_DELTA_UP   = 0.5   # BTC_UP이 상승하는비율
-BTC_DELTA_DOWN = 0.05  # BTC_UP이 상승하는비율
+BTC_DELTA_UP   = 1.0   # BTC_UP이 상승/하락 하는비율  #TODO: 로그고려해야함
+BTC_DELTA_DOWN = 1.0   # BTC_DOWN이 상승/하락 하는비율
 
 BTC_LOCK = 0.85
 BTC_LOCK_V = 1.8
 
-COOL_TIME_ORDER = 10 * 60
-COOL_TIME_HIT = 1 * 20 * 60.0
+COOL_TIME_ORDER = 20 * 60
+# 아래값은 자동 존버들어가기 때문에 오래기다릴 필요없음
+# 그냥 다음 매도 시도하기전 딜레이라고 보면 됨
+COOL_TIME_HIT = 1 * 1 * 30.0  
 ###############################################################################
 # legacy or fixed parameters
 total_tickers = ['BTC']
@@ -155,7 +158,9 @@ def sell(pd, bPartial = False):
             ask_volume = rb['volume']
             ask_amount = rb['final_amount']
         bid_price = base_prices[t] * (1.0 + BTC_DOWN);bid_price=tick_round(bid_price)
-        ask_price_minus1 = tick_round(ask_price - ask_price * FEE * 2 - coin.get_tick_size(ask_price))
+        #ask_price_minus1 = tick_round(ask_price - ask_price * FEE * 2 - coin.get_tick_size(ask_price))
+        # 위에걸로 하면 완전 똔똔 수준이라 약간 개선함
+        ask_price_minus1 = tick_round(ask_price - ask_price * FEE * 2 - coin.get_tick_size(ask_price)*5)
 
         print('bid price:', bid_price, 'ask_price_minus1:', ask_price_minus1)
         bid_price=min(bid_price, ask_price_minus1)
@@ -193,8 +198,8 @@ def sell(pd, bPartial = False):
                     "<< gain:{:.6f}BTC, {:,}원 >>".format(gain, int(gain*bid_price)))
             bSuccess = True
         else:
-            BTC_UP -= BTC_UP * BTC_DELTA_UP
-            BTC_DOWN -= BTC_DOWN * BTC_DELTA_UP
+            # BTC_UP -= BTC_UP * BTC_DELTA_UP
+            # BTC_DOWN -= BTC_DOWN * BTC_DELTA_UP
             # coin.cancel(oid)  # cancel partial buy
             continue
 
@@ -218,6 +223,7 @@ while True:
     elif BTC_UP < BTC_MIN_UP : BTC_UP = BTC_MIN_UP
     if   BTC_DOWN > BTC_MAX_DOWN : BTC_DOWN = BTC_MAX_DOWN
     elif BTC_DOWN < BTC_MIN_DOWN : BTC_DOWN = BTC_MIN_DOWN
+    # print('now_up:', BTC_UP, 'now_down:', BTC_DOWN)
 
     print('')
     mybtc = coin.get_asset_info('BTC')
@@ -227,7 +233,9 @@ while True:
     btc_price = int(coin.get_price('BTC', 'KRW'))
     print('\n!', datetime.now().strftime("%m-%d %H:%M:%S"), 'my btc:', '{:.4f}'.format(btc_total), 
         'btc price:', '{:,}'.format(btc_price), 'BTC자산:', '{:,}'.format(int(btc_total*btc_price)))
-    bet = min(btc_total * BTC_BETTING_RATIO, BTC_MAX_BETTING)
+    new_ratio = BTC_BETTING_RATIO * (1.0 + BTC_UP * BTC_BETTING_DELTA)
+    print('new_ratio:', new_ratio)
+    bet = min(btc_total * new_ratio, BTC_MAX_BETTING)
     # print('bet:', bet)
     real_gain =  tr_btc - btc
     print('! tr_btc:', tr_btc, 'btc:', btc, 'real_gain:', real_gain)
@@ -299,8 +307,10 @@ while True:
 
 
     n = datetime.now()
-    bSuccess = False
+    bOK = False
+    c = 0
     while (datetime.now() - n).seconds < COOL_TIME_ORDER:
+        c += 1
         l = coin.get_live_orders('KRW')
         pd = copy.deepcopy(base_prices)  
         for (ticker, oid, askbid, price, cnt, odt) in l:
@@ -309,14 +319,18 @@ while True:
 
         if len(pd) > 0:
             send_telegram("\n!-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
-            bSuccess = sell(pd)
+            sell(pd)
+            bOK = True
             break
 
-        print(".", end="", flush=True)
+        if c % 20 == 0:
+            print(".", end="", flush=True)
 
-    if bSuccess is True:
+    if bOK is True:
         BTC_UP += BTC_UP * BTC_DELTA_UP
         BTC_DOWN += BTC_DOWN * BTC_DELTA_DOWN
     else:
-        BTC_UP -= BTC_UP * BTC_DELTA_UP
-        BTC_DOWN -= BTC_DOWN * BTC_DELTA_DOWN
+        BTC_UP -= BTC_UP * BTC_DELTA_UP/2
+        BTC_DOWN -= BTC_DOWN * BTC_DELTA_DOWN/2
+
+    print('new_up:', BTC_UP, 'new_down:', BTC_DOWN)

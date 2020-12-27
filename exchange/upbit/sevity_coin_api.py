@@ -203,7 +203,12 @@ def cancel(oid, bLog=True):
     authorize_token = 'Bearer {}'.format(jwt_token)
     headers = {"Authorization": authorize_token}
 
-    res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
+    while True:
+        try:
+            res = requests.delete(server_url + "/v1/order", params=query, headers=headers)
+            break
+        except:
+            time.sleep(1.0)
     if res.ok == False or res.status_code != 200:
         print('  cancel fail...', oid, res.ok, res, res.text)
     return res

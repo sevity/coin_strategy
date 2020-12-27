@@ -293,14 +293,14 @@ def get_live_orders(currency):
     while ok == False:
         try:
             res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+            r = []
+            for ord in res.json():
+                ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+                ticker = ord['market'].split('-')[1]
+                r.append((ticker, ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
             ok = True
         except:
             pass
-    r = []
-    for ord in res.json():
-        ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-        ticker = ord['market'].split('-')[1]
-        r.append((ticker, ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
     return r
 
 def get_fill_order(oid):

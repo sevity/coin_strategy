@@ -15,16 +15,16 @@ import ast
 # param #######################################################################
 total_tickers = [
     # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
-    'TFUEL'
+    'EDR', 'SPND', 'LBC', 'ZIL'
     ]
 
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.030
-BOT_UP    = 0.025
+BOT_DOWN  = 0.040
+BOT_UP    = 0.030
 ZONBER_UP = 0.002  
-MAX_BETTING = 1000000
+MAX_BETTING = 100000
 
 COOL_TIME_ORDER = 40
 COOL_TIME_HIT = 2 * 10 * 60.0
@@ -285,8 +285,9 @@ while True:
     gain = 0
     krw = tr_krw
     if prev_btc_total != -1 and fsame(prev_btc_total, btc_total, 0.00001) == False and prev_btc_total < btc_total:
-        send_telegram('btc increase detected. will have 30min. break!')
+        # send_telegram('btc increase detected. will have 30min. break!')
         # time.sleep(30 * 60)
+        pass
     prev_btc_total = btc_total
     if BETTING == 0:
         bet = round((krw - 0) / MAX_TICKER, 0)
@@ -297,7 +298,7 @@ while True:
     bet = min(bet, MAX_BETTING)
 
 
-    send_telegram('\n-= DOWN:-{:.4f}, UP:-{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
+    send_telegram('\n-= [BOT] DOWN:-{:.4f}, UP:-{:.4f}, 총수익:{:,}원, cnt:{}, 잔액:{:,}원, 배팅:{:,}원  =-'.
                   format(DOWN, BOT_UP, int(total_gain), cnt, int(krw), int(bet)))
     if bet < 550:
         print("betting too small!")
@@ -354,7 +355,7 @@ while True:
             del pd[ticker]
 
         if len(pd) > 0:
-            send_telegram("\n!-=-= {} hits... {}=-=-".format(len(pd), list(pd.keys())))
+            send_telegram("\n!-=-= {} bot hits... {}=-=-".format(len(pd), list(pd.keys())))
             sell(pd)
             break
 

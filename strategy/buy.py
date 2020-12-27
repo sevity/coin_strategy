@@ -14,19 +14,18 @@ import ast
 
 # param #######################################################################
 total_tickers = [
-    # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
-    'XRP'
+    'BTC', 'XRP', 'OMG', 'LTC', 'ETH'
     ]
+# 얘네들은 bid cancel을 하지 않아서 빠른 속도로 구매가 진행된다
+zonber_tickers = ['BTC', 'XRP']
 BUY_DOWN   = 0.001
-BUY_AMOUNT = 1000
+BUY_AMOUNT = 1004
 
-COOL_TIME_ORDER = 60
-COOL_TIME_HIT   = 5 * 60.0
+COOL_TIME_ORDER = 10
+COOL_TIME_HIT   = 1 * 10.0
 
 ###############################################################################
 # legacy or fixed parameters
-# 얘네들은 클리어대상에서 제외
-zonber_tickers = ['BTC']
 
 BOT_DOWN  = 0.015
 BOT_UP    = 0.010
@@ -91,18 +90,7 @@ def cancel_pending_bids(bLog=True):
             continue
         if ticker not in total_tickers:
             continue
-        r = coin.cancel(oid, False)
-
-def cancel_pending_asks(bLog=True):
-    l = coin.get_live_orders('KRW')
-    if bLog:print(' cancel pending asks..')
-    for (ticker, oid, askbid, price, cnt, odt) in l:
-        if ticker in zonber_tickers or askbid == 'bid':
-            continue
-        if ticker not in total_tickers:
-            continue
-        r = coin.cancel(oid)
-
+        r = coin.cancel(oid, bLog)
 
 
 tickers = []
@@ -119,7 +107,6 @@ while True:
     UP = DOWN * 0.0 / 10
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
     cancel_pending_bids(True)
-    cancel_pending_asks(True)
     tr_krw = coin.get_asset_info('KRW')['free']
     btc_total = coin.get_asset_info('BTC')['total']
     print('btc_total', btc_total)
@@ -168,11 +155,10 @@ while True:
             continue
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
         if cv <= CV_THRESHOLD and len(prices[ticker]) >= MIN_CV_CNT:
-            if ticker not in zonber_tickers:
-                oid = coin.limit_buy(ticker, bid_price, bid_cnt, True)
-                base_prices[ticker] = cp
-                bid_oids[ticker] = oid
-                #print(ticker, 'oid:{}'.format(oid))
+            oid = coin.limit_buy(ticker, bid_price, bid_cnt, True)
+            base_prices[ticker] = cp
+            bid_oids[ticker] = oid
+            #print(ticker, 'oid:{}'.format(oid))
         else:
             print('{:<5} cv : {:.5f}, prices: {}'.format(ticker, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[ticker])]))
 
@@ -190,6 +176,7 @@ while True:
         if len(pd) > 0:
             send_telegram("\n!-=-= {} buy hits... {}=-=-".format(len(pd), list(pd.keys())))
             # sell(pd)
-            time.sleep(COOL_TIME_HIT)
             break
+    cancel_pending_bids(True)
+    time.sleep(COOL_TIME_HIT)
     RESET_DOWN -= 0.0005

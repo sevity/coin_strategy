@@ -19,7 +19,7 @@ BTC_BETTING_RATIO = 0.0010  # 총 BTC자산의 0.1%를한번에 배팅
 BTC_BETTING_DELTA = 500  # 레버리지, BTC_UP이 증가할수록 베팅도 커지는 구조
 BTC_MAX_BETTING   = 500000 # 그러나 이값보다 커지진 않게 제한
 
-BTC_MAX_UP = 0.010
+BTC_MAX_UP = 0.050
 BTC_MIN_UP = BTC_UP
 BTC_MAX_DOWN = BTC_MAX_UP * 0.9
 BTC_MIN_DOWN = BTC_DOWN

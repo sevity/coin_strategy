@@ -17,8 +17,11 @@ total_tickers = [
     # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
     'XRP'
     ]
-BUY_DOWN   = 0.015
+BUY_DOWN   = 0.001
 BUY_AMOUNT = 1000
+
+COOL_TIME_ORDER = 60
+COOL_TIME_HIT   = 5 * 60.0
 
 ###############################################################################
 # legacy or fixed parameters
@@ -30,8 +33,6 @@ BOT_UP    = 0.010
 ZONBER_UP = 0.002  
 MAX_BETTING = 2000000
 
-COOL_TIME_ORDER = 40
-COOL_TIME_HIT = 2 * 10 * 60.0
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 DOWN = 0.0
 UP   = 0.0
@@ -117,8 +118,8 @@ while True:
     # UP = DOWN * 7.0 / 10
     UP = DOWN * 0.0 / 10
     print(datetime.now().strftime("%m-%d %H:%M:%S"), 'cancel pending orders (ask/bid), clear tickers')
-    cancel_pending_bids(False)
-    cancel_pending_asks(False)
+    cancel_pending_bids(True)
+    cancel_pending_asks(True)
     tr_krw = coin.get_asset_info('KRW')['free']
     btc_total = coin.get_asset_info('BTC')['total']
     print('btc_total', btc_total)
@@ -127,16 +128,12 @@ while True:
     gain = 0
     krw = tr_krw
     prev_btc_total = btc_total
-    if BETTING == 0:
-        bet = round((krw - 0) / MAX_TICKER, 0)
-        cnt = (min(MAX_TICKER, len(total_tickers)))
-    else:
-        bet = BETTING
-        cnt = (min(MAX_TICKER, int((krw - 0)/ bet), len(total_tickers)))
-    bet = min(bet, MAX_BETTING)
+
+    bet = BUY_AMOUNT
+    cnt = (min(MAX_TICKER, len(total_tickers)))
 
 
-    send_telegram('\n-= DOWN:-{:.4f}, 잔액:{:,}원, 배팅:{:,}원  =-'.
+    send_telegram('\n-= [BUY.PY] DOWN:-{:.4f}, 잔액:{:,}원, 배팅:{:,}원  =-'.
                   format(BUY_DOWN, int(krw), int(bet)))
     if bet < 550:
         print("betting too small!")
@@ -162,7 +159,7 @@ while True:
 
     for ticker in tickers:
         cp = tick_round(coin.get_price(ticker, 'KRW'))
-        bid_price = tick_round(cp - cp * DOWN)
+        bid_price = tick_round(cp - cp * BUY_DOWN)
         bid_prices[ticker] = bid_price
         bid_cnt = float(bet) / bid_price
 
@@ -172,7 +169,7 @@ while True:
         cv = np.std(prices[ticker]) / np.mean(prices[ticker])
         if cv <= CV_THRESHOLD and len(prices[ticker]) >= MIN_CV_CNT:
             if ticker not in zonber_tickers:
-                oid = coin.limit_buy(ticker, bid_price, bid_cnt, False)
+                oid = coin.limit_buy(ticker, bid_price, bid_cnt, True)
                 base_prices[ticker] = cp
                 bid_oids[ticker] = oid
                 #print(ticker, 'oid:{}'.format(oid))
@@ -193,5 +190,6 @@ while True:
         if len(pd) > 0:
             send_telegram("\n!-=-= {} buy hits... {}=-=-".format(len(pd), list(pd.keys())))
             # sell(pd)
+            time.sleep(COOL_TIME_HIT)
             break
     RESET_DOWN -= 0.0005

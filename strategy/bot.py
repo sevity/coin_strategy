@@ -21,10 +21,10 @@ total_tickers = [
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.015
-BOT_UP    = 0.010
+BOT_DOWN  = 0.030
+BOT_UP    = 0.025
 ZONBER_UP = 0.002  
-MAX_BETTING = 2000000
+MAX_BETTING = 1000000
 
 COOL_TIME_ORDER = 40
 COOL_TIME_HIT = 2 * 10 * 60.0

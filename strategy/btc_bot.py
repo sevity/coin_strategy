@@ -13,9 +13,9 @@ from collections import deque
 import ast
 
 # param #######################################################################
-BTC_UP            = 0.0080
-BTC_DOWN          = 0.0040
-BTC_BETTING_RATIO = 0.0010  # 총 BTC자산의 0.1%를한번에 배팅
+BTC_UP            = 0.008
+BTC_DOWN          = 0.005
+BTC_BETTING_RATIO = 0.003  # 총 BTC자산의 0.1%를한번에 배팅
 BTC_BETTING_DELTA = 500  # 레버리지, BTC_UP이 증가할수록 베팅도 커지는 구조
 BTC_MAX_BETTING   = 500000 # 그러나 이값보다 커지진 않게 제한
 
@@ -29,7 +29,7 @@ BTC_DELTA_DOWN = 1.0   # BTC_DOWN이 상승/하락 하는비율
 BTC_LOCK = 0.85
 BTC_LOCK_V = 1.8
 
-COOL_TIME_ORDER = 20 * 60
+COOL_TIME_ORDER = 1 * 60
 # 아래값은 자동 존버들어가기 때문에 오래기다릴 필요없음
 # 그냥 다음 매도 시도하기전 딜레이라고 보면 됨
 COOL_TIME_HIT = 1 * 1 * 30.0  
@@ -231,12 +231,12 @@ while True:
     btc_total = mybtc['total']
     tr_btc = btc_total
     btc_price = int(coin.get_price('BTC', 'KRW'))
-    print('\n!', datetime.now().strftime("%m-%d %H:%M:%S"), 'my btc:', '{:.4f}'.format(btc_total), 
+    print('\n\n\n\n!', datetime.now().strftime("%m-%d %H:%M:%S"), 'my btc:', '{:.4f}'.format(btc_total), 
         'btc price:', '{:,}'.format(btc_price), 'BTC자산:', '{:,}'.format(int(btc_total*btc_price)))
     new_ratio = BTC_BETTING_RATIO * (1.0 + BTC_UP * BTC_BETTING_DELTA)
     print('new_ratio:', new_ratio)
-    bet = min(btc_total * new_ratio, BTC_MAX_BETTING)
-    # print('bet:', bet)
+    bet = min(btc_total * new_ratio, 1.0 * BTC_MAX_BETTING / btc_price)
+    print('bet:', bet, bet*btc_price)
     real_gain =  tr_btc - btc
     print('! tr_btc:', tr_btc, 'btc:', btc, 'real_gain:', real_gain)
     total_gain += real_gain if btc > -1 and abs(real_gain*btc_price) < bet/2 else 0

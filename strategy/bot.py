@@ -15,16 +15,17 @@ import ast
 # param #######################################################################
 total_tickers = [
     # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
-    'EDR', 'SPND', 'LBC', 'ZIL'
+    # 'EDR', 'SPND', 'LBC', 'ZIL'
+    'BCH'
     ]
 
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.040
-BOT_UP    = 0.030
+BOT_DOWN  = 0.015
+BOT_UP    = 0.012
 ZONBER_UP = 0.002  
-MAX_BETTING = 100000
+MAX_BETTING = 300000
 
 COOL_TIME_ORDER = 40
 COOL_TIME_HIT = 2 * 10 * 60.0

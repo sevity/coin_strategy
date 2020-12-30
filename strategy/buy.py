@@ -1,3 +1,4 @@
+# 시간분할 매수 전략
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -14,15 +15,22 @@ import ast
 
 # param #######################################################################
 total_tickers = [
-    'BTC', 'XRP', 'OMG', 'LTC', 'ETH'
+    'BTC', 'BTC',
+    'ETH', 'EOS', 'EOS', 
+    'XRP', 'XRP',
+    'OMG', 'ADA', 'MLK',
+    'BCH', 'DMT', 
+    'EMC2', 'AHT' , 
+    'ICX', 
+    # 'LINK', 'XLM', 'ADA', 'ANKR', 'BCH', 'NEO', 'SNT', 
     ]
 # 얘네들은 bid cancel을 하지 않아서 빠른 속도로 구매가 진행된다
-zonber_tickers = ['BTC', 'XRP']
+zonber_tickers = ['BTC', 'ETH']
 BUY_DOWN   = 0.001
 BUY_AMOUNT = 1004
 
 COOL_TIME_ORDER = 10
-COOL_TIME_HIT   = 1 * 10.0
+COOL_TIME_HIT   = 1.5 * 60
 
 ###############################################################################
 # legacy or fixed parameters

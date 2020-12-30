@@ -355,7 +355,7 @@ def get_fill_order(oid):
     r['volume']=0
     r['final_amount']=0
     for k in j:
-        print('  debug info..', k)
+        # print('  debug info..', k)
         volume += float(k['executed_volume'])
         price = r['fee']/fee/volume if k['price'] is None else float(k['price'])
         if r['askbid']=='ask':

@@ -16,18 +16,18 @@ import ast
 total_tickers = [
     # 'GRS', 'LAMB', 'IGNIS', 'BCH', 'POLY', 'EMC2', 'DCR', 'DMT'
     # 'EDR', 'SPND', 'LBC', 'ZIL'
-    'BCH'
+    'IQ'
     ]
 
 # 얘네들은 클리어대상에서 제외
 zonber_tickers = ['BTC']
 
-BOT_DOWN  = 0.015
-BOT_UP    = 0.012
+BOT_DOWN  = 0.003
+BOT_UP    = 0.000
 ZONBER_UP = 0.002  
-MAX_BETTING = 300000
+MAX_BETTING = 500000
 
-COOL_TIME_ORDER = 40
+COOL_TIME_ORDER = 20
 COOL_TIME_HIT = 2 * 10 * 60.0
 ###############################################################################
 # legacy or fixed parameters
@@ -97,27 +97,26 @@ def zonber_flush():
 
 def on_hit_check_fill(ticker):
     # TODO: 아래부분 시간계산이 정밀하지 않다.
-    for i in range(int(COOL_TIME_HIT / 30)):
+    # for i in range(int(COOL_TIME_HIT / 30)):
+    prev_msg = ''
+    while True:
         l = coin.get_live_orders(ticker, 'KRW')
         found = False
         for (oid, askbid, price, cnt, odt) in l:
             if askbid == 'bid':
                 continue
             found = True
-            if i == 0:
-                print('waiting..{:,} min.'.format(int(COOL_TIME_HIT / 60)), oid, askbid, '{:,.2f}'.format(float(price)), odt)
             break
         if found == False:
             return True
-        time.sleep(30)
+        # time.sleep(30)
         t = ticker
         bid_price = float(bid_prices[t] if t in bid_prices else -1.0)
         ask_price = float(price)
         cur_price = float(tick_round(coin.get_price(t, 'KRW')))
-        left_min = float((COOL_TIME_HIT - 30 * i) / 60)
-        print(t, '{:.2f}min.left, bid:{:,.2f}, ask:{:,.2f} cur:{:,.2f}'.
-                format(left_min, bid_price, ask_price, cur_price))
-        # print('{:<5} cv : {:.5f}, prices: {}'.format(t, cv, [ast.literal_eval("{:.2f}".format(i)) for i in list(prices[t])]))
+        msg = 'wating to be filled bid:{:,.2f}, ask:{} cur:{} gap:{}'.format(bid_price, ask_price, cur_price, ask_price - cur_price)
+        if prev_msg != msg: print(msg)
+        prev_msg = msg
     return False
 
 def cancel_pending_bids(bLog=True):

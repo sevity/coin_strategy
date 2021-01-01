@@ -15,7 +15,7 @@ import ast
 
 # param #######################################################################
 total_tickers = [
-    'BTC', 'BTC',
+    'BTC', 
     'ETH', 'EOS', 'EOS', 
     'XRP', 'XRP',
     'OMG', 'ADA', 'MLK',
@@ -25,7 +25,7 @@ total_tickers = [
     # 'LINK', 'XLM', 'ADA', 'ANKR', 'BCH', 'NEO', 'SNT', 
     ]
 # 얘네들은 bid cancel을 하지 않아서 빠른 속도로 구매가 진행된다
-zonber_tickers = ['BTC', 'ETH']
+zonber_tickers = ['ETH']
 BUY_DOWN   = 0.001
 BUY_AMOUNT = 1004
 

@@ -19,6 +19,10 @@ class Coin:
 
     def get_price(self, ticker, currency):
         return self._api.get_price(ticker, currency)
+    def get_bid1(self, ticker, currency):
+        return self._api.get_bid1(ticker, currency)
+    def get_ask1(self, ticker, currency):
+        return self._api.get_ask1(ticker, currency)
 
     def get_asset_info(self, currency):
         return self._api.get_asset_info(currency)

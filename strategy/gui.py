@@ -5,6 +5,7 @@ from coin import *
 import time
 from datetime import datetime, timezone, timedelta
 from tkinter import *
+from tkinter.ttk import *
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -53,6 +54,7 @@ vHoldCnt = StringVar(value='0.0')
 vFreeCnt = StringVar(value='0.0')
 vAmount = StringVar(value='0')
 vKind = StringVar(value='limit1')
+flagAllIn = False
 def get_price(ticker):
     if vKind.get() == 'limit1':
         if vAskbid.get() == 'bid':
@@ -69,13 +71,19 @@ def get_price(ticker):
 def button_update():
     ticker = vTicker.get().upper()
     vTicker.set(ticker)
-    if len(ticker)<3:
+    if len(ticker)<2:
         print('set ticker!')
         return
+    if ticker not in eTicker['values']:
+        eTicker['values'] += (ticker,)
+    update_cnt()
+def update_cnt():
+    global flagAllIn
+    ticker = vTicker.get()
     krw = coin.get_asset_info('KRW')
     vKRW.set('{:,}'.format(int(krw['free'])))
     a = get_price(ticker)
-    vPrice.set('{:,.1f}'.format(a))
+    vPrice.set('{:,.4f}'.format(a))
     asset = coin.get_asset_info(ticker)
     if 'free' in asset:
         vFreeCnt.set('{:,}'.format(asset['free']))
@@ -83,19 +91,28 @@ def button_update():
     else:
         vFreeCnt.set('{:,}'.format(0))
         vHoldCnt.set('{:,}'.format(0))
-    update_cnt()
-def update_cnt():
-    ticker = vTicker.get()
     amount = float(vAmount.get().replace(',',''))
     free_krw = float(vKRW.get().replace(',',''))
+    free_cnt = float(vFreeCnt.get().replace(',',''))
+    price = get_price(ticker)
     if vAskbid.get() == 'bid':
         amount = min(amount, free_krw)
+    else:
+        amount = min(amount, price * free_cnt)
     vAmount.set('{:,}'.format(amount))
-    price = get_price(ticker)
     order_cnt = amount / price
     free_cnt = float(vFreeCnt.get().replace(',',''))
+
+    flagAllIn = False
     if vAskbid.get() == 'ask':
         order_cnt = min(order_cnt, free_cnt)
+        if vHoldCnt.get() == vOrderCnt.get():
+            flagAllIn = True
+            print('all in')
+    else:
+        if int(free_krw) == int(amount):
+            flagAllIn = True
+            print('all in')
 
     vOrderCnt.set('{:,}'.format(order_cnt))
 def reset():
@@ -117,7 +134,7 @@ def add_1m():
 def cancel():
     ticker = vTicker.get().upper()
     vTicker.set(ticker)
-    if len(ticker)<3:
+    if len(ticker)<2:
         print('set ticker!')
         return
     cancel_pending_bids(ticker)
@@ -135,9 +152,10 @@ def on_ask():
     
     
 def order_new():
+    button_update()
     ticker = vTicker.get().upper()
     vTicker.set(ticker)
-    if len(ticker)<3:
+    if len(ticker)<2:
         print('set ticker!')
         return
     askbid = vAskbid.get()
@@ -147,19 +165,37 @@ def order_new():
     price = float(vPrice.get().replace(',',''))
     if askbid=='bid':
         if kind == 'limit1':
+            if flagAllIn is True:
+                cnt *= (1 - 0.0005)  # fee
             coin.limit_buy(ticker, price, cnt)
         else:
+            # print(amount)
+            if flagAllIn is True:
+                print('all amount')
+                print('before',amount)
+                amount = coin.get_asset_info('KRW')['free']
+                amount *= (1 - 0.0005)  # fee
+                print('after',amount)
+
             coin.market_buy(ticker, amount)
     else:
         if kind == 'limit1':
             coin.limit_sell(ticker, price, cnt)
         else:
+            if flagAllIn is True:
+                print('all amount')
+                print('before',amount)
+                amount = coin.get_asset_info(ticker)['free']
+                print('after',amount)
             coin.market_sell(ticker, cnt)
 
     
 
 Label(frame1, text = 'ticker').grid(row=0, column=0, sticky=W)
-eTicker = Entry(frame1, width=5, textvariable=vTicker).grid(row=0, column=1, sticky=E)
+eTicker = Combobox(frame1, width=6, text='XRP', textvariable=vTicker)
+eTicker['values'] = ('XRP', 'ETH', 'THETA', 'SC', 'AERGO')
+eTicker.current(0)
+eTicker.grid(row=0, column=1, sticky=E)
 bPriceUpdate = Button(frame1, text='update', command=button_update).grid(row=0, column=2, sticky=W)
 Label(frame1, text = 'free KRW').grid(row=1, column=0, sticky=W)
 eKRW = Entry(frame1, textvariable=vKRW, state='disabled', justify='right', width=20).grid(row=1, column=1, columnspan=3, sticky=W)

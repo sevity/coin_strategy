@@ -15,7 +15,7 @@ import ast
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
 KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
-BETTING = 200000    # 초기버전은 고정배팅으로 가보자
+BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
@@ -58,7 +58,7 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         print('! {} bid filled. placing ask..'.format(price))
-        ap = float(price) + KRW_DELTA
+        ap = float(price) + KRW_DELTA - 2000
         bet = BETTING / (1.0 - FEE)
         coin.limit_sell('BTC', ap, bet / ap)
         del bid_prices[oid]

@@ -7,6 +7,8 @@ from datetime import datetime, timezone, timedelta
 from tkinter import *
 from tkinter.ttk import *
 
+COMBO_COINS = ('XRP', 'DOT', 'OMG', 'ETH')
+
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
@@ -193,7 +195,7 @@ def order_new():
 
 Label(frame1, text = 'ticker').grid(row=0, column=0, sticky=W)
 eTicker = Combobox(frame1, width=6, text='XRP', textvariable=vTicker)
-eTicker['values'] = ('XRP', 'ETH', 'THETA', 'SC', 'AERGO')
+eTicker['values'] = COMBO_COINS
 eTicker.current(0)
 eTicker.grid(row=0, column=1, sticky=E)
 bPriceUpdate = Button(frame1, text='update', command=button_update).grid(row=0, column=2, sticky=W)

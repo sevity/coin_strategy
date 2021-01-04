@@ -36,6 +36,7 @@ def print_msg(msg):  # 중복 제거 print
     print(msg)
 
 bid_prices={}
+bid_cnt={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
@@ -59,17 +60,15 @@ while True:
     for oid, price in bps.items():
         print('! {} bid filled. placing ask..'.format(price))
         ap = float(price) + KRW_DELTA - 2000
-        bet = BETTING / (1.0 - FEE)
+        bet = BETTING * bid_cnt[price] / (1.0 - FEE)
         coin.limit_sell('BTC', ap, bet / ap)
         del bid_prices[oid]
-        time.sleep(5)
+        # time.sleep(5)
         continue
 
     bfound = False
     afound = False
     for (oid, askbid, price, cnt, odt) in l:
-        #if askbid=='ask':
-        #    print(price, ap)
         if askbid=='bid' and int(float(price)) == bp:
             bfound = True
         if askbid=='ask' and int(float(price)) == ap:
@@ -82,12 +81,18 @@ while True:
             if price < bp:
                 coin.cancel(oid)
                 del bid_prices[oid]
-        bet = BETTING / (1.0 + FEE)
+
+        if bp not in  bid_cnt: bid_cnt[bp] = 0
+        bid_cnt[bp] += 1
+
+        bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
         oid = coin.limit_buy('BTC', bp, bet / bp)
         if oid != -1:
             bid_prices[oid] = bp
-            print('! bid_prices:', bid_prices)
-            time.sleep(5)
+            print('! bid_prices:', bid_prices, 'bid_cnt({:,}):{}'.format(bp, bid_cnt[bp]))
+            # time.sleep(5)
+        else:
+            bid_cnt[bp] /= 2
 
 
 

@@ -15,7 +15,8 @@ import ast
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
 KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
-BETTING = 10000    # 초기버전은 고정배팅으로 가보자
+# BETTING = 10000    # 초기버전은 고정배팅으로 가보자
+BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
@@ -42,6 +43,10 @@ for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
         # bid_prices[oid] = price
         coin.cancel(oid)
+
+if BETTING == 0:
+    BETTING = max(10000, coin.get_asset_info('KRW')['free'] / 20)
+    print('auto BETTING:{:,}'.format(BETTING))
 
 while True:
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
@@ -84,15 +89,21 @@ while True:
 
         if bp not in  bid_cnt: bid_cnt[bp] = 0
         bid_cnt[bp] += 1
+        bid_cnt[bp] = max(1, bid_cnt[bp])
 
         bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
         oid = coin.limit_buy('BTC', bp, bet / bp)
-        if oid != -1:
-            bid_prices[oid] = bp
-            print('! bid_prices:', bid_prices, 'bid_cnt({:,}):{}'.format(bp, bid_cnt[bp]))
-            # time.sleep(5)
-        else:
+        while oid == -1:
             bid_cnt[bp] /= 2
+            if bid_cnt[bp] < 0.1:
+                bid_cnt[bp] = 1
+                time.sleep(30)
+            bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
+            oid = coin.limit_buy('BTC', bp, bet / bp)
+            time.sleep(2)
+        bid_prices[oid] = bp
+        print('! bid_prices:', bid_prices, 'bid_cnt({:,}):{}'.format(bp, bid_cnt[bp]))
+        # time.sleep(5)
 
 
 

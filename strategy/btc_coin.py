@@ -34,6 +34,8 @@ print('KRW_DELTA:{:,}'.format(KRW_DELTA), 'BETTING:{:,}'.format(BETTING))
 bid_prices={}
 bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
+ask_prices={}
+total_gain = 0
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
@@ -55,26 +57,42 @@ while True:
     bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + 1000 # bid price
     ap = bp + KRW_DELTA - 2000# ask price
     
-    # check fill
+    # check bid fill
     bps = copy.deepcopy(bid_prices)
     l = coin.get_live_orders('BTC', 'KRW')
     for (oid, askbid, price, cnt, odt) in l:
-        if askbid=='bid':
-            if oid in bps:
-                del bps[oid]
+        if askbid=='bid' and oid in bps:
+            del bps[oid]
+
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         ap = float(price) + KRW_DELTA - 2000
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print(fg.blue + '!! {} bid filled. placing ask.. gain after ask: {:.8f}({:,}KRW)' + fg.rs.
-			format(price, gain, int(gain * ap)))
-        coin.limit_sell('BTC', ap, bet / ap)
+        print(fg.blue + '! bid filled({:,}). placing ask.. gain will be: {:.8f}({:,}KRW)'.
+			format(price, gain, int(gain * ap))+ fg.rs)
+        aoid = coin.limit_sell('BTC', ap, bet / ap)
+        ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
         # time.sleep(5)
     if len(bps) > 0: continue
+
+    # check ask fill
+    aps = copy.deepcopy(ask_prices)
+    l = coin.get_live_orders('BTC', 'KRW')
+    for (oid, askbid, price, cnt, odt) in l:
+        if askbid=='ask' and oid in aps:
+            del aps[oid]
+    # 체결된 ask에 대해 gain기록
+    for oid, (price, gain, krw) in aps.items():
+        total_gain += gain
+        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
+			format(price, gain, krw, total_gain, int(total_gain*price))+ fg.rs)
+        del ask_prices[oid]
+    if len(aps) > 0: continue
+
 
     bfound = False
     afound = False

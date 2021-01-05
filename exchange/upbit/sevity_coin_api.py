@@ -13,6 +13,7 @@ import hashlib
 from urllib.parse import urlencode
 from datetime import datetime, timezone, timedelta
 from multipledispatch import dispatch # https://www.geeksforgeeks.org/python-method-overloading/
+from sty import fg, bg, ef, rs
 
 server_url = 'https://api.upbit.com'
 
@@ -131,8 +132,8 @@ def get_asset_info(currency):
 
 
 def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
-    if bLog: print('  order_new...', ticker, 'price:{:,.2f}'.format(price),
-        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid)
+    if bLog: print(fg.li_black + '  order_new...', ticker, 'price:{:,.2f}'.format(price),
+        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid + fg.rs)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -213,7 +214,7 @@ def market_sell(ticker, cnt, bLog=True):
     return r
 
 def cancel(oid, bLog=True):
-    if bLog: print('  order_cancel...', oid)
+    if bLog: print(fg.li_black + '  order_cancel...', oid + fg.rs)
     query = {
         'uuid': oid,
     }

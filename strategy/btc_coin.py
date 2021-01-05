@@ -90,9 +90,9 @@ while True:
     for oid, (price, gain, krw) in aps.items():
         total_gain += gain
         print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
-			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.orage + 
+			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.yellow + 
             'total_gain:{:.8f}({:,}KRW)'.
-			format(price, gain, krw, total_gain, int(total_gain*price))+ fg.rs)
+			format(total_gain, int(total_gain*price))+ fg.rs)
         del ask_prices[oid]
     if len(aps) > 0: continue
 

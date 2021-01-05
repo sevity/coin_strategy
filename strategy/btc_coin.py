@@ -30,13 +30,6 @@ coin = Coin('upbit',access_key,secret_key)
 
 print('KRW_DELTA:{:,}'.format(KRW_DELTA), 'BETTING:{:,}'.format(BETTING))
 
-prev_msg = ''
-def print_msg(msg):  # 중복 제거 print
-    global prev_msg
-    if prev_msg == msg: return
-    prev_msg = msg
-    print(msg)
-
 bid_prices={}
 bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
@@ -91,7 +84,7 @@ while True:
             afound = True
     # ask없는 bid에 대해 주문
     if bfound is False and afound is False:
-        print_msg('current BTC price:{:,} KRW, bid price:{:,}, ask price:{:,}'.format(cp, bp, ap))
+        print('current BTC price:{:,} KRW, bid price:{:,}, ask price:{:,}'.format(cp, bp, ap))
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price < bp:

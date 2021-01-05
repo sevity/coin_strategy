@@ -16,14 +16,14 @@ from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
-BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-# BETTING = 0  # AUTO
+KRW_DELTA = 100000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+# BETTING = 10000    # 초기버전은 고정배팅으로 가보자
+BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 20000
-MINOR_DELTA = 1000
+MINOR_DELTA = 0  # sholud be multiple of 1000
 ###############################################################################
 
 
@@ -65,7 +65,7 @@ while True:
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = int(coin.get_price('BTC', 'KRW'))  # coin price
-    bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
+    bp = int(cp  / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
     ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
 
     # check ask fill
@@ -83,7 +83,7 @@ while True:
                 'total_gain:{:.8f}({:,}KRW)'.
                 format(total_gain, int(float(total_gain*price)))+ fg.rs)
         else:
-            print(fg.green + '! prev ask filled({:,}), gain:? total_gain:?)'. format(int(float(price))))
+            print(fg.green + '! prev ask filled({:,}), gain:? total_gain:?'. format(int(float(price))))
         del ask_prices[oid]
     if len(aps) > 0: continue
     
@@ -99,8 +99,8 @@ while True:
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print(fg.blue + '! bid filled({:,}). placing ask.. gain will be: {:.8f}({:,}KRW)'.
-			format(price, gain, int(gain * ap))+ fg.rs)
+        print(fg.blue + '! bid filled({:,}). placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
+			format(price, int(ap), gain, int(gain * ap))+ fg.rs)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
@@ -119,7 +119,7 @@ while True:
         if askbid=='ask' and int(float(price)) == ap:
             afound = True
     # ask없는 bid에 대해 주문
-    if bfound is False and afound is False:
+    if abs(cp - bp) > KRW_DELTA/4 and bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
         print(fg.li_yellow + '\nfree KRW:{:,},'.format(free_krw) + 
             fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
@@ -128,7 +128,6 @@ while True:
         for oid, price in bps.items():
             if price <= bp:
                 coin.cancel(oid)
-                bid_gop[price] -= 1
                 del bid_prices[oid]
 
         if bp not in  bid_gop: bid_gop[bp] = 1

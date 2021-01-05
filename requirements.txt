@@ -6,7 +6,7 @@ certifi==2020.6.20
 cffi==1.14.2
 chardet==3.0.4
 constantly==15.1.0
-cryptography==3.2
+cryptography==3.1
 dateparser==0.7.6
 decorator==4.4.2
 hyperlink==20.0.1
@@ -32,6 +32,7 @@ regex==2020.7.14
 requests==2.24.0
 service-identity==18.1.0
 six==1.15.0
+sty==1.0.0b12
 telegram==0.0.1
 tornado==6.0.4
 Twisted==20.3.0

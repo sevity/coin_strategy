@@ -11,6 +11,7 @@ import telegram
 import numpy as np
 from collections import deque
 import ast
+from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
@@ -66,8 +67,8 @@ while True:
         ap = float(price) + KRW_DELTA - 2000
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print('!! {} bid filled. placing ask..'.format(price),
-            'gain after ask: {:.8f}({:,}KRW)'.format(gain, int(gain * ap)))
+        print(fg.blue + '!! {} bid filled. placing ask.. gain after ask: {:.8f}({:,}KRW)' + fg.rs.
+			format(price, gain, int(gain * ap)))
         coin.limit_sell('BTC', ap, bet / ap)
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -84,7 +85,7 @@ while True:
             afound = True
     # ask없는 bid에 대해 주문
     if bfound is False and afound is False:
-        print('current BTC price:{:,} KRW, bid price:{:,}, ask price:{:,}'.format(cp, bp, ap))
+        print('\ncurrent BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.format(cp, bp, ap))
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price < bp:
@@ -108,7 +109,8 @@ while True:
             time.sleep(2)
         bid_prices[oid] = bp
         bid_volume[oid] = bet / bp
-        print('! bid_prices:', bid_prices, 'bid_gop({:,}):{}'.format(bp, bid_gop[bp]))
+        print(fg.red + '! bid placed({:,}), bid_gop:{}, bid_prices:{}'.
+            format(bp, bid_gop[bp], list(bid_prices.values())) + fg.rs)
         # time.sleep(5)
 
 

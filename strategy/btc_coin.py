@@ -49,7 +49,7 @@ for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
         coin.cancel(oid)
     else:
-        ask_prices[oid] = (price, 0, 0)
+        ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
 
 bAuto = False
@@ -77,10 +77,13 @@ while True:
     # 체결된 ask에 대해 gain기록
     for oid, (price, gain, krw) in aps.items():
         total_gain += gain
-        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
-			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.li_yellow + 
-            'total_gain:{:.8f}({:,}KRW)'.
-			format(total_gain, int(total_gain*price))+ fg.rs)
+        if gain > 0:
+            print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
+                format(int(float(price)), gain, krw, total_gain, int(total_gain*price)) + fg.li_yellow + 
+                'total_gain:{:.8f}({:,}KRW)'.
+                format(total_gain, int(float(total_gain*price)))+ fg.rs)
+        else:
+            print(fg.green + '! prev ask filled({:,}), gain:? total_gain:?)'. format(int(float(price))))
         del ask_prices[oid]
     if len(aps) > 0: continue
     

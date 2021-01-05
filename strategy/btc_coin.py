@@ -106,7 +106,9 @@ while True:
             afound = True
     # ask없는 bid에 대해 주문
     if bfound is False and afound is False:
-        print('\ncurrent BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.format(cp, bp, ap))
+        free_krw = int(coin.get_asset_info('KRW')['free'])
+        print('\nfree KRW:{:,}, current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
+            format(free_krw, cp, bp, ap))
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price < bp:
@@ -130,8 +132,8 @@ while True:
             time.sleep(2)
         bid_prices[oid] = bp
         bid_volume[oid] = bet / bp
-        print(fg.red + '! bid placed({:,}), bid_gop:{}, bid_prices:{}'.
-            format(bp, bid_gop[bp], list(bid_prices.values())) + fg.rs)
+        print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
+            format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
         # time.sleep(5)
 
 

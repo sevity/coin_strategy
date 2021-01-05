@@ -15,8 +15,8 @@ import ast
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
 KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
-# BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-BETTING = 0  # AUTO
+BETTING = 10000    # 초기버전은 고정배팅으로 가보자
+# BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
@@ -38,18 +38,18 @@ def print_msg(msg):  # 중복 제거 print
     print(msg)
 
 bid_prices={}
-bid_cnt={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
+bid_volume={}
+bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
-        # bid_prices[oid] = price
         coin.cancel(oid)
 
 bAuto = False
 if BETTING == 0:
     bAuto = True
-    BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
-    print('auto BETTING: {:,} KRW'.format(BETTING))
+    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
+    print('auto BETTING start from: {:,} KRW'.format(BETTING))
 
 while True:
     if bAuto:
@@ -70,15 +70,17 @@ while True:
                 del bps[oid]
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
-        print('! {} bid filled. placing ask..'.format(price))
-        if bid_cnt[price] < 1: bid_cnt[price] *= 2
-        else: bid_cnt[price] += 1
         ap = float(price) + KRW_DELTA - 2000
-        bet = BETTING * bid_cnt[price] / (1.0 - FEE)
+        bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
+        gain = bid_volume[oid] - bet / ap
+        print('!! {} bid filled. placing ask..'.format(price),
+            'gain after ask: {:.8f}({:,}KRW)'.format(gain, int(gain * ap)))
         coin.limit_sell('BTC', ap, bet / ap)
         del bid_prices[oid]
+        if bid_gop[price] < 1: bid_gop[price] *= 2
+        else: bid_gop[price] += 1
         # time.sleep(5)
-        continue
+    if len(bps) > 0: continue
 
     bfound = False
     afound = False
@@ -94,25 +96,26 @@ while True:
         for oid, price in bps.items():
             if price < bp:
                 coin.cancel(oid)
-                bid_cnt[price] -= 1
+                bid_gop[price] -= 1
                 del bid_prices[oid]
 
-        if bp not in  bid_cnt: bid_cnt[bp] = 1
-        bid_cnt[bp] = max(1, bid_cnt[bp])
+        if bp not in  bid_gop: bid_gop[bp] = 1
+        bid_gop[bp] = max(1, bid_gop[bp])
 
-        bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
+        bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy('BTC', bp, bet / bp)
         while oid == -1:
-            bid_cnt[bp] /= 2
-            if bid_cnt[bp] < 0.1:
-                print('!!! no money 30 secs break..')
-                bid_cnt[bp] = 1
+            bid_gop[bp] /= 2
+            if bid_gop[bp] < 0.1:
+                print('!!! no money!. will have 30 secs break..')
+                bid_gop[bp] = 1
                 time.sleep(30)
-            bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
+            bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('BTC', bp, bet / bp)
             time.sleep(2)
         bid_prices[oid] = bp
-        print('! bid_prices:', bid_prices, 'bid_cnt({:,}):{}'.format(bp, bid_cnt[bp]))
+        bid_volume[oid] = bet / bp
+        print('! bid_prices:', bid_prices, 'bid_gop({:,}):{}'.format(bp, bid_gop[bp]))
         # time.sleep(5)
 
 

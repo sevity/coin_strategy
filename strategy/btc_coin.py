@@ -12,6 +12,7 @@ import numpy as np
 from collections import deque
 import ast
 from sty import fg, bg, ef, rs
+
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
@@ -24,6 +25,12 @@ FEE = 0.0005
 MIN_BET_FOR_AUTO = 20000
 MINOR_DELTA = 1000
 ###############################################################################
+
+
+
+
+
+
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
 secret_key = f.readline().rstrip()         
@@ -41,6 +48,9 @@ l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
         coin.cancel(oid)
+    else:
+        ask_prices[oid] = (price, 0, 0)
+# print('ask_prices:', ask_prices)
 
 bAuto = False
 if BETTING == 0:
@@ -57,6 +67,22 @@ while True:
     cp = int(coin.get_price('BTC', 'KRW'))  # coin price
     bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
     ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
+
+    # check ask fill
+    aps = copy.deepcopy(ask_prices)
+    l = coin.get_live_orders('BTC', 'KRW')
+    for (oid, askbid, price, cnt, odt) in l:
+        if askbid=='ask' and oid in aps:
+            del aps[oid]
+    # 체결된 ask에 대해 gain기록
+    for oid, (price, gain, krw) in aps.items():
+        total_gain += gain
+        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
+			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.li_yellow + 
+            'total_gain:{:.8f}({:,}KRW)'.
+			format(total_gain, int(total_gain*price))+ fg.rs)
+        del ask_prices[oid]
+    if len(aps) > 0: continue
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
@@ -80,21 +106,6 @@ while True:
         # time.sleep(5)
     if len(bps) > 0: continue
 
-    # check ask fill
-    aps = copy.deepcopy(ask_prices)
-    l = coin.get_live_orders('BTC', 'KRW')
-    for (oid, askbid, price, cnt, odt) in l:
-        if askbid=='ask' and oid in aps:
-            del aps[oid]
-    # 체결된 ask에 대해 gain기록
-    for oid, (price, gain, krw) in aps.items():
-        total_gain += gain
-        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
-			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.yellow + 
-            'total_gain:{:.8f}({:,}KRW)'.
-			format(total_gain, int(total_gain*price))+ fg.rs)
-        del ask_prices[oid]
-    if len(aps) > 0: continue
 
 
     bfound = False
@@ -107,11 +118,12 @@ while True:
     # ask없는 bid에 대해 주문
     if bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
-        print('\nfree KRW:{:,}, current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
-            format(free_krw, cp, bp, ap))
+        print(fg.li_yellow + '\nfree KRW:{:,},'.format(free_krw) + 
+            fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
+            format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if price < bp:
+            if price <= bp:
                 coin.cancel(oid)
                 bid_gop[price] -= 1
                 del bid_prices[oid]

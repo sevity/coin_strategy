@@ -22,6 +22,7 @@ BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 # legacy or fixed
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 20000
+MINOR_DELTA = 1000
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -54,8 +55,8 @@ while True:
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = int(coin.get_price('BTC', 'KRW'))  # coin price
-    bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + 1000 # bid price
-    ap = bp + KRW_DELTA - 2000# ask price
+    bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
+    ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
@@ -66,7 +67,7 @@ while True:
 
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
-        ap = float(price) + KRW_DELTA - 2000
+        ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
         print(fg.blue + '! bid filled({:,}). placing ask.. gain will be: {:.8f}({:,}KRW)'.
@@ -88,7 +89,9 @@ while True:
     # 체결된 ask에 대해 gain기록
     for oid, (price, gain, krw) in aps.items():
         total_gain += gain
-        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
+        print(fg.green + '! ask filled({:,}), gain: {:.8f}({:,}KRW), '.
+			format(price, gain, krw, total_gain, int(total_gain*price)) + fg.orage + 
+            'total_gain:{:.8f}({:,}KRW)'.
 			format(price, gain, krw, total_gain, int(total_gain*price))+ fg.rs)
         del ask_prices[oid]
     if len(aps) > 0: continue

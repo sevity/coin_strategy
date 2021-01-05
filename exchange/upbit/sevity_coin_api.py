@@ -131,7 +131,8 @@ def get_asset_info(currency):
 
 
 def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
-    if bLog: print('  order_new...', ticker, 'price:{:,.2f}'.format(price), 'cnt:{:,.4f}'.format(cnt), askbid)
+    if bLog: print('  order_new...', ticker, 'price:{:,.2f}'.format(price),
+        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 

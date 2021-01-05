@@ -20,6 +20,7 @@ BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
+MIN_BET_FOR_AUTO = 20000
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -44,13 +45,19 @@ for (oid, askbid, price, cnt, odt) in l:
         # bid_prices[oid] = price
         coin.cancel(oid)
 
+bAuto = False
 if BETTING == 0:
-    BETTING = max(10000, coin.get_asset_info('KRW')['free'] / 20)
-    print('auto BETTING:{:,}'.format(BETTING))
+    bAuto = True
+    BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
+    print('auto BETTING: {:,} KRW'.format(BETTING))
 
 while True:
+    if bAuto:
+        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
+        # print('auto BETTING: {:,} KRW'.format(BETTING))
+
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
-    cp = coin.get_price('BTC', 'KRW')  # coin price
+    cp = int(coin.get_price('BTC', 'KRW'))  # coin price
     bp = int((cp - (KRW_DELTA/2)) / KRW_DELTA) * KRW_DELTA + 1000 # bid price
     ap = bp + KRW_DELTA - 2000# ask price
     
@@ -64,6 +71,8 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         print('! {} bid filled. placing ask..'.format(price))
+        if bid_cnt[price] < 1: bid_cnt[price] *= 2
+        else: bid_cnt[price] += 1
         ap = float(price) + KRW_DELTA - 2000
         bet = BETTING * bid_cnt[price] / (1.0 - FEE)
         coin.limit_sell('BTC', ap, bet / ap)
@@ -80,15 +89,15 @@ while True:
             afound = True
     # ask없는 bid에 대해 주문
     if bfound is False and afound is False:
-        print_msg('current BTC price:{:,}, bid price:{:,}, ask price:{:,}'.format(cp, bp, ap))
+        print_msg('current BTC price:{:,} KRW, bid price:{:,}, ask price:{:,}'.format(cp, bp, ap))
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price < bp:
                 coin.cancel(oid)
+                bid_cnt[price] -= 1
                 del bid_prices[oid]
 
-        if bp not in  bid_cnt: bid_cnt[bp] = 0
-        bid_cnt[bp] += 1
+        if bp not in  bid_cnt: bid_cnt[bp] = 1
         bid_cnt[bp] = max(1, bid_cnt[bp])
 
         bet = BETTING * bid_cnt[bp] / (1.0 + FEE)
@@ -96,6 +105,7 @@ while True:
         while oid == -1:
             bid_cnt[bp] /= 2
             if bid_cnt[bp] < 0.1:
+                print('!!! no money 30 secs break..')
                 bid_cnt[bp] = 1
                 time.sleep(30)
             bet = BETTING * bid_cnt[bp] / (1.0 + FEE)

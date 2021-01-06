@@ -16,7 +16,7 @@ from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 100000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 ###############################################################################
@@ -36,6 +36,14 @@ access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()         
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
+token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
+bot = telegram.Bot(token=token)
+def send_telegram(msg):
+    # print(msg)
+    try:
+        bot.sendMessage(chat_id=170583240, text=msg)
+    except:
+        pass
 
 print('KRW_DELTA:{:,}'.format(KRW_DELTA), 'BETTING:{:,}'.format(BETTING))
 
@@ -55,12 +63,12 @@ for (oid, askbid, price, cnt, odt) in l:
 bAuto = False
 if BETTING == 0:
     bAuto = True
-    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
+    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 20))
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 
 while True:
     if bAuto:
-        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
+        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 20)
         # print('auto BETTING: {:,} KRW'.format(BETTING))
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
@@ -82,6 +90,9 @@ while True:
                 format(int(float(price)), gain, krw, total_gain, int(total_gain*price)) + fg.li_yellow + 
                 'total_gain:{:.8f}({:,}KRW)'.
                 format(total_gain, int(float(total_gain*price)))+ fg.rs)
+            send_telegram('! ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
+                format(int(float(price)), gain, krw, total_gain, int(total_gain*price), 
+                total_gain, int(float(total_gain*price))))
         else:
             print(fg.green + '! prev ask filled({:,}), gain:? total_gain:?'. format(int(float(price))))
         del ask_prices[oid]
@@ -121,8 +132,8 @@ while True:
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > KRW_DELTA/4 and bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
-        print(fg.li_yellow + '\nfree KRW:{:,},'.format(free_krw) + 
-            fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
+        print('\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow + 
+            ' free KRW:{:,},'.format(free_krw) + fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
             format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():

@@ -14,9 +14,9 @@ import ast
 
 # param #######################################################################
 BETTING = 1000
-MAX_TICKER = 10  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
+MAX_TICKER = 20  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
 MAX_TICK = 100 # 몇틱기다리는지 설정(이 안에 급상승해야함)
-THRESHOLD = 0.005  # 0.5%상승하면 올라탐
+THRESHOLD = 0.015  # 0.5%상승하면 올라탐
 PROFIT_CUT = 0.3  # 30%이상 상승하면 익절하고 스톱함
 LOSS_CUT = 0.05  # 수익률이 5%이하로 떨어지면 손절함
 ban_tickers = []  # 떡상 직후등 피해야할코인들 나열
@@ -57,6 +57,7 @@ while True:
     print('\ntickers: {}'.format(tickers))
     prices = {}
     n = datetime.now()
+    out = False
     while (datetime.now() - n).seconds < COOL_TIME:
         for ticker in tickers:
             if ticker not in prices: prices[ticker] = deque(maxlen=MAX_TICK)
@@ -70,8 +71,8 @@ while True:
                 print('! {} hit.. up_ratio = {:.2f}%(from {} to {})'.
                     format(ticker, ratio*100, pt[0], pt[-1]))
                 coin.market_buy(ticker, BETTING)
-                time.sleep(10)
-                break
+                out = True
+        if out: break
         print(".", end="", flush=True)
 
 

@@ -31,7 +31,8 @@ class Coin:
         return self._api.get_balance_all(False)
 
     def market_buy(self, ticker, cnt, bLog=True):
-        return self._api.market_buy(ticker, cnt, bLog)
+        r =  self._api.market_buy(ticker, cnt, bLog)
+        return r
 
     def market_sell(self, ticker, cnt, bLog=True):
         return self._api.market_sell(ticker, cnt, bLog)

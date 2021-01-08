@@ -14,9 +14,9 @@ import ast
 from sty import fg, bg, ef, rs
 
 # 설명 ########################################################################
-# BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
+# ETH개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 300000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 10000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 ###############################################################################
@@ -52,7 +52,7 @@ bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 ask_prices={}
 total_gain = 0
-l = coin.get_live_orders('BTC', 'KRW')
+l = coin.get_live_orders('ETH', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
         coin.cancel(oid)
@@ -63,22 +63,22 @@ for (oid, askbid, price, cnt, odt) in l:
 bAuto = False
 if BETTING == 0:
     bAuto = True
-    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
+    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 20))
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 
 while True:
     if bAuto:
-        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
+        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 20)
         # print('auto BETTING: {:,} KRW'.format(BETTING))
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
-    cp = int(coin.get_price('BTC', 'KRW'))  # coin price
+    cp = int(coin.get_price('ETH', 'KRW'))  # coin price
     bp = int(cp  / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
     ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
-    l = coin.get_live_orders('BTC', 'KRW')
+    l = coin.get_live_orders('ETH', 'KRW')
     for (oid, askbid, price, cnt, odt) in l:
         if askbid=='ask' and oid in aps:
             del aps[oid]
@@ -90,7 +90,7 @@ while True:
                 format(int(float(price)), gain, krw, total_gain, int(total_gain*price)) + fg.li_yellow + 
                 'total_gain:{:.8f}({:,}KRW)'.
                 format(total_gain, int(float(total_gain*price)))+ fg.rs)
-            send_telegram('[BTC] ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
+            send_telegram('[ETH] ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
                 format(int(float(price)), gain, krw, total_gain, int(total_gain*price), 
                 total_gain, int(float(total_gain*price))))
         else:
@@ -100,7 +100,7 @@ while True:
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
-    l = coin.get_live_orders('BTC', 'KRW')
+    l = coin.get_live_orders('ETH', 'KRW')
     for (oid, askbid, price, cnt, odt) in l:
         if askbid=='bid' and oid in bps:
             del bps[oid]
@@ -112,7 +112,7 @@ while True:
         gain = bid_volume[oid] - bet / ap
         print(fg.green + '! bid filled({:,}). '+fg.blue+'placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
 			format(price, int(ap), gain, int(gain * ap))+ fg.rs)
-        aoid = coin.limit_sell('BTC', ap, bet / ap)
+        aoid = coin.limit_sell('ETH', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -133,7 +133,7 @@ while True:
     if abs(cp - bp) > KRW_DELTA/4 and bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
         print('\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow + 
-            ' free KRW:{:,},'.format(free_krw) + fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
+            ' free KRW:{:,},'.format(free_krw) + fg.rs + 'current ETH price:{:,} KRW, bid:{:,}, ask:{:,}'.
             format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
@@ -145,7 +145,7 @@ while True:
         bid_gop[bp] = max(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-        oid = coin.limit_buy('BTC', bp, bet / bp)
+        oid = coin.limit_buy('ETH', bp, bet / bp)
         while oid == -1:
             bid_gop[bp] /= 2
             if bid_gop[bp] < 0.1:
@@ -153,7 +153,7 @@ while True:
                 bid_gop[bp] = 1
                 time.sleep(30)
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-            oid = coin.limit_buy('BTC', bp, bet / bp)
+            oid = coin.limit_buy('ETH', bp, bet / bp)
             time.sleep(2)
         bid_prices[oid] = bp
         bid_volume[oid] = bet / bp

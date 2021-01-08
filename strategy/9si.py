@@ -16,7 +16,7 @@ import ast
 BETTING = 1000
 MAX_TICKER = 20  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
 MAX_TICK = 100 # 몇틱기다리는지 설정(이 안에 급상승해야함)
-THRESHOLD = 0.015  # 0.5%상승하면 올라탐
+THRESHOLD = 0.015  # 1.5%상승하면 올라탐
 PROFIT_CUT = 0.3  # 30%이상 상승하면 익절하고 스톱함
 LOSS_CUT = 0.05  # 수익률이 5%이하로 떨어지면 손절함
 ban_tickers = []  # 떡상 직후등 피해야할코인들 나열
@@ -50,6 +50,8 @@ def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
 for ticker in ban_tickers:
     total_tickers.remove(ticker)
 print('BETTING:{}, THRESHOLD:{:.2f}%'.format(BETTING, THRESHOLD*100))
+hit_prices={}
+hit_cnts={}
 while True:
     cnt = min(MAX_TICKER, len(total_tickers))
     random.shuffle(total_tickers)
@@ -67,10 +69,30 @@ while True:
             pt = prices[ticker]
             ratio = pt[-1]/pt[0]-1.0
             if pt[0] < pt[-1] and ratio >= THRESHOLD:
+                if ticker not in hit_cnts: hit_cnts[ticker] = 0
+                hit_cnts[ticker] += 1
                 print(ticker, prices[ticker])
                 print('! {} hit.. up_ratio = {:.2f}%(from {} to {})'.
                     format(ticker, ratio*100, pt[0], pt[-1]))
-                coin.market_buy(ticker, BETTING)
+                if hit_cnts[ticker] > 1:
+                    print('out..')
+                    continue
+                if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
+                    print('11')
+                    coin.market_buy(ticker, BETTING * 100)
+                else:
+                    print('22')
+                    coin.market_buy(ticker, BETTING)
+                    hit_cnts[ticker] = 0
+                time.sleep(5)  # wait market buy to be filled(it took some time sometime)
+                for ix in range(0, 5):
+                    info = coin.get_asset_info(ticker)
+                    print('33', info)
+                    if 'free' in info:
+                        cnt = info['free']
+                        coin.limit_sell(ticker, tick_round(pt[-1] * 1.02), cnt)
+                        hit_prices[ticker] = pt[-1]
+                        break
                 out = True
         if out: break
         print(".", end="", flush=True)

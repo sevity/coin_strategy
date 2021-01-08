@@ -192,6 +192,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
         return (-1, None)
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
+    # print(oid, res)
     return (oid,res)
 
 def limit_buy(ticker, price, cnt, bLog=True):
@@ -201,7 +202,7 @@ def limit_sell(ticker, price, cnt, bLog=True):
     return order_new(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
 def market_buy(ticker, price, bLog=True):
-    (oid, res) =  order_new(ticker, price, 0, 'bid', 'price' , bLog)
+    return order_new(ticker, price, 0, 'bid', 'price' , bLog)[0]
 
 def market_sell(ticker, cnt, bLog=True):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market', bLog)

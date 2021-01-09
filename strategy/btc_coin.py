@@ -16,7 +16,7 @@ from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 300000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 ###############################################################################
@@ -25,11 +25,6 @@ FEE = 0.0005
 MIN_BET_FOR_AUTO = 20000
 MINOR_DELTA = 0  # sholud be multiple of 1000
 ###############################################################################
-
-
-
-
-
 
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -110,8 +105,9 @@ while True:
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print(fg.green + '! bid filled({:,}). '+fg.blue+'placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
-			format(price, int(ap), gain, int(gain * ap))+ fg.rs)
+        print(fg.green + '! bid filled({:,}). '.format(price)+fg.blue+
+            'placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
+			format(int(ap), gain, int(gain * ap))+ fg.rs)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
@@ -119,8 +115,6 @@ while True:
         else: bid_gop[price] += 1
         # time.sleep(5)
     if len(bps) > 0: continue
-
-
 
     bfound = False
     afound = False

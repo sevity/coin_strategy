@@ -54,6 +54,7 @@ def get_ask1(ticker, currency):
                 if response.status_code != 429:  # too many api requeists
                     print(  response.url, response.text)
             j = json.loads(response.text)
+            # print(j[0]["orderbook_units"])
             ask1 = float(j[0]["orderbook_units"][0]["ask_price"])
             return ask1
         except:
@@ -132,8 +133,6 @@ def get_asset_info(currency):
 
 
 def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
-    if bLog: print(fg.li_black + '  order_new...', ticker, 'price:{:,.2f}'.format(price),
-        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid + fg.rs)
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -193,6 +192,10 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
     # print(oid, res)
+    if bLog and ord_type!='price': print(fg.li_black + '  order_new...', ticker, 'price:{:,.2f}'.format(price),
+        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid, oid + fg.rs)
+    elif bLog and ord_type=='price': print(fg.li_black + '  market_buy order_new...', ticker, 
+        'amount:{:,}KRW'.format(int(price)), askbid, oid + fg.rs)
     return (oid,res)
 
 def limit_buy(ticker, price, cnt, bLog=True):
@@ -377,6 +380,8 @@ def get_fill_order(oid):
         info = get_info(ticker, 'KRW')
         g_ask_fee = info['ask_fee']
         g_bid_fee = info['bid_fee']
+
+    print(j)
 
     r = {}
     r['askbid'] = j[0]['side']

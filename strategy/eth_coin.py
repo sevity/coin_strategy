@@ -16,7 +16,7 @@ from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # ETH개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 10000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 5000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 ###############################################################################
@@ -110,8 +110,9 @@ while True:
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print(fg.green + '! bid filled({:,}). '+fg.blue+'placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
-			format(price, int(ap), gain, int(gain * ap))+ fg.rs)
+        print(fg.green + '! bid filled({:,}). '.format(price)+fg.blue+
+            'placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
+			format(int(ap), gain, int(gain * ap))+ fg.rs)
         aoid = coin.limit_sell('ETH', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]

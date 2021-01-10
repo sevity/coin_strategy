@@ -11,6 +11,7 @@ import telegram
 import numpy as np
 from collections import deque
 import ast
+from sty import fg, bg, ef, rs
 
 # param #######################################################################
 BETTING = 1100
@@ -29,7 +30,7 @@ total_tickers = [
     'ELF', 'SOLVE', 'ADA', 'DMT', 'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'THETA',
     'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS',
     'XTZ', 'KAVA', 'ATOM', 'ETC', 'LINK', 'BTG', 'NEO', 'REP', 'LTC', 'JST', 'CRO', 'TON', 'SXP', 'LAMB',
-    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS' 
+    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS', 'BSV', 'BTT', 
     ]
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 ###############################################################################
@@ -46,6 +47,12 @@ def send_telegram(msg):
         bot.sendMessage(chat_id=170583240, text=msg)
     except:
         pass
+def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
+    a = float(a)
+    b = float(b)
+    if abs(a-b)<diff:
+        return True
+    return False
 def tick_round(price):
     t = coin.get_tick_size(price)
     return int(price / t) * t
@@ -66,28 +73,29 @@ while True:
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
     print('\ntickers: {}'.format(tickers))
+    out = False
     prices = {}
     n = datetime.now()
-    out = False
     while (datetime.now() - n).seconds < COOL_TIME:
         for ticker in tickers:
             if ticker not in prices: prices[ticker] = deque(maxlen=MAX_TICK)
             prices[ticker].append(coin.get_price(ticker, 'KRW'))
-            # print(ticker, prices[ticker])
-            # if len(prices[ticker]) >= MAX_TICK:
             pt = prices[ticker]
-            ratio = pt[-1]/pt[0]-1.0
+            ratio = pt[-1] / pt[0] - 1.0
             if pt[0] < pt[-1] and ratio >= THRESHOLD:
                 if ticker not in hit_cnts: hit_cnts[ticker] = 0
                 hit_cnts[ticker] += 1
-                # print(ticker, prices[ticker])
-                # 미체결 매수/매도 있으면 스킵
                 l = coin.get_live_orders(ticker, 'KRW')
-                if len(l) > 0 or hit_cnts[ticker] > 1:
-                    print(ticker, 'out..', 'pending orders:', len(l), 'hit_cnt:', hit_cnts[ticker])
+                a = coin.get_asset_info(ticker)
+                free = 0
+                if 'free' in a:
+                    free = a['free']
+                if len(l) > 0 or hit_cnts[ticker] > 1 or fsame(free, 0) == False:
+                    print(ticker, 'out..', 'pending orders:', len(l), 'hit_cnt:', hit_cnts[ticker],
+                        'free:', free)
                     continue
-                send_telegram('[9si] ! {} hit.. up_ratio = {:.2f}%(from {:.2f} to {:.2f})'.
-                    format(ticker, ratio*100, pt[0], pt[-1]))
+                send_telegram(fg.li_yellow+'[9si] {} hit.. up_ratio = {:.2f}%(from {:,} to {:,})'.
+                    format(ticker, ratio*100, int(pt[0]), int(pt[-1]))+fg.rs)
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
                     send_telegram('market buy {:,}KRW'.format(BETTING*10))
@@ -102,10 +110,10 @@ while True:
                 bid_price = None
                 if 'price' in rb:
                     bid_price = rb['price']
-                    print('bid_price1:', bid_price)
+                    print(fg.red + 'bid_price(from get_fill_order):', bid_price, fg.rs)
                 else:
                     bid_price = ask1
-                    print('bid_price2:', bid_price)
+                    print(fg.red + 'bid_price(from ask1):', bid_price, fg.rs)
                 for ix in range(0, 5):
                     info = coin.get_asset_info(ticker)
                     if 'free' in info:
@@ -118,16 +126,16 @@ while True:
                                 send_telegram('price going up from{} to {}:'.format(prev, cp))
                                 prev = cp
                             else:
+                                print('  cp:{:.4f}, bid_1.02up:{:.4f}, ask+1:{:.4f}'.
+                                    format(cp, tick_round(bid_price * 1.02), ask1+coin.get_tick_size(ask1)))
                                 if cp > bid_price * 1.02:
                                     coin.market_sell(ticker, cnt)
                                     send_telegram('market sell clear')
                                 else:
-                                    t = coin.get_tick_size(bid_price)
                                     a = tick_round(bid_price*1.02)
-                                    b = tick_round(bid_price) + t
-                                    print('tick_size:', t, '1.02 up:', a, 'ask+1:', b)
+                                    b = ask1+coin.get_tick_size(ask1)
                                     p = max(a, b)
-                                    print('ask_price:', p)
+                                    print(fg.blue + 'ask_price:', p, fg.rs)
                                     coin.limit_sell(ticker, p, cnt)
                                     send_telegram('limit sell clear')
                                 break

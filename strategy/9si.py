@@ -94,8 +94,8 @@ while True:
                     print(ticker, 'out..', 'pending orders:', len(l), 'hit_cnt:', hit_cnts[ticker],
                         'free:', free)
                     continue
-                send_telegram(fg.li_yellow+'[9si] {} hit.. up_ratio = {:.2f}%(from {:,} to {:,})'.
-                    format(ticker, ratio*100, int(pt[0]), int(pt[-1]))+fg.rs)
+                send_telegram(fg.li_yellow+'[9si] {} hit.. up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.
+                    format(ticker, ratio*100, pt[0], pt[-1])+fg.rs)
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
                     send_telegram('market buy {:,}KRW'.format(BETTING*10))

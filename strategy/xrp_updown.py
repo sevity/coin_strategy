@@ -67,14 +67,25 @@ bids = {}
 asks = {}
 def buy(price, volume):
     trade_amount = price * volume / (1.0 + FEE)
-    new_volume = trade_amount / price
+    new_volume = volume / price
     oid = coin.limit_buy('XRP', price, new_volume)
-    bids[oid] = (price, volume)
+    time.sleep(5)
+    l = coin.get_live_orders('XRP', 'KRW')
+    for (oid_, askbid, price, cnt, odt) in l:
+        if oid_ == oid:
+            bids[oid] = (price, new_volume)
+            break
+        
 def sell(price, volume):
     trade_amount = price * volume / (1.0 - FEE)
-    new_volume = trade_amount / price
+    new_volume = volume / price
     oid = coin.limit_sell('XRP', price, new_volume)
-    asks[oid] = (price, volume)
+    time.sleep(5)
+    l = coin.get_live_orders('XRP', 'KRW')
+    for (oid_, askbid, price, cnt, odt) in l:
+        if oid_ == oid:
+            asks[oid] = (price, new_volume)
+            break
 while True:
     try:
         a = coin.get_price('XRP', 'KRW')
@@ -103,8 +114,8 @@ while True:
 
     else:
         print('!!!!!!!!!!!! not enough KRW!')
-        if xrp['free'] > ask_cnt:
-            new_ask_price = round(a + UPDOWN_TICK/2, 0); new_ask_cnt = float(BETTING) / new_ask_price / 3
+        new_ask_price = round(a + UPDOWN_TICK/2, 0); new_ask_cnt = float(BETTING) / new_ask_price / 3
+        if 'free' in xrp and xrp['free'] > new_ask_cnt:
             sell(new_ask_price, new_ask_cnt)
 
     try:
@@ -139,13 +150,13 @@ while True:
     for oid, (price, volume) in bps.items():
         gain = int(float(price) * float(volume))
         print(fg.red + '! bid filled({:,}). '.format(price)+fg.green+'gain will be: -{:.8f}({:,}KRW)'.
-			format(volume, gain)+ fg.rs)
+			format(int(float(volume)), int(float(gain)))+ fg.rs)
         total_gain -= gain
         del bids[oid]
     for oid, (price, volume) in aps.items():
         gain = int(float(price) * float(volume))
         print(fg.blue + '! ask filled({:,}). '.format(price)+fg.green+'gain will be: {:.8f}({:,}KRW)'.
-			format(volume, gain)+ fg.rs)
+			format(int(float(volume)), int(float(gain)))+ fg.rs)
         total_gain += gain
         del asks[oid]
     a = coin.get_asset_info('XRP')

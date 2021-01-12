@@ -292,7 +292,7 @@ def get_live_orders(ticker, currency):
     r = []
     for ord in res.json():
         ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-        r.append((ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
+        r.append((ord['uuid'], ord['side'], float(ord['price']), float(ord['remaining_volume']), ct))
     return r
 
 @dispatch(str) 
@@ -333,7 +333,7 @@ def get_live_orders(currency):
             for ord in res.json():
                 ct = dt = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
                 ticker = ord['market'].split('-')[1]
-                r.append((ticker, ord['uuid'], ord['side'], ord['price'], ord['remaining_volume'], ct))
+                r.append((ticker, ord['uuid'], ord['side'], float(ord['price']), float(ord['remaining_volume']), ct))
             ok = True
         except:
             pass

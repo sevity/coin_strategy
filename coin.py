@@ -42,6 +42,12 @@ class Coin:
 
     def limit_sell(self, ticker, price, cnt, bLog=True):
         return self._api.limit_sell(ticker, price, cnt, bLog)
+        
+    def limit_buy_btc(self, ticker, price, cnt, bLog=True):
+        return self._api.limit_buy_btc(ticker, price, cnt, bLog)
+
+    def limit_sell_btc(self, ticker, price, cnt, bLog=True):
+        return self._api.limit_sell_btc(ticker, price, cnt, bLog)
 
     def cancel(self, oid, bLog=True):
         return self._api.cancel(oid, bLog)

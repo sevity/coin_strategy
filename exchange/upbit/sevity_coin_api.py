@@ -186,7 +186,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
         print(res, res.text)
         en = json.loads(res.text)['error']['name']
         if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
-            market_buy(ticker, 550)
+            # market_buy(ticker, 550)
             return (-1, None)
         return (-1, None)
     oid = json.loads(res.content)['uuid']
@@ -198,11 +198,77 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
         'amount:{:,}KRW'.format(int(price)), askbid, oid + fg.rs)
     return (oid,res)
 
+def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
+    query = {
+        'market': 'BTC-{}'.format(ticker),
+        'side': askbid,
+        'volume': cnt,
+        'price': price,
+        'ord_type': ord_type,
+    }
+    if ord_type=='market':
+        query = {
+            'market': 'BTC-{}'.format(ticker),
+            'side': askbid,
+            'volume': cnt,
+            'ord_type': ord_type,
+        }
+    if ord_type=='price':
+        query = {
+            'market': 'BTC-{}'.format(ticker),
+            'side': askbid,
+            'price': price,
+            'ord_type': ord_type,
+        }
+    query_string = urlencode(query).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string)
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    ok = False
+    while ok == False:
+        try:
+            res = requests.post(server_url + "/v1/orders", params=query, headers=headers)
+            ok = True
+        except:
+            pass
+    
+    if res.ok == False:
+        print(res, res.text)
+        en = json.loads(res.text)['error']['name']
+        if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
+            return (-1, None)
+        return (-1, None)
+    oid = json.loads(res.content)['uuid']
+    # print(' ', oid)
+    # print(oid, res)
+    if bLog and ord_type!='price': print(fg.li_black + '  order_new...', ticker, 'price:{:.8f}'.format(price),
+        'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid + fg.rs)
+    return (oid,res)
+
 def limit_buy(ticker, price, cnt, bLog=True):
     return order_new(ticker, price, cnt, 'bid', 'limit', bLog)[0]
 
 def limit_sell(ticker, price, cnt, bLog=True):
     return order_new(ticker, price, cnt, 'ask', 'limit', bLog)[0]
+
+def limit_buy_btc(ticker, price, cnt, bLog=True):
+    return order_new_btc(ticker, price, cnt, 'bid', 'limit', bLog)[0]
+
+def limit_sell_btc(ticker, price, cnt, bLog=True):
+    return order_new_btc(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
 def market_buy(ticker, price, bLog=True):
     return order_new(ticker, price, 0, 'bid', 'price' , bLog)[0]

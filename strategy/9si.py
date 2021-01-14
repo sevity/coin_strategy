@@ -94,19 +94,18 @@ while True:
                         'free:', free)
                     continue
                 hit_cnts[ticker] += 1
-                txt = '[9si] {} hit.. up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(
-                    ticker, ratio*100, pt[0], pt[-1])
-                print(fg.li_yellow+txt+fg.rs)
-                send_telegram(txt)
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
                     bet = BETTING * 10 / hit_cnts[ticker]
-                    send_telegram('market buy {:,}KRW'.format(bet))
                     oid = coin.market_buy(ticker, bet)
                 else:
-                    send_telegram('market buy {:,}KRW'.format(BETTING))
+                    bet = BETTING
                     oid = coin.market_buy(ticker, BETTING)
                     hit_cnts[ticker] = 0
+                txt = '[9si] {} hit.. bet:{:,}KRW up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(
+                    ticker, bet, ratio*100, pt[0], pt[-1])
+                print(fg.li_yellow+txt+fg.rs)
+                send_telegram(txt)
                 ask1 = coin.get_ask1(ticker, 'KRW')
                 bid_price = ask1
                 print(fg.red + 'bid_price(from ask1):', bid_price, fg.rs)

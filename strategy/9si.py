@@ -122,6 +122,7 @@ while True:
                         # send_telegram('limit sell clear')
                         hit_prices[ticker] = pt[-1]
                         break
+                    time.sleep(1)
                 out = True
         if out: break
         print(".", end="", flush=True)

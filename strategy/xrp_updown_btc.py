@@ -162,18 +162,19 @@ while True:
     for oid, (price, volume) in bps.items():
         gain = (float(price) * float(volume))
         print(fg.red + '! bid filled({:.8f}). '.format(price)+fg.green+'gain will be: -{:.8f}({:.8f}BTC)'.
-			format(float(volume), float(gain))+ fg.rs + oid)
+			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
         total_gain -= gain
         del bids[oid]
     for oid, (price, volume) in aps.items():
         gain = (float(price) * float(volume))
         print(fg.blue + '! ask filled({:.8f}). '.format(price)+fg.green+'gain will be: {:.8f}({:.8f}BTC)'.
-			format(float(volume), float(gain))+ fg.rs + oid)
+			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
         total_gain += gain
         del asks[oid]
     a = coin.get_asset_info('XRP')
-    if 'free' in a:
+    if 'total' in a:
         v = float(a['total'])*coin.get_price('XRP', 'BTC')
+        print(a)
         # print(a['total'], coin.get_price('XRP', 'BTC'))
         holding_value = v - holding_value_init
         # print('holding XRP value:', v)

@@ -42,7 +42,7 @@ coin = Coin('upbit',access_key,secret_key)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
-    print(msg)
+    # print(msg)
     try:
         bot.sendMessage(chat_id=170583240, text=msg)
     except:
@@ -84,63 +84,42 @@ while True:
             ratio = pt[-1] / pt[0] - 1.0
             if pt[0] < pt[-1] and ratio >= THRESHOLD:
                 if ticker not in hit_cnts: hit_cnts[ticker] = 0
-                hit_cnts[ticker] += 1
                 l = coin.get_live_orders(ticker, 'KRW')
                 a = coin.get_asset_info(ticker)
                 free = 0
                 if 'free' in a:
                     free = a['free']
-                if len(l) > 0 or hit_cnts[ticker] > 1 or fsame(free, 0) == False:
+                if len(l) > 0 or fsame(free, 0) == False:
                     print(ticker, 'out..', 'pending orders:', len(l), 'hit_cnt:', hit_cnts[ticker],
                         'free:', free)
                     continue
-                send_telegram(fg.li_yellow+'[9si] {} hit.. up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.
-                    format(ticker, ratio*100, pt[0], pt[-1])+fg.rs)
+                hit_cnts[ticker] += 1
+                txt = '[9si] {} hit.. up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(
+                    ticker, ratio*100, pt[0], pt[-1])
+                print(fg.li_yellow+txt+fg.rs)
+                send_telegram(txt)
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
-                    send_telegram('market buy {:,}KRW'.format(BETTING*10))
-                    oid = coin.market_buy(ticker, BETTING * 10)
+                    bet = BETTING * 10 / hit_cnts[ticker]
+                    send_telegram('market buy {:,}KRW'.format(bet))
+                    oid = coin.market_buy(ticker, bet)
                 else:
                     send_telegram('market buy {:,}KRW'.format(BETTING))
                     oid = coin.market_buy(ticker, BETTING)
                     hit_cnts[ticker] = 0
                 ask1 = coin.get_ask1(ticker, 'KRW')
-                time.sleep(5)  # wait market buy to be filled(it took some time sometime)
-                rb = coin.get_fill_order(oid)
-                bid_price = None
-                if 'price' in rb:
-                    bid_price = rb['price']
-                    print(fg.red + 'bid_price(from get_fill_order):', bid_price, fg.rs)
-                else:
-                    bid_price = ask1
-                    print(fg.red + 'bid_price(from ask1):', bid_price, fg.rs)
-                for ix in range(0, 5):
+                bid_price = ask1
+                print(fg.red + 'bid_price(from ask1):', bid_price, fg.rs)
+                for x in range(0, 5):
                     info = coin.get_asset_info(ticker)
                     if 'free' in info:
                         cnt = info['free']
-                        prev = bid_price * 1.00
-                        time.sleep(10)
-                        while True:
-                            cp = coin.get_price(ticker, 'KRW')
-                            if cp >= prev:
-                                send_telegram('price going up from{} to {}:'.format(prev, cp))
-                                prev = cp
-                            else:
-                                print('  cp:{:.4f}, bid_1.02up:{:.4f}, ask+1:{:.4f}'.
-                                    format(cp, tick_round(bid_price * 1.02), ask1+coin.get_tick_size(ask1)))
-                                if cp > bid_price * 1.02:
-                                    coin.market_sell(ticker, cnt)
-                                    send_telegram('market sell clear')
-                                else:
-                                    a = tick_round(bid_price*1.02)
-                                    b = ask1+coin.get_tick_size(ask1)
-                                    p = max(a, b)
-                                    print(fg.blue + 'ask_price:', p, fg.rs)
-                                    coin.limit_sell(ticker, p, cnt)
-                                    send_telegram('limit sell clear')
-                                break
-                            time.sleep(10)
-                        # coin.limit_sell(ticker, tick_round(pt[-1] * 1.02), cnt)
+                        a = tick_round(bid_price*1.02)
+                        b = ask1+coin.get_tick_size(ask1)
+                        p = max(a, b)
+                        print(fg.blue + 'ask_price:', p, fg.rs)
+                        coin.limit_sell(ticker, p, cnt)
+                        # send_telegram('limit sell clear')
                         hit_prices[ticker] = pt[-1]
                         break
                 out = True

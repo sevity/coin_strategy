@@ -7,20 +7,30 @@ import copy
 import telegram
 from sty import fg, bg, ef, rs
 from datetime import datetime, timezone, timedelta
+import argparse
 
 # 설명 ########################################################################
 # updown.py의 BTC시장 알트 버전
 # param #######################################################################
 # TICKER = 'EMC2'
 # UPDOWN_TICK = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
-TICKER = 'DOT'
-UPDOWN_TICK = 0.00002000  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
+UPDOWN = {
+    'DOT': 0.00002000, 
+    'XRP': 0.00000020}
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 5
 ###############################################################################
 FEE = 0.0025  # 수수료는 0.25%
+parser = argparse.ArgumentParser(description='updown strategy for BTC market')
+parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
+args = parser.parse_args()
+TICKER = args.ticker.upper()
+UPDOWN_TICK = UPDOWN[TICKER]
 ###############################################################################
+print('ticker:{}, updown_tick:{:.8f}'.format(TICKER, UPDOWN_TICK))
+assert(UPDOWN_TICK > 0)
+
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
@@ -160,16 +170,19 @@ while True:
         elif askbid=='ask' and oid in aps:
             del aps[oid]
 
+    btckrw = coin.get_price('BTC', 'KRW')
     # 체결된 ask/bid에 대해 수익계산 
     for oid, (price, volume) in bps.items():
         gain = (float(price) * float(volume)) * (1.0 + FEE)
-        print(fg.red + '! bid filled({:.8f}). '.format(price)+fg.green+'gain will be: -{:.8f}({:.8f}BTC)'.
+        print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
+            'gain will be: -{:.8f}cnt({:.8f}BTC)'.
 			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
         total_gain -= gain
         del bids[oid]
     for oid, (price, volume) in aps.items():
         gain = (float(price) * float(volume))
-        print(fg.blue + '! ask filled({:.8f}). '.format(price)+fg.green+'gain will be: {:.8f}({:.8f}BTC)'.
+        print(fg.blue + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
+            'gain will be: -{:.8f}cnt({:.8f}BTC)'.
 			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
         total_gain += gain
         del asks[oid]
@@ -180,8 +193,9 @@ while True:
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
-    a = coin.get_price('BTC', 'KRW')
-    txt = 'RETURN: holding value:{:.8f}({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format((holding_value), int(a*holding_value), (total_gain), int(a*total_gain), (holding_value + total_gain), int(a * (holding_value + total_gain)))
+    txt = 'RETURN: holding value:{:.8f}({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format(
+        (holding_value), int(btckrw*holding_value), (total_gain), int(btckrw*total_gain), 
+        (holding_value + total_gain), int(btckrw * (holding_value + total_gain)))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

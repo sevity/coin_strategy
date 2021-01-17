@@ -357,11 +357,12 @@ def get_live_orders(ticker, currency):
 
     r = []
     for ord in res.json():
-        ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
         try:
+            ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
             price = float(ord['price'])
             remaining_volume = float(ord['remaining_volume'])
         except:
+            ct = None
             price = 0.0
             remaining_volume = 0.0
         r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))

@@ -78,17 +78,17 @@ cnt = 0
 bids = {}
 asks = {}
 def buy(price, volume):
-    trade_amount = price * volume / (1.0 + FEE)
+    trade_amount = price * volume / (1.0 + FEE)  # 거래금액
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
     l = coin.get_live_orders(TICKER, 'BTC')
     for (oid_, askbid, price, cnt, odt) in l:
         if oid_ == oid:
-            bids[oid] = (price, new_volume)
+            bids[oid] = (price, cnt)
             break
     if oid in bids:
-        return oid, new_volume
+        return oid, bids[oid][1]
     return (None, None)
         
 def sell(price, volume):
@@ -98,14 +98,20 @@ def sell(price, volume):
     for (oid_, askbid, price, cnt, odt) in l:
         if oid_ == oid:
             asks[oid] = (price, volume)
+            print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, volume))
             break
 
+# 실행전 걸려있는 미체결 주문들 등록
+l = coin.get_live_orders(TICKER, 'BTC')
+for (oid_, askbid, price, cnt, odt) in l:
+    if askbid=='bid':
+        bids[oid_] = (price, cnt)
+    else:
+        asks[oid_] = (price, cnt)
+
+    
 holding_value = 0.0
-total_gain = 0.0
-a = coin.get_asset_info(TICKER)
-if 'free' in a:
-    v = float(a['total'])*coin.get_price(TICKER, 'BTC')
-    total_gain = -v
+trade_delta = None
 while True:
     try:
         a = coin.get_price(TICKER, 'BTC')
@@ -152,7 +158,8 @@ while True:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-            print(oid, askbid, '{:.8f} {:.2f}'.format((float(price)), float(cnt)), odt, hour_diff, 'hours')
+            print(oid.split('-')[0], askbid, 
+                '{:.8f}BTC {:.8f}cnt'.format(float(price), float(cnt)), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))
@@ -170,32 +177,38 @@ while True:
         elif askbid=='ask' and oid in aps:
             del aps[oid]
 
+    a = coin.get_asset_info(TICKER)
+    p = coin.get_price(TICKER, 'BTC')
     btckrw = coin.get_price('BTC', 'KRW')
+    if trade_delta is None:
+        if 'total' in a:
+            v = float(a['total'])*p
+            trade_delta = -v
+        else:
+            trade_delta = 0
     # 체결된 ask/bid에 대해 수익계산 
     for oid, (price, volume) in bps.items():
-        gain = (float(price) * float(volume)) * (1.0 + FEE)
+        delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'gain will be: -{:.8f}cnt({:.8f}BTC)'.
-			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
-        total_gain -= gain
+            'trade delta: -{:.8f}cnt({:.8f}BTC)'.
+			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+        trade_delta -= delta 
         del bids[oid]
     for oid, (price, volume) in aps.items():
-        gain = (float(price) * float(volume))
-        print(fg.blue + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'gain will be: -{:.8f}cnt({:.8f}BTC)'.
-			format(float(volume), float(gain))+ fg.rs + ' ' + oid)
-        total_gain += gain
+        delta = (float(price) * float(volume)) * (1.0 - FEE)
+        print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
+            'trade delta: -{:.8f}cnt({:.8f}BTC)'.
+			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+        trade_delta += delta 
         del asks[oid]
-    a = coin.get_asset_info(TICKER)
     if 'total' in a:
-        p = coin.get_price(TICKER, 'BTC')
         v = float(a['total'])*p
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
     txt = 'RETURN: holding value:{:.8f}({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format(
-        (holding_value), int(btckrw*holding_value), (total_gain), int(btckrw*total_gain), 
-        (holding_value + total_gain), int(btckrw * (holding_value + total_gain)))
+        (holding_value), int(btckrw*holding_value), (trade_delta), int(btckrw*trade_delta), 
+        (holding_value + trade_delta), int(btckrw * (holding_value + trade_delta)))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

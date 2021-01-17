@@ -13,7 +13,7 @@ import argparse
 # updown.py의 BTC시장 알트 버전
 # param #######################################################################
 # TICKER = 'EMC2'
-# UPDOWN_TICK = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
+# UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
     'DOT': 0.00002000, 
     'XRP': 0.00000020}
@@ -26,10 +26,10 @@ parser = argparse.ArgumentParser(description='updown strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
 args = parser.parse_args()
 TICKER = args.ticker.upper()
-UPDOWN_TICK = UPDOWN[TICKER]
+UPDOWN_DELTA = UPDOWN[TICKER]
 ###############################################################################
-print('ticker:{}, updown_tick:{:.8f}'.format(TICKER, UPDOWN_TICK))
-assert(UPDOWN_TICK > 0)
+print('ticker:{}, updown_delta:{:.8f}BTC'.format(TICKER, UPDOWN_DELTA))
+assert(UPDOWN_DELTA > 0)
 
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -127,22 +127,22 @@ while True:
     print('{}..'.format(TICKER), ticker)
     print(datetime.now().strftime("%m-%d %H:%M:%S"), '{} price..'.format(TICKER), 'upbit', '{:.8f}'.format(a))
 
-    ask_price = (a + UPDOWN_TICK); ask_cnt = float(BETTING) / ask_price 
-    bid_price = (a - UPDOWN_TICK); bid_cnt = float(BETTING) / bid_price
+    ask_price = (a + UPDOWN_DELTA); ask_cnt = float(BETTING) / ask_price 
+    bid_price = (a - UPDOWN_DELTA); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if 'free' in ticker and ticker['free'] > ask_cnt:
             oid, new_cnt = buy(bid_price, bid_cnt)
             sell(ask_price, new_cnt)
         else:
             print('!!!!!!!!!!!! not enough {}!'.format(TICKER))
-            # new_bid_price = round(a - UPDOWN_TICK/2, 0); new_bid_cnt = float(BETTING) / new_bid_price / 3
+            # new_bid_price = round(a - UPDOWN_DELTA/2, 0); new_bid_cnt = float(BETTING) / new_bid_price / 3
             new_bid_price = bid_price
             new_bid_cnt = bid_cnt
             buy(new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough BTC!')
-        new_ask_price = (a + UPDOWN_TICK/2); new_ask_cnt = float(BETTING) / new_ask_price / 3
+        new_ask_price = (a + UPDOWN_DELTA/2); new_ask_cnt = float(BETTING) / new_ask_price / 3
         new_ask_price = ask_price
         new_ask_cnt = ask_cnt
         if 'free' in ticker and ticker['free'] > new_ask_cnt:

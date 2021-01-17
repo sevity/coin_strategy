@@ -16,7 +16,9 @@ import argparse
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
     'DOT': 0.00002000, 
-    'XRP': 0.00000020}
+    'XRP': 0.00000020,
+    'XLM': 0.00000020,
+    }
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 5
@@ -24,11 +26,13 @@ TIMEOUT_DAYS = 5
 FEE = 0.0025  # 수수료는 0.25%
 parser = argparse.ArgumentParser(description='updown strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
+parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 args = parser.parse_args()
 TICKER = args.ticker.upper()
+BETTING = float(args.betting)
 UPDOWN_DELTA = UPDOWN[TICKER]
 ###############################################################################
-print('ticker:{}, updown_delta:{:.8f}BTC'.format(TICKER, UPDOWN_DELTA))
+print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC'.format(TICKER, UPDOWN_DELTA, BETTING))
 assert(UPDOWN_DELTA > 0)
 
 f = open("../upbit_api_key.txt", 'r')
@@ -114,21 +118,29 @@ holding_value = 0.0
 trade_delta = None
 while True:
     try:
-        a = coin.get_price(TICKER, 'BTC')
         money = coin.get_asset_info('BTC')
         ticker = coin.get_asset_info(TICKER)
+        a = coin.get_asset_info(TICKER)
+        p = coin.get_price(TICKER, 'BTC')
+        krwp = coin.get_price(TICKER, 'KRW')
+        btckrw = coin.get_price('BTC', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)
         continue
 
     print('BTC..', money)
-    # money['free'] = int(money['free'] - 3000000)
     print('{}..'.format(TICKER), ticker)
-    print(datetime.now().strftime("%m-%d %H:%M:%S"), '{} price..'.format(TICKER), 'upbit', '{:.8f}'.format(a))
+    print(fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S"), '{} BTC price:'.
+        format(TICKER), '{:.8f}BTC({:,}KRW)'.format(p, int(float(p) * float(btckrw))), 
+        'KRW price: {:,}KRW({:.8f}BTC) price:'.format(int(krwp), krwp / btckrw)
+        + fg.rs)
 
-    ask_price = (a + UPDOWN_DELTA); ask_cnt = float(BETTING) / ask_price 
-    bid_price = (a - UPDOWN_DELTA); bid_cnt = float(BETTING) / bid_price
+    p = krwp / btckrw
+    print(fg.magenta + 'current price: {:.8f}BTC'.format(p) + fg.rs)
+
+    ask_price = (p + UPDOWN_DELTA); ask_cnt = float(BETTING) / ask_price 
+    bid_price = (p - UPDOWN_DELTA); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if 'free' in ticker and ticker['free'] > ask_cnt:
             oid, new_cnt = buy(bid_price, bid_cnt)
@@ -142,7 +154,7 @@ while True:
 
     else:
         print('!!!!!!!!!!!! not enough BTC!')
-        new_ask_price = (a + UPDOWN_DELTA/2); new_ask_cnt = float(BETTING) / new_ask_price / 3
+        # new_ask_price = (p + UPDOWN_DELTA/2); new_ask_cnt = float(BETTING) / new_ask_price / 3
         new_ask_price = ask_price
         new_ask_cnt = ask_cnt
         if 'free' in ticker and ticker['free'] > new_ask_cnt:
@@ -177,9 +189,6 @@ while True:
         elif askbid=='ask' and oid in aps:
             del aps[oid]
 
-    a = coin.get_asset_info(TICKER)
-    p = coin.get_price(TICKER, 'BTC')
-    btckrw = coin.get_price('BTC', 'KRW')
     if trade_delta is None:
         if 'total' in a:
             v = float(a['total'])*p
@@ -190,14 +199,14 @@ while True:
     for oid, (price, volume) in bps.items():
         delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: -{:.8f}cnt({:.8f}BTC)'.
+            'trade delta: -{:.8f}cnt(-{:.8f}BTC)'.
 			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta -= delta 
         del bids[oid]
     for oid, (price, volume) in aps.items():
         delta = (float(price) * float(volume)) * (1.0 - FEE)
         print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: -{:.8f}cnt({:.8f}BTC)'.
+            'trade delta: +{:.8f}cnt(+{:.8f}BTC)'.
 			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta += delta 
         del asks[oid]
@@ -206,7 +215,7 @@ while True:
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
-    txt = 'RETURN: holding value:{:.8f}({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format(
+    txt = 'RETURN: holding value:{:.8f}BTC({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format(
         (holding_value), int(btckrw*holding_value), (trade_delta), int(btckrw*trade_delta), 
         (holding_value + trade_delta), int(btckrw * (holding_value + trade_delta)))
 

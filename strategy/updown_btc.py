@@ -15,15 +15,15 @@ import argparse
 # TICKER = 'EMC2'
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
-    'DOT': 0.00002000, 
-    'XRP': 0.00000020,
-    'XLM': 0.00000020,
-    'EOS': 0.00000100,
-    'TRX': 0.00000003,
+    'DOT':  0.00002000, 
+    'XRP':  0.00000020,
+    'XLM':  0.00000020,
+    'EOS':  0.00000100,
+    'TRX':  0.00000003,
     'MANA': 0.00000010,
-    'ZIL': 0.00000002,
-    'XTZ': 0.00000080,
-    'ALGO': 0.00000400,
+    'ZIL':  0.00000002,
+    'XTZ':  0.00000080,
+    'ALGO': 0.00000150,
     }
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
@@ -213,14 +213,14 @@ while True:
     for oid, (price, volume) in bps.items():
         delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: -{:.8f}cnt(-{:.8f}BTC)'.
+            'trade delta: +{:.8f}cnt(-{:.8f}BTC)'.
 			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta -= delta 
         del bids[oid]
     for oid, (price, volume) in aps.items():
         delta = (float(price) * float(volume)) * (1.0 - FEE)
         print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: +{:.8f}cnt(+{:.8f}BTC)'.
+            'trade delta: -{:.8f}cnt(+{:.8f}BTC)'.
 			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta += delta 
         del asks[oid]

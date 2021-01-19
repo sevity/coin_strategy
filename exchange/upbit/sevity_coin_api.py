@@ -362,6 +362,7 @@ def get_live_orders(ticker, currency):
     r = []
     for ord in res.json():
         try:
+            # print('ord:', ord)
             ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
             price = float(ord['price'])
             remaining_volume = float(ord['remaining_volume'])
@@ -370,6 +371,62 @@ def get_live_orders(ticker, currency):
             price = 0.0
             remaining_volume = 0.0
         r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
+    return r
+
+@dispatch(str, str) 
+def get_live_orders_ext(ticker, currency):
+    query = {
+        'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+        'state': 'wait',
+    }
+    query_string = urlencode(query)
+
+    uuids = [
+        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+        #...
+    ]
+    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+    #query['uuids[]'] = uuids
+    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+
+    m = hashlib.sha512()
+    m.update(query_string.encode())
+    query_hash = m.hexdigest()
+
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
+
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    ok = False
+    while ok == False:
+        try:
+            res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+            ok = True
+        except:
+            pass
+
+    r = []
+    for ord in res.json():
+        try:
+            # print('ord:', ord)
+            ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+            price = float(ord['price'])
+            ordered_volume = float(ord['volume'])
+            remaining_volume = float(ord['remaining_volume'])
+        except:
+            ct = None
+            price = 0.0
+            ordered_volume = 0.0
+            remaining_volume = 0.0
+        r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
     return r
 
 @dispatch(str) 

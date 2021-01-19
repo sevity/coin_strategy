@@ -56,6 +56,10 @@ class Coin:
     def get_live_orders(self, ticker, currency):
         return self._api.get_live_orders(ticker, currency)
 
+    @multimethod(str, str)
+    def get_live_orders_ext(self, ticker, currency):
+        return self._api.get_live_orders_ext(ticker, currency)
+
     @multimethod(str)
     def get_live_orders(self, currency):
         return self._api.get_live_orders(currency)

@@ -15,8 +15,8 @@ import argparse
 # TICKER = 'EMC2'
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
-    'DOT':  0.00002000, 
-    'XRP':  0.00000020,
+    'DOT':  0.00003000, 
+    'XRP':  0.00000030,
     'XLM':  0.00000020,
     'EOS':  0.00000100,
     'TRX':  0.00000003,
@@ -38,7 +38,7 @@ parser.add_argument('--cooltime', '-c', required=False, default=COOL_TIME,
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
-COOL_TIME = int(args.cooltime)
+COOL_TIME = int(eval(args.cooltime))
 UPDOWN_DELTA = UPDOWN[TICKER]
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')
@@ -58,6 +58,12 @@ def send_telegram(msg):
         bot.sendMessage(chat_id=170583240, text=msg)
     except:
         pass
+def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
+    a = float(a)
+    b = float(b)
+    if abs(a-b)<diff:
+        return True
+    return False
 
 def cancel_pending_bids(bLog=True):
     l = coin.get_live_orders(TICKER, 'BTC')
@@ -139,7 +145,7 @@ while True:
         time.sleep(1)
         continue
 
-    print('BTC..', money)
+    print('\n\nBTC..', money)
     print('{}..'.format(TICKER), ticker)
     krw_txt = ''
     if krwp is not None:
@@ -203,10 +209,20 @@ while True:
         elif askbid=='ask' and oid in aps:
             del aps[oid]
 
+    partial_value = 0
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
+        if fsame(order_cnt, remain_cnt) is False:
+            executed_cnt = order_cnt - remain_cnt
+            if askbid == 'bid':
+                partial_value -= executed_cnt*p
+            else:
+                partial_value += executed_cnt*p
+
     if trade_delta is None:
         if 'total' in a:
             v = float(a['total'])*p
-            trade_delta = -v
+            trade_delta = -v -partial_value
         else:
             trade_delta = 0
     # 체결된 ask/bid에 대해 수익계산 
@@ -229,9 +245,11 @@ while True:
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
-    txt = 'RETURN: holding value:{:.8f}BTC({:,}KRW) + trade value:{:.8f}({:,}KRW) = {:.8f}BTC({:,}KRW)'.format(
-        (holding_value), int(btckrw*holding_value), (trade_delta), int(btckrw*trade_delta), 
-        (holding_value + trade_delta), int(btckrw * (holding_value + trade_delta)))
+
+
+    txt = 'RET: holding:{:.8f}BTC({:,}KRW) + trade:{:.8f}BTC({:,}KRW) + partial:{:.8f}BTC({:,}KRW)\n= {:.8f}BTC({:,}KRW)'.format(
+        (holding_value), int(btckrw*holding_value), (trade_delta), int(btckrw*trade_delta), partial_value, int(btckrw*partial_value),
+        (holding_value + trade_delta + partial_value), int(btckrw * (holding_value + trade_delta + partial_value)))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

@@ -33,7 +33,7 @@ FEE = 0.0025  # 수수료는 0.25%
 parser = argparse.ArgumentParser(description='updown strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
-parser.add_argument('--cooltime', '-c', required=False, default=COOL_TIME, 
+parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
     help='wait time between orders in sec')
 args = parser.parse_args()
 TICKER = args.ticker.upper()

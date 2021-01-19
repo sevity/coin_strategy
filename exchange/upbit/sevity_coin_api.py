@@ -30,18 +30,22 @@ def set_key(api_key, secret_key):
 
 def get_price(ticker, currency):
     while True:
+        j = {}
         try:
             url = server_url + "/v1/orderbook"
             querystring = {"markets":"{}-{}".format(currency, ticker)}
             response = requests.request("GET", url, params=querystring)
             if response.ok == False:
                 if response.status_code != 429:  # too many api requeists
-                    print(  response.url, response.text)
+                    print(fg.li_black + response.url, response.text, fg.rs)
             j = json.loads(response.text)
             ask1 = float(j[0]["orderbook_units"][0]["ask_price"])
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
             return (ask1+bid1)/2
         except:
+            if 'error' in j:
+                if int(j['error']['name']) == 404:
+                    return None
             time.sleep(1.0)
 
 def get_ask1(ticker, currency):

@@ -18,6 +18,12 @@ UPDOWN = {
     'DOT': 0.00002000, 
     'XRP': 0.00000020,
     'XLM': 0.00000020,
+    'EOS': 0.00000100,
+    'TRX': 0.00000003,
+    'MANA': 0.00000010,
+    'ZIL': 0.00000002,
+    'XTZ': 0.00000080,
+    'ALGO': 0.00000400,
     }
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
@@ -27,19 +33,23 @@ FEE = 0.0025  # 수수료는 0.25%
 parser = argparse.ArgumentParser(description='updown strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
+parser.add_argument('--cooltime', '-c', required=False, default=COOL_TIME, 
+    help='wait time between orders in sec')
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
+COOL_TIME = int(args.cooltime)
 UPDOWN_DELTA = UPDOWN[TICKER]
 ###############################################################################
-print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC'.format(TICKER, UPDOWN_DELTA, BETTING))
-assert(UPDOWN_DELTA > 0)
-
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
+btckrw = coin.get_price('BTC', 'KRW')
+print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), cooltime:{}sec'.
+    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), COOL_TIME))
+assert(UPDOWN_DELTA > 0)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
@@ -131,12 +141,16 @@ while True:
 
     print('BTC..', money)
     print('{}..'.format(TICKER), ticker)
+    krw_txt = ''
+    if krwp is not None:
+        krw_txt = 'KRW price: {:,}KRW({:.8f}BTC)'.format(int(krwp), krwp / btckrw)
+        p = krwp / btckrw
+
     print(fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S"), '{} BTC price:'.
         format(TICKER), '{:.8f}BTC({:,}KRW)'.format(p, int(float(p) * float(btckrw))), 
-        'KRW price: {:,}KRW({:.8f}BTC) price:'.format(int(krwp), krwp / btckrw)
+        krw_txt, 'BTC price:{:,}KRW'.format(int(btckrw))
         + fg.rs)
 
-    p = krwp / btckrw
     print(fg.magenta + 'current price: {:.8f}BTC'.format(p) + fg.rs)
 
     ask_price = (p + UPDOWN_DELTA); ask_cnt = float(BETTING) / ask_price 

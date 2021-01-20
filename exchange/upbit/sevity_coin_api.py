@@ -188,10 +188,6 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
     
     if res.ok == False:
         print(res, res.text)
-        en = json.loads(res.text)['error']['name']
-        if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
-            # market_buy(ticker, 550)
-            return (-1, None)
         return (-1, None)
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
@@ -360,17 +356,18 @@ def get_live_orders(ticker, currency):
             pass
 
     r = []
-    for ord in res.json():
-        try:
-            # print('ord:', ord)
-            ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-            price = float(ord['price'])
-            remaining_volume = float(ord['remaining_volume'])
-        except:
-            ct = None
-            price = 0.0
-            remaining_volume = 0.0
-        r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
+    if res.json() is not None:
+        for ord in res.json():
+            try:
+                # print('ord:', ord)
+                ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+                price = float(ord['price'])
+                remaining_volume = float(ord['remaining_volume'])
+            except:
+                ct = None
+                price = 0.0
+                remaining_volume = 0.0
+            r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
     return r
 
 @dispatch(str, str) 

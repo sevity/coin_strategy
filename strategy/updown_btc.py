@@ -21,8 +21,8 @@ UPDOWN = {
     'EOS':  0.00000100,
     'TRX':  0.00000003,
     'MANA': 0.00000010,
-    'ZIL':  0.00000002,
-    'XTZ':  0.00000080,
+    'ZIL':  0.00000004,
+    'XTZ':  0.00000150,
     'ALGO': 0.00000150,
     }
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
@@ -132,6 +132,7 @@ for (oid_, askbid, price, cnt, odt) in l:
     
 holding_value = 0.0
 trade_delta = None
+trade_volume_delta = None
 while True:
     try:
         money = coin.get_asset_info('BTC')
@@ -209,36 +210,41 @@ while True:
         elif askbid=='ask' and oid in aps:
             del aps[oid]
 
-    partial_value = 0
+    partial_volume = 0
     l = coin.get_live_orders_ext(TICKER, 'BTC')
     for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
         if fsame(order_cnt, remain_cnt) is False:
+            print('  partial debug..', oid, askbid, price, order_cnt, remain_cnt, odt)
             executed_cnt = order_cnt - remain_cnt
             if askbid == 'bid':
-                partial_value -= executed_cnt*p
+                partial_volume -= executed_cnt
             else:
-                partial_value += executed_cnt*p
+                partial_volume += executed_cnt
 
     if trade_delta is None:
         if 'total' in a:
             v = float(a['total'])*p
-            trade_delta = -v -partial_value
+            trade_delta = -v - partial_volume * p
+            trade_volume_delta = a['total'] - partial_volume
         else:
             trade_delta = 0
+            trade_volume_delta = 0
     # 체결된 ask/bid에 대해 수익계산 
     for oid, (price, volume) in bps.items():
         delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: +{:.8f}cnt(-{:.8f}BTC)'.
-			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            'trade delta: +{:.8f}{}(-{:.8f}BTC)'.
+			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta -= delta 
+        trade_volume_delta -= volume
         del bids[oid]
     for oid, (price, volume) in aps.items():
         delta = (float(price) * float(volume)) * (1.0 - FEE)
         print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
-            'trade delta: -{:.8f}cnt(+{:.8f}BTC)'.
-			format(float(volume), float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            'trade delta: -{:.8f}{}(+{:.8f}BTC)'.
+			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta += delta 
+        trade_volume_delta += volume
         del asks[oid]
     if 'total' in a:
         v = float(a['total'])*p
@@ -247,9 +253,17 @@ while True:
         holding_value = v
 
 
-    txt = 'RET: holding:{:.8f}BTC({:,}KRW) + trade:{:.8f}BTC({:,}KRW) + partial:{:.8f}BTC({:,}KRW)\n= {:.8f}BTC({:,}KRW)'.format(
-        (holding_value), int(btckrw*holding_value), (trade_delta), int(btckrw*trade_delta), partial_value, int(btckrw*partial_value),
-        (holding_value + trade_delta + partial_value), int(btckrw * (holding_value + trade_delta + partial_value)))
+    holding_volume = 0 if 'total' not in a else a['total']
+    txt  = 'RET: \nholding: {:.8f}{}({:.8f}BTC, {:,}KRW) +'.format(
+        holding_volume, TICKER, holding_value, int(btckrw*holding_value))
+    txt += '\ntrade:   {:.8f}{}({:.8f}BTC, {:,}KRW) +'.format(
+        trade_volume_delta, TICKER, (trade_delta), int(btckrw*trade_delta))
+    txt += '\npartial: {:.8f}{}({:.8f}BTC, {:,}KRW)'.format(
+        partial_volume, TICKER, partial_volume*p, int(btckrw*partial_volume*p))
+    txt += '\n= {:.8f}BTC, {:,}KRW'.format(
+        #holding_volume + trade_volume_delta + partial_volume, TICKER, 
+        holding_value + trade_delta + partial_volume*p, 
+        int(btckrw * (holding_value + trade_delta + partial_volume*p)))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

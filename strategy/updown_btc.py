@@ -254,11 +254,11 @@ while True:
 
 
     holding_volume = 0 if 'total' not in a else a['total']
-    txt  = 'RET: \nholding: {:.8f}{}({:.8f}BTC, {:,}KRW) +'.format(
+    txt  = 'RET: \nholding: {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         holding_volume, TICKER, holding_value, int(btckrw*holding_value))
-    txt += '\ntrade:   {:.8f}{}({:.8f}BTC, {:,}KRW) +'.format(
+    txt += '\ntrade:   {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         trade_volume_delta, TICKER, (trade_delta), int(btckrw*trade_delta))
-    txt += '\npartial: {:.8f}{}({:.8f}BTC, {:,}KRW)'.format(
+    txt += '\npartial: {:.3f}{}({:.8f}BTC, {:,}KRW)'.format(
         partial_volume, TICKER, partial_volume*p, int(btckrw*partial_volume*p))
     txt += '\n= {:.8f}BTC, {:,}KRW'.format(
         #holding_volume + trade_volume_delta + partial_volume, TICKER, 

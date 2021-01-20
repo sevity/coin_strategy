@@ -103,7 +103,7 @@ while True:
                     oid = coin.market_buy(ticker, BETTING)
                     hit_cnts[ticker] = 0
                 print('oid:', oid)
-                if oid is None:
+                if oid == -1:
                     print(ticker, 'out...')
                     continue
                 txt = '[9si] {} hit.. bet:{:,}KRW up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(

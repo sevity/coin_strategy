@@ -39,6 +39,12 @@ def send_telegram(msg):
         bot.sendMessage(chat_id=170583240, text=msg)
     except:
         pass
+def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
+    a = float(a)
+    b = float(b)
+    if abs(a-b)<diff:
+        return True
+    return False
 
 print('KRW_DELTA:{:,}'.format(KRW_DELTA), 'BETTING:{:,}'.format(BETTING))
 

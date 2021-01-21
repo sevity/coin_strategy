@@ -24,10 +24,11 @@ UPDOWN = {
     'ZIL':  0.00000004,
     'XTZ':  0.00000150,
     'ALGO': 0.00000150,
+    'LINK': 0.00000300,
     }
-BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
+BETTING = 0.0018 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
-TIMEOUT_DAYS = 5
+TIMEOUT_DAYS = 500  # temp
 ###############################################################################
 FEE = 0.0025  # 수수료는 0.25%
 parser = argparse.ArgumentParser(description='updown strategy for BTC market')
@@ -35,11 +36,13 @@ parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
     help='wait time between orders in sec')
+parser.add_argument('--upratio', '-u', required=False, default=1.2)
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COOL_TIME = int(eval(args.cooltime))
 UPDOWN_DELTA = UPDOWN[TICKER]
+UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
@@ -160,7 +163,7 @@ while True:
 
     print(fg.magenta + 'current price: {:.8f}BTC'.format(p) + fg.rs)
 
-    ask_price = (p + UPDOWN_DELTA); ask_cnt = float(BETTING) / ask_price 
+    ask_price = (p + UPDOWN_DELTA * UP_RATIO); ask_cnt = float(BETTING) / ask_price 
     bid_price = (p - UPDOWN_DELTA); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if 'free' in ticker and ticker['free'] > ask_cnt:
@@ -225,7 +228,7 @@ while True:
         if 'total' in a:
             v = float(a['total'])*p
             trade_delta = -v - partial_volume * p
-            trade_volume_delta = a['total'] - partial_volume
+            trade_volume_delta = -a['total'] - partial_volume
         else:
             trade_delta = 0
             trade_volume_delta = 0
@@ -254,16 +257,16 @@ while True:
 
 
     holding_volume = 0 if 'total' not in a else a['total']
-    txt  = 'RET: \nholding: {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
+    txt = 'R:{:.8f}BTC, {:,}KRW = '.format(
+        #holding_volume + trade_volume_delta + partial_volume, TICKER, 
+        holding_value + trade_delta + partial_volume*p, 
+        int(btckrw * (holding_value + trade_delta + partial_volume*p)))
+    txt += '\nholding: {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         holding_volume, TICKER, holding_value, int(btckrw*holding_value))
     txt += '\ntrade:   {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         trade_volume_delta, TICKER, (trade_delta), int(btckrw*trade_delta))
     txt += '\npartial: {:.3f}{}({:.8f}BTC, {:,}KRW)'.format(
         partial_volume, TICKER, partial_volume*p, int(btckrw*partial_volume*p))
-    txt += '\n= {:.8f}BTC, {:,}KRW'.format(
-        #holding_volume + trade_volume_delta + partial_volume, TICKER, 
-        holding_value + trade_delta + partial_volume*p, 
-        int(btckrw * (holding_value + trade_delta + partial_volume*p)))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

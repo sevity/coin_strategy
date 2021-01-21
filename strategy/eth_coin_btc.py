@@ -17,7 +17,7 @@ from sty import fg, bg, ef, rs
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 BTC_DELTA = 0.0004  # 이걸 기준으로 촘촘하게 주문을 낸다.
-BETTING = 0.0300    # 초기버전은 고정배팅으로 가보자
+BETTING = 0.1000    # 초기버전은 고정배팅으로 가보자
 # BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
@@ -140,7 +140,7 @@ while True:
         if askbid=='ask' and fsame(price, ap):
             afound = True
     msg = 'bfound:{}, afound:{}'.format(bfound, afound)
-    if pmsg != msg: print(msg)
+    # if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:
@@ -151,8 +151,13 @@ while True:
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price <= bp:
-                coin.cancel(oid)
-                del bid_prices[oid]
+                l = coin.get_live_orders_ext('ETH', 'BTC')
+                for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
+                    if oid_ == oid:
+                        if fsame(order_cnt, remain_cnt):
+                            coin.cancel(oid)
+                            del bid_prices[oid]
+                            break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

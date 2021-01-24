@@ -152,9 +152,10 @@ while True:
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy('BTC', bp, bet / bp)
         while oid == -1:
+            print('!!! no money!({:,}KRW)'.format(int(bet)))
             bid_gop[bp] /= 2
             if bid_gop[bp] < 0.1:
-                print('!!! no money!. will have 30 secs break..')
+                print('! will have 30 secs break..')
                 bid_gop[bp] = 1
                 time.sleep(30)
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)

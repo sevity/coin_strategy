@@ -15,7 +15,7 @@ import argparse
 # TICKER = 'EMC2'
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
-    'DOT':  0.00003000, 
+    'DOT':  0.00002000, 
     'XRP':  0.00000030,
     'XLM':  0.00000020,
     'EOS':  0.00000100,
@@ -23,10 +23,13 @@ UPDOWN = {
     'MANA': 0.00000010,
     'ZIL':  0.00000004,
     'XTZ':  0.00000150,
-    'ALGO': 0.00000150,
-    'LINK': 0.00000300,
+    'ALGO': 0.00000070,
+    'LINK': 0.00000900,
+    'EMC2': 0.00000005,
+    'BFC':  0.00000003,
+    'OMG':  0.00000200,
     }
-BETTING = 0.0018 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
+BETTING = 0.0020 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 500  # temp
 ###############################################################################
@@ -136,6 +139,8 @@ for (oid_, askbid, price, cnt, odt) in l:
 holding_value = 0.0
 trade_delta = None
 trade_volume_delta = None
+p_partial_volume = -1
+partial_delta = None
 while True:
     try:
         money = coin.get_asset_info('BTC')
@@ -223,6 +228,10 @@ while True:
                 partial_volume -= executed_cnt
             else:
                 partial_volume += executed_cnt
+    if fsame(p_partial_volume, partial_volume) is False:
+        partial_delta = partial_volume * p
+        
+    p_partial_volume = partial_volume
 
     if trade_delta is None:
         if 'total' in a:
@@ -259,14 +268,14 @@ while True:
     holding_volume = 0 if 'total' not in a else a['total']
     txt = 'R:{:.8f}BTC, {:,}KRW = '.format(
         #holding_volume + trade_volume_delta + partial_volume, TICKER, 
-        holding_value + trade_delta + partial_volume*p, 
+        holding_value + trade_delta + partial_delta, 
         int(btckrw * (holding_value + trade_delta + partial_volume*p)))
     txt += '\nholding: {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         holding_volume, TICKER, holding_value, int(btckrw*holding_value))
     txt += '\ntrade:   {:.3f}{}({:.8f}BTC, {:,}KRW) +'.format(
         trade_volume_delta, TICKER, (trade_delta), int(btckrw*trade_delta))
     txt += '\npartial: {:.3f}{}({:.8f}BTC, {:,}KRW)'.format(
-        partial_volume, TICKER, partial_volume*p, int(btckrw*partial_volume*p))
+        partial_volume, TICKER, partial_delta, int(btckrw*partial_delta))
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)

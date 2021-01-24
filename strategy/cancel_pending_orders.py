@@ -9,11 +9,12 @@ import argparse
 parser = argparse.ArgumentParser(description='cancel pending orders')
 parser.add_argument('--ticker', '-t', required=True)
 parser.add_argument('--askbid', required=False, default='all', choices=['ask', 'bid', 'all'])
-parser.add_argument('--market', '-m', required=False, default='KRW', choices=['KRW','BTC'])
+parser.add_argument('--market', '-m', required=False, default='ALL', 
+    choices=['ALL', 'KRW','BTC', 'all', 'krw', 'btc'])
 args = parser.parse_args()
 ticker = args.ticker.upper()
 askbid = args.askbid.lower()
-market = args.market
+market = args.market.upper()
 print('ticker:', ticker, 'askbid:', askbid, 'market:', market)
 
 f = open("../upbit_api_key.txt", 'r')
@@ -22,9 +23,19 @@ secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
 
-l = coin.get_live_orders(ticker, market)
-for (oid, askbid_, price, cnt, odt) in l:
-    if askbid == 'all' or askbid_ == askbid:
-        coin.cancel(oid, True)
+if market == 'ALL':
+    l = coin.get_live_orders(ticker, 'KRW')
+    for (oid, askbid_, price, cnt, odt) in l:
+        if askbid == 'all' or askbid_ == askbid:
+            coin.cancel(oid, True)
+    l = coin.get_live_orders(ticker, 'BTC')
+    for (oid, askbid_, price, cnt, odt) in l:
+        if askbid == 'all' or askbid_ == askbid:
+            coin.cancel(oid, True)
+else:
+    l = coin.get_live_orders(ticker, market)
+    for (oid, askbid_, price, cnt, odt) in l:
+        if askbid == 'all' or askbid_ == askbid:
+            coin.cancel(oid, True)
 
 

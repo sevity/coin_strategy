@@ -164,20 +164,15 @@ while True:
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy_btc('ETH', bp, bet / bp)
-        while oid == -1:
-            bid_gop[bp] /= 2
-            if bid_gop[bp] < 0.1:
-                print('!!! no money!. will have 30 secs break..')
-                bid_gop[bp] = 1
-                time.sleep(30)
-            bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-            oid = coin.limit_buy('ETH', bp, bet / bp)
-            time.sleep(2)
-        bid_prices[oid] = bp
-        bid_volume[oid] = bet / bp
-        print(fg.red + '! bid placed({:.8f}), bet:{:.8f}BTC, bid_gop:{}, bid_prices:{}'.
-            format(bp, (bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
-        # time.sleep(5)
+        if oid == -1:
+            print('!!! no money!({:.8}BTC)'.format(bet))
+            time.sleep(60)
+        else:
+            bid_prices[oid] = bp
+            bid_volume[oid] = bet / bp
+            print(fg.red + '! bid placed({:.8f}), bet:{:.8f}BTC, bid_gop:{}, bid_prices:{}'.
+                format(bp, (bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
+            # time.sleep(5)
 
 
 

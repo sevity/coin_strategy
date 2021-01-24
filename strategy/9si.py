@@ -14,7 +14,7 @@ import ast
 from sty import fg, bg, ef, rs
 
 # param #######################################################################
-BETTING = 2200
+BETTING = 5000
 MAX_TICKER = 20  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
 MAX_TICK = 100 # 몇틱기다리는지 설정(이 안에 급상승해야함)
 THRESHOLD = 0.015  # 1.5%상승하면 올라탐
@@ -69,10 +69,11 @@ print('BETTING:{}, THRESHOLD:{:.2f}%'.format(BETTING, THRESHOLD*100))
 hit_prices={}
 hit_cnts={}
 while True:
+    print('\n' + fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S") + fg.rs)
     cnt = min(MAX_TICKER, len(total_tickers))
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
-    print('\ntickers: {}'.format(tickers))
+    print('tickers: {}'.format(tickers))
     out = False
     prices = {}
     n = datetime.now()
@@ -101,13 +102,13 @@ while True:
                 else:
                     bet = BETTING
                     oid = coin.market_buy(ticker, BETTING)
-                    hit_cnts[ticker] = 0
+                    # hit_cnts[ticker] = 0
                 print('oid:', oid)
                 if oid == -1:
                     print(ticker, 'out...')
                     continue
-                txt = '[9si] {} hit.. bet:{:,}KRW up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(
-                    ticker, bet, ratio*100, pt[0], pt[-1])
+                txt = '[9si] {} hit({}).. bet:{:,}KRW up_ratio = {:.2f}%(from {:,.2f} to {:,.2f})'.format(
+                    ticker, hit_cnts[ticker], bet, ratio*100, pt[0], pt[-1])
                 print(fg.li_yellow+txt+fg.rs)
                 send_telegram(txt)
                 ask1 = coin.get_ask1(ticker, 'KRW')

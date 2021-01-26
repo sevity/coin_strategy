@@ -28,8 +28,9 @@ UPDOWN = {
     'EMC2': 0.00000005,
     'BFC':  0.00000003,
     'OMG':  0.00000200,
+    'LOOM':  0.00000007,
     }
-BETTING = 0.0020 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
+BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 500  # temp
 ###############################################################################
@@ -108,10 +109,10 @@ def buy(price, volume):
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
-    l = coin.get_live_orders(TICKER, 'BTC')
-    for (oid_, askbid, price, cnt, odt) in l:
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
         if oid_ == oid:
-            bids[oid] = (price, cnt)
+            bids[oid] = (price, ocnt)
             break
     if oid in bids:
         return oid, bids[oid][1]
@@ -120,20 +121,21 @@ def buy(price, volume):
 def sell(price, volume):
     oid = coin.limit_sell_btc(TICKER, price, volume)
     time.sleep(1)
-    l = coin.get_live_orders(TICKER, 'BTC')
-    for (oid_, askbid, price, cnt, odt) in l:
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
         if oid_ == oid:
-            asks[oid] = (price, volume)
-            print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, volume))
+            asks[oid] = (price, ocnt)
+            assert(fsame(ocnt, volume)
+            print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, ocnt))
             break
 
 # 실행전 걸려있는 미체결 주문들 등록
-l = coin.get_live_orders(TICKER, 'BTC')
-for (oid_, askbid, price, cnt, odt) in l:
+l = coin.get_live_orders_ext(TICKER, 'BTC')
+for (oid_, askbid, price, ocnt, rcnt, odt) in l:
     if askbid=='bid':
-        bids[oid_] = (price, cnt)
+        bids[oid_] = (price, ocnt)
     else:
-        asks[oid_] = (price, cnt)
+        asks[oid_] = (price, ocnt)
 
     
 holding_value = 0.0
@@ -192,15 +194,15 @@ while True:
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
         print("cancel pending orders...")
-        l = coin.get_live_orders(TICKER, 'BTC')
+        l = coin.get_live_orders_ext(TICKER, 'BTC')
         KST = timezone(timedelta(hours=9))
         print("{} orders alive...".format(len(l)))
-        for (oid, askbid, price, cnt, odt) in l:
+        for (oid, askbid, price, ocnt, rcnt, odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
             print(oid.split('-')[0], askbid, 
-                '{:.8f}BTC {:.8f}cnt'.format(float(price), float(cnt)), odt, hour_diff, 'hours')
+                '{:.8f}BTC {:.8f}{}'.format(float(price), float(ocnt), TICKER), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))

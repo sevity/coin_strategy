@@ -125,7 +125,7 @@ def sell(price, volume):
     for (oid_, askbid, price, ocnt, rcnt, odt) in l:
         if oid_ == oid:
             asks[oid] = (price, ocnt)
-            assert(fsame(ocnt, volume)
+            assert(fsame(ocnt, volume))
             print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, ocnt))
             break
 

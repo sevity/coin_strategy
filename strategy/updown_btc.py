@@ -265,9 +265,11 @@ while True:
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
+        holding_volume = a['total']
+    else:
+        holding_value = 0
+        holding_volume = 0
 
-
-    holding_volume = 0 if 'total' not in a else a['total']
     txt = 'R:{:.8f}BTC, {:,}KRW = '.format(
         #holding_volume + trade_volume_delta + partial_volume, TICKER, 
         holding_value + trade_delta + partial_delta, 

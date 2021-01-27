@@ -53,7 +53,7 @@ TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COOL_TIME = int(eval(args.cooltime))
 if TICKER not in UPDOWN:
-    UPDOWN_DELTA = coin.get_price(TICKER, 'BTC') * 0.003
+    UPDOWN_DELTA = coin.get_price(TICKER, 'BTC') * 0.03
 else:
     UPDOWN_DELTA = UPDOWN[TICKER]
 UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.

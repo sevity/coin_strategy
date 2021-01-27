@@ -110,7 +110,14 @@ def buy(price, volume):
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
-    return oid, new_volume
+	l = coin.get_live_orders_ext(TICKER, 'BTC')
+	for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+		if oid_ == oid:
+			bids[oid] = (price, ocnt)
+			break
+	if oid in bids:
+		return oid, bids[oid][1]
+	return (None, None)
         
 def sell(price, volume):
     oid = coin.limit_sell_btc(TICKER, price, volume)

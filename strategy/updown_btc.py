@@ -35,6 +35,12 @@ BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 500  # temp
 ###############################################################################
+f = open("../upbit_api_key.txt", 'r')
+access_key = f.readline().rstrip()
+secret_key = f.readline().rstrip()
+f.close()
+coin = Coin('upbit',access_key,secret_key)
+
 FEE = 0.0025  # 수수료는 0.25%
 parser = argparse.ArgumentParser(description='updown strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
@@ -46,14 +52,12 @@ args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COOL_TIME = int(eval(args.cooltime))
-UPDOWN_DELTA = UPDOWN[TICKER]
+if TICKER not in UPDOWN:
+    UPDOWN_DELTA = coin.get_price(TICKER, 'BTC') * 0.003
+else:
+    UPDOWN_DELTA = UPDOWN[TICKER]
 UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.
 ###############################################################################
-f = open("../upbit_api_key.txt", 'r')
-access_key = f.readline().rstrip()
-secret_key = f.readline().rstrip()
-f.close()
-coin = Coin('upbit',access_key,secret_key)
 btckrw = coin.get_price('BTC', 'KRW')
 print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), upratio:{}, cooltime:{}sec'.
     format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), UP_RATIO, COOL_TIME))
@@ -110,14 +114,14 @@ def buy(price, volume):
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
-	l = coin.get_live_orders_ext(TICKER, 'BTC')
-	for (oid_, askbid, price, ocnt, rcnt, odt) in l:
-		if oid_ == oid:
-			bids[oid] = (price, ocnt)
-			break
-	if oid in bids:
-		return oid, bids[oid][1]
-	return (None, None)
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+        if oid_ == oid:
+            bids[oid] = (price, ocnt)
+            break
+    if oid in bids:
+        return oid, bids[oid][1]
+    return (None, None)
         
 def sell(price, volume):
     oid = coin.limit_sell_btc(TICKER, price, volume)
@@ -246,7 +250,7 @@ while True:
         delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
             'trade delta: +{:.8f}{}(-{:.8f}BTC)'.
-			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta -= delta 
         trade_volume_delta -= volume
         del bids[oid]
@@ -254,7 +258,7 @@ while True:
         delta = (float(price) * float(volume)) * (1.0 - FEE)
         print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
             'trade delta: -{:.8f}{}(+{:.8f}BTC)'.
-			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta += delta 
         trade_volume_delta += volume
         del asks[oid]

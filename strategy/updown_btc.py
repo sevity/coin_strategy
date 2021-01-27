@@ -16,19 +16,20 @@ import argparse
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
     'DOT':  0.00002000, 
-    'XRP':  0.00000030,
-    'XLM':  0.00000020,
-    'EOS':  0.00000100,
+    'XRP':  0.00000020,
+    'XLM':  0.00000030,
+    'EOS':  0.00000200,
     'TRX':  0.00000003,
     'MANA': 0.00000010,
-    'ZIL':  0.00000004,
-    'XTZ':  0.00000150,
+    'ZIL':  0.00000006,
+    'XTZ':  0.00000250,
     'ALGO': 0.00000070,
-    'LINK': 0.00000900,
-    'EMC2': 0.00000005,
-    'BFC':  0.00000003,
-    'OMG':  0.00000200,
-    'LOOM':  0.00000007,
+    'LINK': 0.00001500,
+    'EMC2': 0.00000007,
+    'BFC':  0.00000005,
+    'OMG':  0.00000250,
+    'LOOM': 0.00000007,
+    'UNI':  0.00002400,
     }
 BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
@@ -54,8 +55,8 @@ secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
 btckrw = coin.get_price('BTC', 'KRW')
-print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), cooltime:{}sec'.
-    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), COOL_TIME))
+print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), upratio:{}, cooltime:{}sec'.
+    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), UP_RATIO, COOL_TIME))
 assert(UPDOWN_DELTA > 0)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -109,14 +110,7 @@ def buy(price, volume):
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
-    l = coin.get_live_orders_ext(TICKER, 'BTC')
-    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
-        if oid_ == oid:
-            bids[oid] = (price, ocnt)
-            break
-    if oid in bids:
-        return oid, bids[oid][1]
-    return (None, None)
+    return oid, new_volume
         
 def sell(price, volume):
     oid = coin.limit_sell_btc(TICKER, price, volume)
@@ -129,21 +123,18 @@ def sell(price, volume):
             print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, ocnt))
             break
 
-# 실행전 걸려있는 미체결 주문들 등록
-l = coin.get_live_orders_ext(TICKER, 'BTC')
-for (oid_, askbid, price, ocnt, rcnt, odt) in l:
-    if askbid=='bid':
-        bids[oid_] = (price, ocnt)
-    else:
-        asks[oid_] = (price, ocnt)
-
-    
 holding_value = 0.0
 trade_delta = None
 trade_volume_delta = None
 p_partial_volume = -1
 partial_delta = None
 while True:
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+        if askbid=='bid':
+            bids[oid_] = (price, ocnt)
+        else:
+            asks[oid_] = (price, ocnt)
     try:
         money = coin.get_asset_info('BTC')
         ticker = coin.get_asset_info(TICKER)

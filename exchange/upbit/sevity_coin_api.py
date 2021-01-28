@@ -356,7 +356,12 @@ def get_live_orders(ticker, currency):
             pass
 
     r = []
-    if res.json() is not None:
+    try:
+        rj = res.json()
+    except:
+        return r
+
+    if rj is not None:
         for ord in res.json():
             try:
                 # print('ord:', ord)

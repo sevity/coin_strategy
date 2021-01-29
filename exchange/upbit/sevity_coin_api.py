@@ -368,6 +368,8 @@ def get_live_orders(ticker, currency):
                 ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
                 price = float(ord['price'])
                 remaining_volume = float(ord['remaining_volume'])
+                a = ord['uuid']
+                b = ord['side']
             except:
                 ct = None
                 price = 0.0

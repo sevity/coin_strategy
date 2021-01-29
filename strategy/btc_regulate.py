@@ -16,7 +16,7 @@ import math
 TARGET_KRW_BTC_RATIO = 0.1
 UPDOWN_PERCENT = 0.007  # 기본 상하방 0.7%, 성공하면 수수료 제외 1.3% 먹음
 BETTING_KRW = 55000   # 한번에 거는 돈의 크기
-COOL_TIME = 60 * 60  # 초단위
+COOL_TIME = 60 * 30  # 초단위
 ###############################################################################
 TICKER = 'BTC'
 FEE = 0.0025  # 수수료는 0.25%
@@ -65,22 +65,29 @@ while True:
     # krw_ratio = 0.2
     UP_DELTA = UPDOWN_PERCENT
     DOWN_DELTA = UPDOWN_PERCENT
+    UP_RATIO = 1.0
+    DOWN_RATIO = 1.0
     print(fg.yellow + 'TARGET_KRW_BTC_RATIO:{:.4f}, current krw_ratio:{:.4f}'.
         format(TARGET_KRW_BTC_RATIO, krw_ratio) + fg.rs)
     if krw_ratio < TARGET_KRW_BTC_RATIO:
         # 돈부족 상황
         print(fg.blue + 'KRW shortage! strong BTC ask' + fg.rs)
-        DOWN_DELTA = UP_DELTA * (TARGET_KRW_BTC_RATIO / krw_ratio)
+        DOWN_RATIO = (TARGET_KRW_BTC_RATIO / krw_ratio)
+        DOWN_RATIO = min(DOWN_RATIO, 10)
+        DOWN_DELTA = UP_DELTA * DOWN_RATIO
         DOWN_DELTA = min(DOWN_DELTA, 10)
     else:
         print(fg.red + 'KRW surplus! strong BTC bid' + fg.rs)
-        UP_DELTA = DOWN_DELTA * (krw_ratio / TARGET_KRW_BTC_RATIO)
+        UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
+        UP_RATIO = min(UP_RATIO, 10)
+        UP_DELTA = UP_DELTA * UP_RATIO 
         UP_DELTA = min(UP_DELTA, 10)
 
-    print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}'.format(UP_DELTA, DOWN_DELTA))
+    print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
+        format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))
 
-    ask_price = (btc_price + btc_price * UP_DELTA); ask_cnt = float(BETTING_KRW) / ask_price 
-    bid_price = (btc_price - btc_price * DOWN_DELTA); bid_cnt = float(BETTING_KRW) / bid_price
+    ask_price = (btc_price + btc_price * UP_DELTA); ask_cnt = float(BETTING_KRW * DOWN_RATIO) / ask_price 
+    bid_price = (btc_price - btc_price * DOWN_DELTA);bid_cnt = float(BETTING_KRW * UP_RATIO) / bid_price
 
     coin.limit_sell(TICKER, ask_price, ask_cnt)
     coin.limit_buy(TICKER, bid_price, bid_cnt)

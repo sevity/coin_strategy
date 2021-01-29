@@ -69,11 +69,10 @@ print('BETTING:{}, THRESHOLD:{:.2f}%'.format(BETTING, THRESHOLD*100))
 hit_prices={}
 hit_cnts={}
 while True:
-    print('\n' + fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S") + fg.rs)
     cnt = min(MAX_TICKER, len(total_tickers))
     random.shuffle(total_tickers)
     tickers = total_tickers[:cnt]
-    print('tickers: {}'.format(tickers))
+    print('\n'+fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S") + fg.rs + ' tickers: {}'.format(tickers))
     out = False
     prices = {}
     n = datetime.now()

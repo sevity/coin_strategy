@@ -55,7 +55,7 @@ total_gain = 0
 l = coin.get_live_orders('ETH', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
-        coin.cancel(oid)
+        # coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
@@ -144,6 +144,7 @@ while True:
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
+        bid_gop[bp] = min(5, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy('ETH', bp, bet / bp)

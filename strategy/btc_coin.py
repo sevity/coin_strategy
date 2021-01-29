@@ -56,7 +56,7 @@ total_gain = 0
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
-        coin.cancel(oid)
+        # coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)

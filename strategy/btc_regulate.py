@@ -103,6 +103,7 @@ while True:
         KST = timezone(timedelta(hours=9))
         print("{} orders alive...".format(len(l)))
         for (oid, askbid, price, cnt, odt) in l:
+            if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)

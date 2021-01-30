@@ -160,6 +160,7 @@ while True:
                 print('! will have 30 secs break..')
                 bid_gop[bp] = 1
                 time.sleep(30)
+                break
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('BTC', bp, bet / bp)
             time.sleep(2)

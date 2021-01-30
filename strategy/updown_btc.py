@@ -47,7 +47,7 @@ parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
     help='wait time between orders in sec')
-parser.add_argument('--upratio', '-u', required=False, default=1.2)
+parser.add_argument('--upratio', '-u', required=False, default=1.5)
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)

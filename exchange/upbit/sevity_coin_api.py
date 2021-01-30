@@ -370,11 +370,11 @@ def get_live_orders(ticker, currency):
                 remaining_volume = float(ord['remaining_volume'])
                 a = ord['uuid']
                 b = ord['side']
+                r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
             except:
                 ct = None
                 price = 0.0
                 remaining_volume = 0.0
-            r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
     return r
 
 @dispatch(str, str) 

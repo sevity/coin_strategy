@@ -77,6 +77,7 @@ while True:
         DOWN_DELTA = UP_DELTA * DOWN_RATIO
         DOWN_DELTA = min(DOWN_DELTA, 10)
         UP_DELTA /= 4
+        DOWN_DELTA = 0
     else:
         print(fg.red + 'KRW surplus! strong BTC bid' + fg.rs)
         UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
@@ -84,15 +85,17 @@ while True:
         UP_DELTA = UP_DELTA * UP_RATIO 
         UP_DELTA = min(UP_DELTA, 10)
         DOWN_DELTA /= 4
+        UP_DELTA = 0
 
     print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
         format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))
 
-    ask_price = (btc_price + btc_price * UP_DELTA); ask_cnt = float(BETTING_KRW * DOWN_RATIO) / ask_price 
-    bid_price = (btc_price - btc_price * DOWN_DELTA);bid_cnt = float(BETTING_KRW * UP_RATIO) / bid_price
-
-    coin.limit_sell(TICKER, ask_price, ask_cnt)
-    coin.limit_buy(TICKER, bid_price, bid_cnt)
+    if UP_DELTA > 0:
+        ask_price = (btc_price + btc_price * UP_DELTA); ask_cnt = float(BETTING_KRW * DOWN_RATIO) / ask_price 
+        coin.limit_sell(TICKER, ask_price, ask_cnt)
+    if DOWN_DELTA > 0:
+        bid_price = (btc_price - btc_price * DOWN_DELTA);bid_cnt = float(BETTING_KRW * UP_RATIO) / bid_price
+        coin.limit_buy(TICKER, bid_price, bid_cnt)
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
         print("cancel pending orders...")

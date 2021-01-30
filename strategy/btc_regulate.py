@@ -15,8 +15,8 @@ import math
 # param #######################################################################
 TARGET_KRW_BTC_RATIO = 0.1
 UPDOWN_PERCENT = 0.007  # 기본 상하방 0.7%, 성공하면 수수료 제외 1.3% 먹음
-BETTING_KRW = 55000   # 한번에 거는 돈의 크기
-COOL_TIME = 60 * 30  # 초단위
+BETTING_KRW = 15000   # 한번에 거는 돈의 크기
+COOL_TIME = 60 * 10  # 초단위
 ###############################################################################
 TICKER = 'BTC'
 FEE = 0.0025  # 수수료는 0.25%
@@ -76,12 +76,14 @@ while True:
         DOWN_RATIO = min(DOWN_RATIO, 10)
         DOWN_DELTA = UP_DELTA * DOWN_RATIO
         DOWN_DELTA = min(DOWN_DELTA, 10)
+        UP_DELTA /= 4
     else:
         print(fg.red + 'KRW surplus! strong BTC bid' + fg.rs)
         UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
         UP_RATIO = min(UP_RATIO, 10)
         UP_DELTA = UP_DELTA * UP_RATIO 
         UP_DELTA = min(UP_DELTA, 10)
+        DOWN_DELTA /= 4
 
     print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
         format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))

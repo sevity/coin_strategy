@@ -287,7 +287,6 @@ while True:
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)
-    time.sleep(COOL_TIME)
     n = datetime.now()
     while (datetime.now() - n).seconds < COOL_TIME:
         l = coin.get_live_orders_ext(TICKER, 'BTC')

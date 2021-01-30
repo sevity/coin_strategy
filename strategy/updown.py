@@ -17,6 +17,9 @@ COOL_TIME = 60 * 15  # 초단위
 TIMEOUT_HOURS = 24
 BTC_LOCK = 0.90 # 최소 30%는 항상 BTC로 보유
 BTC_LOCK_V = 2.00 # 최소 1.5 BTC 보유
+BTC_BOX_CHECK = False
+BTC_BOX_MIN = 36000000 #minimum boundary in krw OF BTC box
+BTC_BOX_MAX = 38000000 #maximum boundary in krw OF BTC box
 BTC_LOCK_PENDING_CHECK = True
 THREAD_COOL_TIME = 5 #초단위
 ###############################################################################
@@ -89,17 +92,20 @@ def write_config(json_data):
 
 
 def load_config():
-    global UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK
+    global UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK, BTC_BOX_CHECK, BTC_BOX_MIN, BTC_BOX_MAX
     conf = get_config()
     try:
-        UPDOWN = float(conf['up_down_percent']) / 100
-        BETTING = float(conf['betting_in_krw'])
-        COOL_TIME = int(conf['cool_time_in_seconds'])
-        TIMEOUT_HOURS = int(conf['timeout_in_hours'])
-        BTC_LOCK = float(conf['btc_lock_percent']) / 100
-        BTC_LOCK_V = float(conf['btc_lock_abs_amount'])
-        BTC_LOCK_PENDING_CHECK = conf['btc_lock_pending_check'] == 'yes'
-        print('conf: updown: {}, betting: {}, cool_time: {}, timeout_hours: {}, btc_lock: {}, btc_lock_v: {}, btc_lock_pending_check: {}'.format(UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK))
+        UPDOWN = float(conf['up-down-percent']) / 100
+        BETTING = float(conf['betting-krw'])
+        COOL_TIME = int(conf['cool-time-seconds'])
+        TIMEOUT_HOURS = int(conf['timeout-hours'])
+        BTC_LOCK = float(conf['btc-lock-percent']) / 100
+        BTC_LOCK_V = float(conf['btc-lock-abs-amount'])
+        BTC_LOCK_PENDING_CHECK = conf['btc-lock-pending-check'] == 'yes'
+        BTC_BOX_CHECK = conf['btc-box-check'] == 'yes'
+        BTC_BOX_MAX = float(conf['btc-box-max-krw'])
+        BTC_BOX_MIN = float(conf['btc-box-min-krw'])
+        print('conf: {}'.format(conf))
     except Exception as e:
         print('err', e)
         sys.exit()
@@ -139,7 +145,7 @@ def check_and_cancel_pending_orders():
                 bid_cnt_sum += cnt
             if date_diff >= TIMEOUT_HOURS:
                 print("cancel order.. {}".format(oid))
-                # r = coin.cancel(oid)
+                r = coin.cancel(oid)
 
                 # 나중에 bid만으로 KRW부족이 발생해서, 오래된건 위치조정하지 말고 그냥 버리는걸로 해본다. > 근데 KRW부족이 peak eater 때문이어서 원복 ㅋ
                 # if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
@@ -209,7 +215,7 @@ class CommandProcessor (threading.Thread):
 
     @staticmethod
     def make_error(param):
-        log_and_send_msg(bot_info, 'wrong command error! {} is not supported commands \n (only support for start/stop/exit/set parameter)'.format(param), True)
+        log_and_send_msg(bot_info, 'wrong command error! {} \n (only support for start/stop/exit/set parameter)'.format(param), True)
 
     @staticmethod
     def get_telegram_command():
@@ -219,16 +225,12 @@ class CommandProcessor (threading.Thread):
         if not is_empty:
             try:
                 CommandProcessor.offset_pos = updates[-1].update_id
-                ++CommandProcessor.offset_pos
+                CommandProcessor.offset_pos = CommandProcessor.offset_pos + 1
                 # get last command
                 u = updates[-1]
                 if u.message['chat']['id'] == commander:
                     text = u.message['text']
-                    first_command = text.split(' ')[0]
-                    if first_command in CommandProcessor.commands:
-                        return text
-                    else:
-                        return 'none'
+                    return text
 
             except Exception as e:
                 return 'none'
@@ -238,47 +240,52 @@ class CommandProcessor (threading.Thread):
     def run(self):
         global run_status
         while True:
-            res = CommandProcessor.get_telegram_command()
-            args = res.split(' ')
-            argc = len(args)
-
-            if argc == 0:
-                self.make_error('empty command')
-                return
-            i = 0
-            arg = args[0]
-            if arg != 'none':
-                self.prev_command = self.command
-                self.command = res
-            if arg == 'exit':
-                log_and_send_msg(bot_info, 'exit command has been received, exiting ... ', True)
-                run_status.set('exit')
-                sys.exit()
-            elif arg == 'stop':
-                if self.command != self.prev_command:
-                    run_status.set('stop')
-                    log_and_send_msg(bot_info, 'stop command has been received, pausing ... ', True)
-            elif arg == 'start':
-                if self.command != self.prev_command:
-                    run_status.set('start')
-                    log_and_send_msg(bot_info, 'start command has been received, starting ... ', True)
-            elif arg == 'set':
-                if self.command != self.prev_command:
-                    arg = args[1]
-                    if arg == 'parameter':
-                        name = args[2]
-                        value = args[3]
-                        config_json = get_config()
-                        if name in config_json:
-                            config_json[name] = value
-                            write_config(config_json)
-                            log_and_send_msg(bot_info, 'setting parameter with name {}, value {} \n json conf file will be {}'.format(name, value, config_json), True)
-                        else:
-                            log_and_send_msg(bot_info, 'unknown parameter name {} : refer to current conf.json file {}'.format(name, config_json), True)
-                    else:
-                        self.make_error(arg)
-            elif arg != 'none':
-                self.make_error(arg)
+            try:
+                res = CommandProcessor.get_telegram_command()
+                args = res.split(' ')
+                argc = len(args)
+            except Exception as e:
+                log_and_send_msg(bot_info, "telegram get commands make errors: {}".format(e))
+            try:
+                if argc == 0:
+                    self.make_error('empty command')
+                else:
+                    arg = args[0]
+                    if arg != 'none':
+                        self.prev_command = self.command
+                        self.command = res
+                    if arg == 'exit':
+                        log_and_send_msg(bot_info, 'exit command has been received, exiting ... ', True)
+                        run_status.set('exit')
+                        sys.exit()
+                    elif arg == 'stop':
+                        if self.command != self.prev_command:
+                            run_status.set('stop')
+                            log_and_send_msg(bot_info, 'stop command has been received, pausing ... ', True)
+                    elif arg == 'start':
+                        if self.command != self.prev_command:
+                            run_status.set('start')
+                            log_and_send_msg(bot_info, 'start command has been received, starting ... ', True)
+                    elif arg == 'set':
+                        if self.command != self.prev_command:
+                            arg = args[1]
+                            if arg == 'parameter':
+                                name = args[2]
+                                value = args[3]
+                                config_json = get_config()
+                                if name in config_json:
+                                    config_json[name] = value
+                                    write_config(config_json)
+                                    log_and_send_msg(bot_info, 'setting parameter with name {}, value {} \n json conf file will be {}'.format(name, value, config_json), True)
+                                else:
+                                    log_and_send_msg(bot_info, 'unknown parameter name {} : refer to current conf.json file {}'.format(name, config_json), True)
+                            else:
+                                self.make_error(arg)
+                    elif arg != 'none':
+                        if self.command != self.prev_command:
+                            self.make_error(arg)
+            except Exception as e:
+                self.make_error('with an error: {}'.format(e))
             time.sleep(THREAD_COOL_TIME)
 
 
@@ -321,15 +328,18 @@ while True:
 
         if btc_ratio < BTC_LOCK: print('!!!!! less than BTC LOCK! {}'.format(BTC_LOCK))
         if btc_total < BTC_LOCK_V: print('!!!!! less than BTC VOLUME LOCK! {}'.format(BTC_LOCK_V))
-        print(datetime.now().strftime("%m-%d %H:%M:%S"), 'BTC price..', 'upbit', '{:,}'.format(a))
+        log_and_send_msg(bot_info, '[ {} ] BTC price.. upbit {:,}'.format(datetime.now().strftime("%m-%d %H:%M:%S"),a), True)
 
         ask_price = round(a + a * UPDOWN * 1.5, -3); ask_cnt = float(BETTING) / ask_price
         bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
         if money['free'] > bid_price * bid_cnt :
             if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK and btc_total > BTC_LOCK_V:
-                coin.limit_buy('BTC', bid_price, bid_cnt)
-                coin.limit_sell('BTC', ask_price, ask_cnt)
-                log_and_send_msg(bot_info, 'reserved limit buy: bid_price: {}, bid_cnt: {}, sell: ask_price: {}, ask_cnt: {}'.format(bid_price, bid_cnt, ask_price, ask_cnt), True)
+                if not BTC_BOX_CHECK or (BTC_BOX_CHECK and bid_price >= BTC_BOX_MIN and ask_price <= BTC_BOX_MAX):
+                    log_and_send_msg(bot_info, 'reserved limit buy: bid_price: {}, bid_cnt: {}, sell: ask_price: {}, ask_cnt: {}'.format(bid_price, bid_cnt, ask_price, ask_cnt), True)
+                    coin.limit_buy('BTC', bid_price, bid_cnt)
+                    coin.limit_sell('BTC', ask_price, ask_cnt)
+                else:
+                    log_and_send_msg(bot_info, 'skipping updown strategy because bid ask prices {} ~ {} are not in the box range {} ~ {}'.format(bid_price, ask_price, BTC_BOX_MIN, BTC_BOX_MAX), True)
             else:
                 # canceling pending order logic is not required when BTC_LOCK_PENDING_CHECK is True
                 if not BTC_LOCK_PENDING_CHECK:

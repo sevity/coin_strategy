@@ -1,9 +1,12 @@
 {
-  "up_down_percent": 1,
-  "betting_in_krw": 900000,
-  "cool_time_in_seconds": 900,
-  "timeout_in_hours": 24,
-  "btc_lock_percent": 70,
-  "btc_lock_abs_amount": 0.2,
-  "btc_lock_pending_check": "yes"
+  "up-down-percent": 1,
+  "betting-krw": 900000,
+  "cool-time-seconds": 900,
+  "timeout-hours": 24,
+  "btc-lock-percent": 70,
+  "btc-lock-abs-amount": 0.2,
+  "btc-lock-pending-check": "yes"
+  "btc-box-check": "no",
+  "btc-box-min-krw": 36000000,
+  "btc-box-max-krw": 39000000
 }

@@ -157,25 +157,6 @@ def check_and_cancel_pending_orders():
         sys.exit()
 
 
-#later implement this as a separate thread
-def handle_commands():
-    global command
-    prev_command = command
-    result = get_telegram_command(bot_info)
-    if result != 'none':
-        command = result
-    if command == 'exit':
-        log_and_send_msg(bot_info, 'exit command has been received, exiting ... ', True)
-        sys.exist()
-    elif command == 'stop':
-        if command != prev_command:
-            log_and_send_msg(bot_info, 'stop command has been received, pausing ... ', True)
-    elif command == 'start':
-        if command != prev_command:
-            log_and_send_msg(bot_info, 'start command has been received, starting ... ', True)
-    return command == 'start'
-
-
 # 공유된 변수를 위한 클래스
 class ThreadVariable():
     def __init__(self):

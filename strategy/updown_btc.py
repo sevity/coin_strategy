@@ -139,13 +139,15 @@ trade_delta = None
 trade_volume_delta = None
 p_partial_volume = -1
 partial_delta = None
+
+l = coin.get_live_orders_ext(TICKER, 'BTC')
+for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+    if askbid=='bid':
+        bids[oid_] = (price, ocnt)
+    else:
+        asks[oid_] = (price, ocnt)
+
 while True:
-    l = coin.get_live_orders_ext(TICKER, 'BTC')
-    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
-        if askbid=='bid':
-            bids[oid_] = (price, ocnt)
-        else:
-            asks[oid_] = (price, ocnt)
     try:
         money = coin.get_asset_info('BTC')
         ticker = coin.get_asset_info(TICKER)
@@ -286,3 +288,12 @@ while True:
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)
     time.sleep(COOL_TIME)
+    n = datetime.now()
+    while (datetime.now() - n).seconds < COOL_TIME:
+        l = coin.get_live_orders_ext(TICKER, 'BTC')
+        for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+            if askbid=='bid':
+                bids[oid_] = (price, ocnt)
+            else:
+                asks[oid_] = (price, ocnt)
+        time.sleep(5)

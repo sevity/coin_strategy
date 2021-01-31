@@ -317,43 +317,48 @@ def cancel(oid, bLog=True):
 
 @dispatch(str, str) 
 def get_live_orders(ticker, currency):
-    query = {
-        'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
-        'state': 'wait',
-    }
-    query_string = urlencode(query)
+    r = []
+    page_id = 1
 
-    uuids = [
-        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
-        #...
-    ]
-    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+    while True:
+        query = {
+            'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+            'state': 'wait',
+            'page': page_id,
+        }
+        query_string = urlencode(query)
 
-    #query['uuids[]'] = uuids
-    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+        uuids = [
+            '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+            #...
+        ]
+        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
 
-    m = hashlib.sha512()
-    m.update(query_string.encode())
-    query_hash = m.hexdigest()
+        m = hashlib.sha512()
+        m.update(query_string.encode())
+        query_hash = m.hexdigest()
 
-    payload = {
-        'access_key': g_api_key,
-        'nonce': str(uuid.uuid4()),
-        'query_hash': query_hash,
-        'query_hash_alg': 'SHA512',
-    }
+        payload = {
+            'access_key': g_api_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
 
-    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-    authorize_token = 'Bearer {}'.format(jwt_token)
-    headers = {"Authorization": authorize_token}
+        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
 
-    ok = False
-    while ok == False:
-        try:
-            res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-            ok = True
-        except:
-            pass
+        ok = False
+        while ok == False:
+            try:
+                res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+                ok = True
+            except:
+                pass
+
+        if not bool(res.json()):
+            break
 
     r = []
     try:
@@ -375,6 +380,7 @@ def get_live_orders(ticker, currency):
                 ct = None
                 price = 0.0
                 remaining_volume = 0.0
+        page_id = page_id + 1
     return r
 
 @dispatch(str, str) 

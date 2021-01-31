@@ -56,8 +56,7 @@ total_gain = 0
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
-        pass
-        # coin.cancel(oid)
+        coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
@@ -131,6 +130,7 @@ while True:
         if askbid=='ask' and int(float(price)) == ap:
             afound = True
     # ask없는 bid에 대해 주문
+    # print(afound, bfound)
     if abs(cp - bp) > KRW_DELTA/4 and bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
         print('\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow + 

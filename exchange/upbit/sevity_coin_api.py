@@ -357,22 +357,24 @@ def get_live_orders(ticker, currency):
             except:
                 pass
 
+        try:
+            rj = res.json()
+        except:
+            break
+
         if not bool(res.json()):
             break
 
-        for ord in res.json():
-            try:
-                # print('ord:', ord)
-                ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-                price = float(ord['price'])
-                remaining_volume = float(ord['remaining_volume'])
-                a = ord['uuid']
-                b = ord['side']
-                r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
-            except:
-                ct = None
-                price = 0.0
-                remaining_volume = 0.0
+        if rj is not None:
+            for ord in res.json():
+                try:
+                    # print('ord:', ord)
+                    ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+                    price = float(ord['price'])
+                    remaining_volume = float(ord['remaining_volume'])
+                    r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
+                except:
+                    pass
         page_id = page_id + 1
     return r
 

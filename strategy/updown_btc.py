@@ -16,45 +16,51 @@ import argparse
 # UPDOWN_DELTA = 0.00000025  # 현재 유리호가 보다 몇틱 벌려서 내는지(2이면 상하방 2호가)
 UPDOWN = {
     'DOT':  0.00002000, 
-    'XRP':  0.00000030,
-    'XLM':  0.00000020,
-    'EOS':  0.00000100,
+    'XRP':  0.00000020,
+    'XLM':  0.00000030,
+    'EOS':  0.00000200,
     'TRX':  0.00000003,
     'MANA': 0.00000010,
-    'ZIL':  0.00000004,
-    'XTZ':  0.00000150,
+    'ZIL':  0.00000006,
+    'XTZ':  0.00000250,
     'ALGO': 0.00000070,
-    'LINK': 0.00000900,
-    'EMC2': 0.00000005,
-    'BFC':  0.00000003,
-    'OMG':  0.00000200,
+    'LINK': 0.00001500,
+    'EMC2': 0.00000007,
+    'BFC':  0.00000005,
+    'OMG':  0.00000250,
+    'LOOM': 0.00000007,
+    'UNI':  0.00002400,
     }
-BETTING = 0.0020 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
+BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
 COOL_TIME = 60 * 60  # 초단위
 TIMEOUT_DAYS = 500  # temp
-###############################################################################
-FEE = 0.0025  # 수수료는 0.25%
-parser = argparse.ArgumentParser(description='updown strategy for BTC market')
-parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
-parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
-parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
-    help='wait time between orders in sec')
-parser.add_argument('--upratio', '-u', required=False, default=1.2)
-args = parser.parse_args()
-TICKER = args.ticker.upper()
-BETTING = float(args.betting)
-COOL_TIME = int(eval(args.cooltime))
-UPDOWN_DELTA = UPDOWN[TICKER]
-UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()
 f.close()
 coin = Coin('upbit',access_key,secret_key)
+
+FEE = 0.0025  # 수수료는 0.25%
+parser = argparse.ArgumentParser(description='updown strategy for BTC market')
+parser.add_argument('--ticker', '-t', required=True, help='coin name ex)XRP')
+parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
+parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
+    help='wait time between orders in sec')
+parser.add_argument('--upratio', '-u', required=False, default=1.5)
+args = parser.parse_args()
+TICKER = args.ticker.upper()
+BETTING = float(args.betting)
+COOL_TIME = int(eval(args.cooltime))
+if TICKER not in UPDOWN:
+    UPDOWN_DELTA = coin.get_price(TICKER, 'BTC') * 0.03
+else:
+    UPDOWN_DELTA = UPDOWN[TICKER]
+UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.
+###############################################################################
 btckrw = coin.get_price('BTC', 'KRW')
-print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), cooltime:{}sec'.
-    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), COOL_TIME))
+print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), upratio:{}, cooltime:{}sec'.
+    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), UP_RATIO, COOL_TIME))
 assert(UPDOWN_DELTA > 0)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -108,10 +114,10 @@ def buy(price, volume):
     new_volume = trade_amount / price
     oid = coin.limit_buy_btc(TICKER, price, new_volume)
     time.sleep(1)
-    l = coin.get_live_orders(TICKER, 'BTC')
-    for (oid_, askbid, price, cnt, odt) in l:
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
         if oid_ == oid:
-            bids[oid] = (price, cnt)
+            bids[oid] = (price, ocnt)
             break
     if oid in bids:
         return oid, bids[oid][1]
@@ -120,27 +126,27 @@ def buy(price, volume):
 def sell(price, volume):
     oid = coin.limit_sell_btc(TICKER, price, volume)
     time.sleep(1)
-    l = coin.get_live_orders(TICKER, 'BTC')
-    for (oid_, askbid, price, cnt, odt) in l:
+    l = coin.get_live_orders_ext(TICKER, 'BTC')
+    for (oid_, askbid, price, ocnt, rcnt, odt) in l:
         if oid_ == oid:
-            asks[oid] = (price, volume)
-            print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, volume))
+            asks[oid] = (price, ocnt)
+            assert(fsame(ocnt, volume))
+            print('sell debug.. cnt:{}, new_volume:{}'.format(cnt, ocnt))
             break
 
-# 실행전 걸려있는 미체결 주문들 등록
-l = coin.get_live_orders(TICKER, 'BTC')
-for (oid_, askbid, price, cnt, odt) in l:
-    if askbid=='bid':
-        bids[oid_] = (price, cnt)
-    else:
-        asks[oid_] = (price, cnt)
-
-    
 holding_value = 0.0
 trade_delta = None
 trade_volume_delta = None
 p_partial_volume = -1
 partial_delta = None
+
+l = coin.get_live_orders_ext(TICKER, 'BTC')
+for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+    if askbid=='bid':
+        bids[oid_] = (price, ocnt)
+    else:
+        asks[oid_] = (price, ocnt)
+
 while True:
     try:
         money = coin.get_asset_info('BTC')
@@ -192,15 +198,15 @@ while True:
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
         print("cancel pending orders...")
-        l = coin.get_live_orders(TICKER, 'BTC')
+        l = coin.get_live_orders_ext(TICKER, 'BTC')
         KST = timezone(timedelta(hours=9))
         print("{} orders alive...".format(len(l)))
-        for (oid, askbid, price, cnt, odt) in l:
+        for (oid, askbid, price, ocnt, rcnt, odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
             print(oid.split('-')[0], askbid, 
-                '{:.8f}BTC {:.8f}cnt'.format(float(price), float(cnt)), odt, hour_diff, 'hours')
+                '{:.8f}BTC {:.8f}{}'.format(float(price), float(ocnt), TICKER), odt, hour_diff, 'hours')
             if date_diff >= TIMEOUT_DAYS:
             #if hour_diff >= 33:
                 print("cancel order.. {}".format(oid))
@@ -246,7 +252,7 @@ while True:
         delta = (float(price) * float(volume)) * (1.0 + FEE)
         print(fg.red + 'bid filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
             'trade delta: +{:.8f}{}(-{:.8f}BTC)'.
-			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta -= delta 
         trade_volume_delta -= volume
         del bids[oid]
@@ -254,7 +260,7 @@ while True:
         delta = (float(price) * float(volume)) * (1.0 - FEE)
         print(fg.blue + 'ask filled({:.8f}BTC, {:,}KRW). '.format(price, int(price*btckrw))+fg.green+
             'trade delta: -{:.8f}{}(+{:.8f}BTC)'.
-			format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
+            format(float(volume), TICKER, float(delta))+ fg.rs + ' ' + oid.split('-')[0])
         trade_delta += delta 
         trade_volume_delta += volume
         del asks[oid]
@@ -263,9 +269,11 @@ while True:
         print('debug..', a, p, v)
         # print(a['total'], coin.get_price(TICKER, 'BTC'))
         holding_value = v
+        holding_volume = a['total']
+    else:
+        holding_value = 0
+        holding_volume = 0
 
-
-    holding_volume = 0 if 'total' not in a else a['total']
     txt = 'R:{:.8f}BTC, {:,}KRW = '.format(
         #holding_volume + trade_volume_delta + partial_volume, TICKER, 
         holding_value + trade_delta + partial_delta, 
@@ -279,4 +287,12 @@ while True:
 
     print(fg.li_yellow + txt + fg.rs)
     send_telegram('[{}-BTC] '.format(TICKER)+txt)
-    time.sleep(COOL_TIME)
+    n = datetime.now()
+    while (datetime.now() - n).seconds < COOL_TIME:
+        l = coin.get_live_orders_ext(TICKER, 'BTC')
+        for (oid_, askbid, price, ocnt, rcnt, odt) in l:
+            if askbid=='bid':
+                bids[oid_] = (price, ocnt)
+            else:
+                asks[oid_] = (price, ocnt)
+        time.sleep(5)

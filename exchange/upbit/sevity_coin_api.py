@@ -187,7 +187,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
             pass
     
     if res.ok == False:
-        print(res, res.text)
+        print(' ' + fg.li_black, res, res.text, fg.rs)
         return (-1, None)
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
@@ -246,7 +246,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
             pass
     
     if res.ok == False:
-        print(res, res.text)
+        print(' ' + fg.li_black, res, res.text, fg.rs)
         en = json.loads(res.text)['error']['name']
         if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
             return (-1, None)
@@ -360,18 +360,26 @@ def get_live_orders(ticker, currency):
         if not bool(res.json()):
             break
 
+    r = []
+    try:
+        rj = res.json()
+    except:
+        return r
+
+    if rj is not None:
         for ord in res.json():
             try:
                 # print('ord:', ord)
                 ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
                 price = float(ord['price'])
                 remaining_volume = float(ord['remaining_volume'])
+                a = ord['uuid']
+                b = ord['side']
+                r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
             except:
                 ct = None
                 price = 0.0
                 remaining_volume = 0.0
-            r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
-
         page_id = page_id + 1
     return r
 

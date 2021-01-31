@@ -139,13 +139,9 @@ while True:
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price <= bp:
-                l = coin.get_live_orders_ext('BTC', 'KRW')
-                for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
-                    if oid_ == oid:
-                        if fsame(order_cnt, remain_cnt):
-                            coin.cancel(oid)
-                            del bid_prices[oid]
-                            break
+                coin.cancel(oid)
+                del bid_prices[oid]
+                break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

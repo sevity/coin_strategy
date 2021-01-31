@@ -360,13 +360,6 @@ def get_live_orders(ticker, currency):
         if not bool(res.json()):
             break
 
-    r = []
-    try:
-        rj = res.json()
-    except:
-        return r
-
-    if rj is not None:
         for ord in res.json():
             try:
                 # print('ord:', ord)

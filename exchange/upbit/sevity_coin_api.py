@@ -317,65 +317,64 @@ def cancel(oid, bLog=True):
 
 @dispatch(str, str) 
 def get_live_orders(ticker, currency):
-    r = []
-    page_id = 1
+    query = {
+        'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+        'state': 'wait',
+    }
+    query_string = urlencode(query)
 
-    while True:
-        query = {
-            'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
-            'state': 'wait',
-            'page': page_id,
-        }
-        query_string = urlencode(query)
+    uuids = [
+        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+        #...
+    ]
+    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
 
-        uuids = [
-            '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
-            #...
-        ]
-        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+    #query['uuids[]'] = uuids
+    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
 
-        m = hashlib.sha512()
-        m.update(query_string.encode())
-        query_hash = m.hexdigest()
+    m = hashlib.sha512()
+    m.update(query_string.encode())
+    query_hash = m.hexdigest()
 
-        payload = {
-            'access_key': g_api_key,
-            'nonce': str(uuid.uuid4()),
-            'query_hash': query_hash,
-            'query_hash_alg': 'SHA512',
-        }
+    payload = {
+        'access_key': g_api_key,
+        'nonce': str(uuid.uuid4()),
+        'query_hash': query_hash,
+        'query_hash_alg': 'SHA512',
+    }
 
-        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-        authorize_token = 'Bearer {}'.format(jwt_token)
-        headers = {"Authorization": authorize_token}
+    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
 
-        ok = False
-        while ok == False:
-            try:
-                res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-                ok = True
-            except:
-                pass
-
+    ok = False
+    while ok == False:
         try:
-            rj = res.json()
+            res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+            ok = True
         except:
-            break
+            pass
 
-        if not bool(res.json()):
-            break
+    r = []
+    try:
+        rj = res.json()
+    except:
+        return r
 
-        if rj is not None:
-            for ord in res.json():
-                try:
-                    # print('ord:', ord)
-                    ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
-                    price = float(ord['price'])
-                    remaining_volume = float(ord['remaining_volume'])
-                    r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
-                except:
-                    pass
-        page_id = page_id + 1
+    if rj is not None:
+        for ord in res.json():
+            try:
+                # print('ord:', ord)
+                ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
+                price = float(ord['price'])
+                remaining_volume = float(ord['remaining_volume'])
+                a = ord['uuid']
+                b = ord['side']
+                r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
+            except:
+                ct = None
+                price = 0.0
+                remaining_volume = 0.0
     return r
 
 @dispatch(str, str) 
@@ -417,8 +416,12 @@ def get_live_orders_ext(ticker, currency):
             ok = True
         except:
             pass
-
     r = []
+    try:
+        rj = res.json()
+    except:
+        return r
+
     for ord in res.json():
         try:
             # print('ord:', ord)
@@ -426,12 +429,9 @@ def get_live_orders_ext(ticker, currency):
             price = float(ord['price'])
             ordered_volume = float(ord['volume'])
             remaining_volume = float(ord['remaining_volume'])
+            r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
         except:
-            ct = None
-            price = 0.0
-            ordered_volume = 0.0
-            remaining_volume = 0.0
-        r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
+            pass
     return r
 
 @dispatch(str) 

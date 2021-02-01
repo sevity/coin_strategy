@@ -161,6 +161,7 @@ while True:
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
+        bid_gop[bp] = min(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy_btc('ETH', bp, bet / bp)

@@ -73,7 +73,7 @@ while True:
         format(TARGET_KRW_BTC_RATIO, krw_ratio) + fg.rs)
     if krw_ratio < TARGET_KRW_BTC_RATIO:
         # 돈부족 상황
-        print(fg.blue + 'KRW shortage! will make BTC ask to make KRW!' + fg.rs)
+        print(fg.blue + 'KRW shortage! will place BTC ask to make KRW!' + fg.rs)
         DOWN_RATIO = (TARGET_KRW_BTC_RATIO / krw_ratio)
         DOWN_RATIO = min(DOWN_RATIO, 10)
         DOWN_DELTA = UP_DELTA * DOWN_RATIO
@@ -81,7 +81,7 @@ while True:
         UP_DELTA /= 4
         DOWN_DELTA = 0
     else:
-        print(fg.red + 'KRW surplus! will make BTC bid to reduce KRW!' + fg.rs)
+        print(fg.red + 'KRW surplus! will place BTC bid to reduce KRW!' + fg.rs)
         UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
         UP_RATIO = min(UP_RATIO, 10)
         UP_DELTA = UP_DELTA * UP_RATIO 

@@ -138,7 +138,7 @@ while True:
             format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if price <= bp and price % 100000 == 0:
+            if price <= bp:
                 coin.cancel(oid)
                 del bid_prices[oid]
                 break

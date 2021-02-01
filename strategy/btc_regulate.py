@@ -50,7 +50,9 @@ while True:
     try:
         btc = coin.get_asset_info(TICKER)
         krw = coin.get_asset_info('KRW')
+        eth = coin.get_asset_info('ETH')
         btc_price = coin.get_price(TICKER, 'KRW')
+        eth_price = coin.get_price('ETH', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)
@@ -61,7 +63,7 @@ while True:
     print(fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S") + fg.rs + ' btc price:{:,}KRW'.
         format(int(btc_price)))
 
-    krw_ratio = krw['total'] / (krw['total'] + btc['total'] * btc_price)
+    krw_ratio = krw['total'] / (krw['total'] + btc['total'] * btc_price + eth['total'] * eth_price)
     # krw_ratio = 0.2
     UP_DELTA = UPDOWN_PERCENT
     DOWN_DELTA = UPDOWN_PERCENT

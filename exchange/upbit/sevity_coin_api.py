@@ -354,11 +354,25 @@ def get_live_orders(ticker, currency):
             try:
                 res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
                 ok = True
-            except:
-                pass
+            except Exception as e:
+                print('[get_live_orders] error when get request response, so retrying... with exception:', e)
 
+        # if json conversion error occurs then return empty dictionary
+        try:
+            rj = res.json()
+        except Exception as e:
+            r = []
+            print('[get_live_orders] error when making response to json, returning empty, with exception:', e)
+            return r
+
+        if rj is None:
+            r = []
+            print('[get_live_orders] error: json is None, returning empty')
+            return r
+
+        # loop end condition, return current response, empty live orders in this page, meaning the end of the page
         if not bool(res.json()):
-            break
+            return r
 
         for ord in res.json():
             try:
@@ -366,13 +380,14 @@ def get_live_orders(ticker, currency):
                 ct = datetime.strptime(ord['created_at'], '%Y-%m-%dT%H:%M:%S%z')
                 price = float(ord['price'])
                 remaining_volume = float(ord['remaining_volume'])
-            except:
-                ct = None
-                price = 0.0
-                remaining_volume = 0.0
-            r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
-
+                a = ord['uuid']
+                b = ord['side']
+                r.append((a, b, price, remaining_volume, ct))
+            # maybe data index reference exception? don't we need to return empty dictionary?
+            except Exception as e:
+                print('[get_live_orders] error when appending individual order, so skipping... with exception:', e)
         page_id = page_id + 1
+
     return r
 
 @dispatch(str, str) 

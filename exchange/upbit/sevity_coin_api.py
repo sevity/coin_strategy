@@ -362,12 +362,12 @@ def get_live_orders(ticker, currency):
             rj = res.json()
         except Exception as e:
             r = []
-            print('[get_live_orders] error when making response to json, returning empty, with exception:', e)
+            print('[get_live_orders] error when making response to json, returning an empty result, with exception:', e)
             return r
 
         if rj is None:
             r = []
-            print('[get_live_orders] error: json is None, returning empty')
+            print('[get_live_orders] error: json is None, returning an empty result')
             return r
 
         # loop end condition, return current response, empty live orders in this page, meaning the end of the page

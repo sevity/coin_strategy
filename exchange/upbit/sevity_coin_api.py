@@ -315,7 +315,8 @@ def cancel(oid, bLog=True):
         print('  cancel fail...', oid, res.ok, res, res.text)
     return res
 
-@dispatch(str, str) 
+
+@dispatch(str, str)
 def get_live_orders(ticker, currency):
     r = []
     page_id = 0
@@ -428,8 +429,12 @@ def get_live_orders_ext(ticker, currency):
             ok = True
         except:
             pass
-
     r = []
+    try:
+        rj = res.json()
+    except:
+        return r
+
     for ord in res.json():
         try:
             # print('ord:', ord)
@@ -437,12 +442,9 @@ def get_live_orders_ext(ticker, currency):
             price = float(ord['price'])
             ordered_volume = float(ord['volume'])
             remaining_volume = float(ord['remaining_volume'])
+            r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
         except:
-            ct = None
-            price = 0.0
-            ordered_volume = 0.0
-            remaining_volume = 0.0
-        r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
+            pass
     return r
 
 @dispatch(str) 

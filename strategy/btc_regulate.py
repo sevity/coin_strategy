@@ -15,8 +15,8 @@ import math
 # param #######################################################################
 TARGET_KRW_BTC_RATIO = 0.1
 UPDOWN_PERCENT = 0.008  # 기본 상하방 0.8%, 성공하면 수수료 제외 1.5% 먹음
-BETTING_KRW = 15000   # 한번에 거는 돈의 크기
-COOL_TIME = 60 * 10  # 초단위
+BETTING_KRW = 30000   # 한번에 거는 돈의 크기
+COOL_TIME = 60 * 5  # 초단위
 ###############################################################################
 TICKER = 'BTC'
 FEE = 0.0025  # 수수료는 0.25%
@@ -50,7 +50,9 @@ while True:
     try:
         btc = coin.get_asset_info(TICKER)
         krw = coin.get_asset_info('KRW')
+        eth = coin.get_asset_info('ETH')
         btc_price = coin.get_price(TICKER, 'KRW')
+        eth_price = coin.get_price('ETH', 'KRW')
     except Exception as e:
         print('err', e)
         time.sleep(1)
@@ -61,7 +63,7 @@ while True:
     print(fg.magenta + datetime.now().strftime("%m-%d %H:%M:%S") + fg.rs + ' btc price:{:,}KRW'.
         format(int(btc_price)))
 
-    krw_ratio = krw['total'] / (krw['total'] + btc['total'] * btc_price)
+    krw_ratio = krw['total'] / (krw['total'] + btc['total'] * btc_price + eth['total'] * eth_price)
     # krw_ratio = 0.2
     UP_DELTA = UPDOWN_PERCENT
     DOWN_DELTA = UPDOWN_PERCENT
@@ -71,7 +73,7 @@ while True:
         format(TARGET_KRW_BTC_RATIO, krw_ratio) + fg.rs)
     if krw_ratio < TARGET_KRW_BTC_RATIO:
         # 돈부족 상황
-        print(fg.blue + 'KRW shortage! strong BTC ask' + fg.rs)
+        print(fg.blue + 'KRW shortage! will place BTC ask to make KRW!' + fg.rs)
         DOWN_RATIO = (TARGET_KRW_BTC_RATIO / krw_ratio)
         DOWN_RATIO = min(DOWN_RATIO, 10)
         DOWN_DELTA = UP_DELTA * DOWN_RATIO
@@ -79,7 +81,7 @@ while True:
         UP_DELTA /= 4
         DOWN_DELTA = 0
     else:
-        print(fg.red + 'KRW surplus! strong BTC bid' + fg.rs)
+        print(fg.red + 'KRW surplus! will place BTC bid to reduce KRW!' + fg.rs)
         UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
         UP_RATIO = min(UP_RATIO, 10)
         UP_DELTA = UP_DELTA * UP_RATIO 

@@ -17,7 +17,7 @@ from sty import fg, bg, ef, rs
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 BTC_DELTA = 0.0004  # 이걸 기준으로 촘촘하게 주문을 낸다.
-BETTING = 0.0100    # 초기버전은 고정배팅으로 가보자
+BETTING = 0.0500    # 초기버전은 고정배팅으로 가보자
 # BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
@@ -161,6 +161,7 @@ while True:
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
+        bid_gop[bp] = min(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy_btc('ETH', bp, bet / bp)

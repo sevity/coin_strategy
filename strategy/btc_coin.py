@@ -56,6 +56,7 @@ total_gain = 0
 l = coin.get_live_orders('BTC', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
+        if price % 100000 != 0: continue  # btc_regulate에서 건건 취소하지 않는다.
         coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)

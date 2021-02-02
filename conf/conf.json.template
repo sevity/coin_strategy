@@ -8,5 +8,6 @@
   "btc-lock-pending-check": "yes"
   "btc-box-check": "no",
   "btc-box-min-krw": 36000000,
-  "btc-box-max-krw": 39000000
+  "btc-box-max-krw": 39000000,
+  "log-file-name": "updown.log"
 }

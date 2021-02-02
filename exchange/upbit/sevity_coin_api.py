@@ -315,53 +315,66 @@ def cancel(oid, bLog=True):
         print('  cancel fail...', oid, res.ok, res, res.text)
     return res
 
-@dispatch(str, str) 
+
+@dispatch(str, str)
 def get_live_orders(ticker, currency):
-    query = {
-        'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
-        'state': 'wait',
-    }
-    query_string = urlencode(query)
-
-    uuids = [
-        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
-        #...
-    ]
-    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
-
-    #query['uuids[]'] = uuids
-    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
-
-    m = hashlib.sha512()
-    m.update(query_string.encode())
-    query_hash = m.hexdigest()
-
-    payload = {
-        'access_key': g_api_key,
-        'nonce': str(uuid.uuid4()),
-        'query_hash': query_hash,
-        'query_hash_alg': 'SHA512',
-    }
-
-    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-    authorize_token = 'Bearer {}'.format(jwt_token)
-    headers = {"Authorization": authorize_token}
-
-    ok = False
-    while ok == False:
-        try:
-            res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-            ok = True
-        except:
-            pass
-
     r = []
-    try:
-        rj = res.json()
-    except:
-        return r
+    page_id = 0
 
-    if rj is not None:
+    while True:
+        page_id = page_id + 1
+        query = {
+            'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
+            'state': 'wait',
+            'page': page_id,
+        }
+        query_string = urlencode(query)
+
+        uuids = [
+            '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
+            #...
+        ]
+        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+        m = hashlib.sha512()
+        m.update(query_string.encode())
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': g_api_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+
+        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        ok = False
+        while not ok:
+            try:
+                res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+                ok = True
+            except Exception as e:
+                print('[get_live_orders] error when get request response, so retrying... with exception:', e)
+
+        # if json conversion error occurs then return empty dictionary
+        try:
+            rj = res.json()
+        except Exception as e:
+            r = []
+            print('[get_live_orders] error when making response to json, returning an empty result, with exception:', e)
+            return r
+
+        if rj is None:
+            r = []
+            print('[get_live_orders] error: json is None, returning an empty result')
+            return r
+        elif not bool(rj):
+            # loop end condition, return current response, empty live orders in this page, meaning the end of the page
+            return r
+
         for ord in res.json():
             try:
                 # print('ord:', ord)
@@ -370,11 +383,11 @@ def get_live_orders(ticker, currency):
                 remaining_volume = float(ord['remaining_volume'])
                 a = ord['uuid']
                 b = ord['side']
-                r.append((ord['uuid'], ord['side'], price, remaining_volume, ct))
-            except:
-                ct = None
-                price = 0.0
-                remaining_volume = 0.0
+                r.append((a, b, price, remaining_volume, ct))
+            # maybe data index reference exception? don't we need to return empty dictionary?
+            except Exception as e:
+                print('[get_live_orders] error when appending individual order, so skipping... with exception:', e)
+
     return r
 
 @dispatch(str, str) 

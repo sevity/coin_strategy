@@ -12,6 +12,7 @@ import threading
 FEE = 0.0005  # 수수료는 0.05%
 UPDOWN = 0.01  # 2% 상하로 걸어놓기..  성공하면 1.9%먹는 게임
 BETTING = 900000  # 한번에 거는 돈의 크기
+UPBIT_MIN_BETTING = 5100 # upbit의 최소 BTC 베팅 금액
 COOL_TIME = 60 * 15  # 초단위
 # TIMEOUT_DAYS = 1
 TIMEOUT_HOURS = 24
@@ -68,6 +69,12 @@ def check_pending_ask(bLog=True):
 
 def log_and_send_msg(bot_info, msg, do_send=False):
     print(msg)
+    try:
+        log_file_name = global_conf['log-file-name']
+        log_file = open("../log/{}".format(log_file_name), "a+")
+        log_file.write("\n{}".format(msg))
+    except:
+        pass
     if do_send:
         try:
             bot_info['bot'].sendMessage(chat_id=bot_info['chat_id'], text=msg)
@@ -106,6 +113,7 @@ def load_config():
         BTC_BOX_MAX = float(conf['btc-box-max-krw'])
         BTC_BOX_MIN = float(conf['btc-box-min-krw'])
         print('conf: {}'.format(conf))
+        return conf
     except Exception as e:
         print('err', e)
         sys.exit()
@@ -127,16 +135,17 @@ def check_and_cancel_pending_orders():
         print("check if it is needed to cancel pending orders...")
         l = coin.get_live_orders('BTC', 'KRW')
         KST = timezone(timedelta(hours=9))
-        print("{} orders alive...".format(len(l)))
+        log_and_send_msg(bot_info, "{} orders alive...".format(len(l)), True)
         bid_sum = 0
         ask_sum = 0
         bid_cnt_sum = 0
         ask_cnt_sum = 0
+        sid = 1
         for (oid, askbid, price, cnt, odt) in l:
             now = datetime.now(KST)
             date_diff = (now-odt).days
             hour_diff = int(date_diff*24 + (now-odt).seconds/3600)
-            print(oid, askbid, '{:,} {:.2f}m'.format(int(float(price)), float(cnt)*1000), odt, hour_diff, 'hours')
+            print('[{}]'.format(sid), oid, askbid, '{:,} {:.2f}m'.format(int(float(price)), float(cnt)*1000), odt, hour_diff, 'hours')
             if askbid == 'ask':
                 ask_sum += price * cnt
                 ask_cnt_sum += cnt
@@ -144,12 +153,14 @@ def check_and_cancel_pending_orders():
                 bid_sum += price * cnt
                 bid_cnt_sum += cnt
             if date_diff >= TIMEOUT_HOURS:
-                print("cancel order.. {}".format(oid))
+                log_and_send_msg(bot_info, "cancel order.. {}".format(oid), True)
                 r = coin.cancel(oid)
 
                 # 나중에 bid만으로 KRW부족이 발생해서, 오래된건 위치조정하지 말고 그냥 버리는걸로 해본다. > 근데 KRW부족이 peak eater 때문이어서 원복 ㅋ
                 # if askbid=='ask': coin.limit_sell('BTC', ask_price, ask_cnt)
                 # else: coin.limit_buy('BTC', bid_price, bid_cnt)
+            sid = sid + 1
+
         print("pending orders' bid cnt: {}, bid sum: {}, ask cnt: {}, ask sum: {}".format(bid_cnt_sum, bid_sum, ask_cnt_sum, ask_sum))
         return {'bid_cnt': bid_cnt_sum, 'bid_krw': bid_sum, 'ask_cnt': ask_cnt_sum, 'ask_krw': ask_sum}
     except Exception as e:
@@ -274,12 +285,13 @@ bot_info = get_telegram_bot_info()
 command_handling_thread = CommandProcessor()
 command_handling_thread.daemon = True
 command_handling_thread.start()
+global_conf = load_config()
 
 while True:
     if run_status.get() == 'exit':
         sys.exit()
     elif run_status.get() == 'start':
-        load_config()
+        global_conf = load_config()
         try:
             a = coin.get_price('BTC', 'KRW')
             money = coin.get_asset_info('KRW')
@@ -293,13 +305,14 @@ while True:
         # money['free'] = int(money['free'] - 3000000)
         log_and_send_msg(bot_info, 'BTC.. {}'.format(btc))
         log_and_send_msg(bot_info, 'free BTC in KRW.. {:,}'.format(int(btc['free']*a)))
-        log_and_send_msg(bot_info, 'total money.. {:,}'.format(int(money['total'])+int(btc['total']*a)))
+        total_asset_krw = money['total']+btc['total']*a
+        log_and_send_msg(bot_info, 'total asset in krw.. {:,}'.format(total_asset_krw), True)
 
         btc_ratio = 0
         btc_total = 0
         if BTC_LOCK_PENDING_CHECK:
-            btc_ratio = (btc['total']*a - pending_sum['ask_krw']) / (money['total']+btc['total']*a)
             btc_total = btc['free']
+            btc_ratio = btc_total*a / total_asset_krw
             log_and_send_msg(bot_info, 'BTC to KRW ratio.. including pending btc sell {:.4f}'.format(btc_ratio))
             log_and_send_msg(bot_info, 'BTC total {:.4f}, BTC free {:.4f}, BTC pending ask in krw {:.4f}'.format(btc['total'], btc['free'], pending_sum['ask_cnt']))
         else:
@@ -313,7 +326,7 @@ while True:
 
         ask_price = round(a + a * UPDOWN * 1.5, -3); ask_cnt = float(BETTING) / ask_price
         bid_price = round(a - a * UPDOWN, -3); bid_cnt = float(BETTING) / bid_price
-        if money['free'] > bid_price * bid_cnt :
+        if money['free'] > bid_price * bid_cnt:
             if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK and btc_total > BTC_LOCK_V:
                 if not BTC_BOX_CHECK or (BTC_BOX_CHECK and bid_price >= BTC_BOX_MIN and ask_price <= BTC_BOX_MAX):
                     log_and_send_msg(bot_info, 'reserved limit buy: bid_price: {}, bid_cnt: {}, sell: ask_price: {}, ask_cnt: {}'.format(bid_price, bid_cnt, ask_price, ask_cnt), True)
@@ -323,29 +336,31 @@ while True:
                     log_and_send_msg(bot_info, 'skipping updown strategy because bid ask prices {} ~ {} are not in the box range {} ~ {}'.format(bid_price, ask_price, BTC_BOX_MIN, BTC_BOX_MAX), True)
             else:
                 # canceling pending order logic is not required when BTC_LOCK_PENDING_CHECK is True
-                if not BTC_LOCK_PENDING_CHECK:
-                    if btc_ratio <= BTC_LOCK:
-                        log_and_send_msg(bot_info, '!!!!!!!!!!!! BTC LOCK!')
+                if btc_ratio <= BTC_LOCK:
+                    log_and_send_msg(bot_info, '!!!!!!!!!!!! BTC LOCK!', True)
+                    if not BTC_LOCK_PENDING_CHECK:
                         cancel_pending_asks()
                         time.sleep(1)
-                    elif btc_total <= BTC_LOCK_V:
-                        log_and_send_msg(bot_info, '!!!!!!!!!!!! BTC VOLUME LOCK!')
+                elif btc_total <= BTC_LOCK_V:
+                    log_and_send_msg(bot_info, '!!!!!!!!!!!! BTC VOLUME LOCK!', True)
+                    if not BTC_LOCK_PENDING_CHECK:
                         cancel_pending_asks()
                         time.sleep(1)
-                    else:
-                        log_and_send_msg(bot_info, '!!!!!!!!!!!! not enough BTC!')
+                else:
+                    log_and_send_msg(bot_info, '!!!!!!!!!!!! not enough BTC!', True)
 
-                if not check_pending_ask():
-                    coin.limit_sell('BTC', ask_price, ask_cnt)  # 한 개는 걸어둔다(단 한개만)
-                    log_and_send_msg(bot_info, 'reserved limit sell: ask_price: {}, ask_cnt: {}'.format(ask_price, ask_cnt))
-                new_bid_price = round(a - a * UPDOWN * 0.25, -3); new_bid_cnt = float(BETTING) / new_bid_price / 3
-                coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
-                log_and_send_msg(bot_info, 'reserved limit buy: new_bid_price: {}, new_bid_cnt: {}'.format(new_bid_price, new_bid_cnt), True)
+                if not BTC_LOCK_PENDING_CHECK:
+                    if not check_pending_ask():
+                        coin.limit_sell('BTC', ask_price, ask_cnt)  # 한 개는 걸어둔다(단 한개만)
+                        log_and_send_msg(bot_info, 'reserved limit sell: ask_price: {}, ask_cnt: {}'.format(ask_price, ask_cnt))
+                    new_bid_price = round(a - a * UPDOWN * 0.25, -3); new_bid_cnt = max(float(BETTING) / new_bid_price / 3, float(UPBIT_MIN_BETTING) / new_bid_price)
+                    coin.limit_buy('BTC', new_bid_price, new_bid_cnt)
+                    log_and_send_msg(bot_info, 'reserved limit buy: new_bid_price: {}, new_bid_cnt: {}'.format(new_bid_price, new_bid_cnt), True)
 
         else:
-            print('!!!!!!!!!!!! not enough KRW!')
+            log_and_send_msg(bot_info, '!!!!!!!!!!!! not enough KRW!', True)
             if btc['free'] > ask_cnt and btc_ratio > BTC_LOCK and btc_total > BTC_LOCK_V:
-                new_ask_price = round(a + a * UPDOWN * 0.75, -3); new_ask_cnt = float(BETTING) / new_ask_price / 3
+                new_ask_price = round(a + a * UPDOWN * 0.75, -3); new_ask_cnt = max(float(BETTING) / new_ask_price / 3, float(UPBIT_MIN_BETTING) / new_ask_price)
                 coin.limit_sell('BTC', new_ask_price, new_ask_cnt)
                 log_and_send_msg(bot_info, 'reserved limit sell: new_ask_price: {}, new_ask_cnt: {}'.format(new_ask_price, new_ask_cnt), True)
 

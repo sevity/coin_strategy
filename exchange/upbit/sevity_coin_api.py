@@ -318,9 +318,10 @@ def cancel(oid, bLog=True):
 @dispatch(str, str) 
 def get_live_orders(ticker, currency):
     r = []
-    page_id = 1
+    page_id = 0
 
     while True:
+        page_id = page_id + 1
         query = {
             'market': '{}-{}'.format(currency, ticker),  # 왠일인지 이게 안먹네
             'state': 'wait',
@@ -350,7 +351,7 @@ def get_live_orders(ticker, currency):
         headers = {"Authorization": authorize_token}
 
         ok = False
-        while ok == False:
+        while not ok:
             try:
                 res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
                 ok = True
@@ -369,18 +370,10 @@ def get_live_orders(ticker, currency):
             r = []
             print('[get_live_orders] error: json is None, returning an empty result')
             return r
-
-        # loop end condition, return current response, empty live orders in this page, meaning the end of the page
-        if not bool(res.json()):
+        elif not bool(rj):
+            # loop end condition, return current response, empty live orders in this page, meaning the end of the page
             return r
 
-    r = []
-    try:
-        rj = res.json()
-    except:
-        return r
-
-    if rj is not None:
         for ord in res.json():
             try:
                 # print('ord:', ord)
@@ -393,7 +386,6 @@ def get_live_orders(ticker, currency):
             # maybe data index reference exception? don't we need to return empty dictionary?
             except Exception as e:
                 print('[get_live_orders] error when appending individual order, so skipping... with exception:', e)
-        page_id = page_id + 1
 
     return r
 

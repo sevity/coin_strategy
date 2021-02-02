@@ -16,13 +16,13 @@ from sty import fg, bg, ef, rs
 # 설명 ########################################################################
 # ETH개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 20000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 10000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
-MIN_BET_FOR_AUTO = 20000
+MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
 ###############################################################################
 
@@ -55,7 +55,8 @@ total_gain = 0
 l = coin.get_live_orders('ETH', 'KRW')
 for (oid, askbid, price, cnt, odt) in l:
     if askbid=='bid':
-        coin.cancel(oid)
+        pass
+        # coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
@@ -144,6 +145,7 @@ while True:
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
+        bid_gop[bp] = min(5, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy('ETH', bp, bet / bp)
@@ -153,6 +155,7 @@ while True:
                 print('!!! no money!. will have 30 secs break..')
                 bid_gop[bp] = 1
                 time.sleep(30)
+                break
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('ETH', bp, bet / bp)
             time.sleep(2)

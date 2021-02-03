@@ -102,7 +102,7 @@ while True:
                     bet = BETTING
                     oid = coin.market_buy(ticker, BETTING)
                     # hit_cnts[ticker] = 0
-                print('oid:', oid)
+                # print('oid:', oid)
                 if oid == -1:
                     print(ticker, 'out...')
                     continue

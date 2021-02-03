@@ -27,6 +27,8 @@ def set_key(api_key, secret_key):
     g_api_key = api_key
     g_api_secret = secret_key
 
+def log(msg):
+    print('  ' + fg.li_black + msg + fg.rs)
 
 def get_price(ticker, currency):
     while True:
@@ -193,9 +195,9 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
     # print(' ', oid)
     # print(oid, res)
     if bLog and ord_type!='price': print(fg.li_black + '  order_new...', ticker, 'price:{:,.2f}'.format(price),
-        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid, oid + fg.rs)
+        'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid, oid.split('-')[0] + fg.rs)
     elif bLog and ord_type=='price': print(fg.li_black + '  market_buy order_new...', ticker, 
-        'amount:{:,}KRW'.format(int(price)), askbid, oid + fg.rs)
+        'amount:{:,}KRW'.format(int(price)), askbid, oid.split('-')[0] + fg.rs)
     return (oid,res)
 
 def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
@@ -255,7 +257,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
     # print(' ', oid)
     # print(oid, res)
     if bLog and ord_type!='price': print(fg.li_black + '  order_new...', ticker, 'price:{:.8f}'.format(price),
-        'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid + fg.rs)
+        'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid.split('-')[0] + fg.rs)
     return (oid,res)
 
 def limit_buy(ticker, price, cnt, bLog=True):
@@ -363,7 +365,8 @@ def get_live_orders(ticker, currency):
         try:
             rj = res.json()
         except Exception as e:
-            print('[get_live_orders] error when making response to json, returning an empty result, with exception:', e)
+            log('[get_live_orders] error when making response to json, with exception:' +  str(e))
+            time.sleep(5)
             return 'error'
 
         if rj is None:

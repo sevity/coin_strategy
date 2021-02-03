@@ -12,6 +12,7 @@ import numpy as np
 from collections import deque
 import ast
 from sty import fg, bg, ef, rs
+import argparse
 
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략

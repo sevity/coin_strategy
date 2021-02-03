@@ -75,6 +75,10 @@ while True:
     if TARGET_KRW_BTC_RATIO/2 < krw_ratio < TARGET_KRW_BTC_RATIO*1.5:
         print(fg.green + 'KRW is in OK range..({:.4f} < {:.4f} < {:.4f})'.
             format(TARGET_KRW_BTC_RATIO/2, krw_ratio, TARGET_KRW_BTC_RATIO*1.5) + fg.rs)
+        l = coin.get_live_orders('BTC', 'KRW')
+        for (oid, askbid, price, cnt, odt) in l:
+            if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
+            coin.cancel(oid)
     else:
         if krw_ratio < TARGET_KRW_BTC_RATIO:
             # 돈부족 상황
@@ -101,7 +105,7 @@ while True:
         for (oid, askbid, price, cnt, odt) in l:
             if askbid == CANCEL_ASKBID:
                 if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
-                r = coin.cancel(oid)
+                coin.cancel(oid)
 
         print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
             format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))

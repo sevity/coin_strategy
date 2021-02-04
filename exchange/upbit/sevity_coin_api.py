@@ -260,11 +260,18 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
         'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid.split('-')[0] + fg.rs)
     return (oid,res)
 
+def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
+    oid, res = order_new(ticker, price, cnt, 'bid', 'limit', bLog)
+    while res.reason == 'too_many_request_order':
+        time.sleep(5)
+        oid, res = order_new(ticker, price, cnt, 'bid', 'limit', bLog)
+    return oid, res
+
 def limit_buy(ticker, price, cnt, bLog=True):
-    return order_new(ticker, price, cnt, 'bid', 'limit', bLog)[0]
+    return order_new_wrap(ticker, price, cnt, 'bid', 'limit', bLog)[0]
 
 def limit_sell(ticker, price, cnt, bLog=True):
-    return order_new(ticker, price, cnt, 'ask', 'limit', bLog)[0]
+    return order_new_wrap(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
 def limit_buy_btc(ticker, price, cnt, bLog=True):
     return order_new_btc(ticker, price, cnt, 'bid', 'limit', bLog)[0]
@@ -390,7 +397,8 @@ def get_live_orders(ticker, currency):
                 r.append((a, b, price, remaining_volume, ct))
             # maybe data index reference exception? don't we need to return empty dictionary?
             except Exception as e:
-                print('[get_live_orders] error when appending individual order, so skipping... with exception:', e)
+                log(res.reason + ', ' +  res.text)
+                log('[get_live_orders] error when appending... with exception:' + str(e))
 
     return r
 

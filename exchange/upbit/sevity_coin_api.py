@@ -376,6 +376,9 @@ def get_live_orders(ticker, currency):
             # loop end condition, return current response, empty live orders in this page, meaning the end of the page
             return r
 
+        if res.reason == 'Bad Request':  # ex> BTC마켓에만 있는데 KRW로 조회하는 경우
+            return []
+
         for ord in res.json():
             try:
                 # print('ord:', ord)

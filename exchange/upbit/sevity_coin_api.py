@@ -261,10 +261,10 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
     return (oid,res)
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
-    oid, res = order_new(ticker, price, cnt, 'bid', 'limit', bLog)
+    oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
     while res.reason == 'too_many_request_order':
         time.sleep(5)
-        oid, res = order_new(ticker, price, cnt, 'bid', 'limit', bLog)
+        oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
     return oid, res
 
 def limit_buy(ticker, price, cnt, bLog=True):

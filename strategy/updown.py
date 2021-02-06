@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 import json
 import telegram
 import threading
+from utils.util import *
 
 # param #######################################################################
 FEE = 0.0005  # 수수료는 0.05%
@@ -162,7 +163,7 @@ def check_and_cancel_pending_orders():
             sid = sid + 1
 
         print("pending orders' bid cnt: {}, bid sum: {}, ask cnt: {}, ask sum: {}".format(bid_cnt_sum, bid_sum, ask_cnt_sum, ask_sum))
-        return {'bid_cnt': bid_cnt_sum, 'bid_krw': bid_sum, 'ask_cnt': ask_cnt_sum, 'ask_krw': ask_sum}
+        return {'bid_cnt': bid_cnt_sum, 'bid_krw': bid_sum, 'ask_cnt': ask_cnt_sum, 'ask_krw': ask_sum, 'p_cnt': sid}
     except Exception as e:
         print('err', e)
         sys.exit()
@@ -307,6 +308,8 @@ while True:
         log_and_send_msg(bot_info, 'free BTC in KRW.. {:,}'.format(int(btc['free']*a)))
         total_asset_krw = money['total']+btc['total']*a
         log_and_send_msg(bot_info, 'total asset in krw.. {:,}'.format(total_asset_krw), True)
+        log_and_send_msg(bot_info, 'total asset in btc {:,}'.format(total_asset_krw/a), True)
+        send_metric_telegraf({'total_btc_cnt': total_asset_krw/a, 'total_krw': total_asset_krw, 'btc_price': a, 'btc_ratio': btc['free']*a / total_asset_krw, 'p_orders_cnt': pending_sum['p_cnt']})
 
         btc_ratio = 0
         btc_total = 0

@@ -52,9 +52,10 @@ def send_telegram(msg):
 def fsame(a, b, diff=0.00000001):  # default: 0.01%이내로 같으면 true 리턴
     return True if abs(float(a)-float(b))<diff else False
 def format_8f(dict):
-    for key, val in dict.items():
-        dict[key] = '{:.8f}'.format(val) 
-    return dict
+    d = copy.deepcopy(dict)
+    for key, val in d.items():
+        d[key] = '{:.8f}'.format(val) 
+    return d
 
 print('BTC_DELTA:{:.8f}'.format(BTC_DELTA), 'BETTING:{:.4f}'.format(BETTING))
 
@@ -100,15 +101,17 @@ while True:
     for oid, (price, gain, btc) in aps.items():
         total_gain += gain
         if gain > 0:
-            print(fg.green + '! ask filled({:.8f}BTC), gain: {:.8f}BTC({:,}KRW), '.
-                format(float(price), gain, int(gain*btckrw),total_gain,int(total_gain*btckrw)) + fg.li_yellow + 
+            print(bg.da_blue+fg.white + '! ask filled({:.8f}BTC).'.format(float(price))+bg.blue+
+                ' gain: {:.8f}BTC({:,}KRW), '.
+                format(gain, int(gain*btckrw),total_gain,int(total_gain*btckrw)) + fg.li_yellow + 
                 'total_gain:{:.8f}BTC({:,}KRW)'.
-                format(total_gain, (int(total_gain*btckrw)))+ fg.rs)
+                format(total_gain, (int(total_gain*btckrw)))+ bg.rs+fg.rs)
             send_telegram('[{}-BTC] ask filled({:.8f}BTC), gain: {:.8f}BTC({:,}KRW), total_gain:{:.8f}BTC({:,}KRW)'.
                 format(TICKER, (float(price)), gain, int(gain*btckrw), total_gain, int(total_gain*btckrw), 
                 total_gain, (int(total_gain*btckrw))))
         else:
-            print(fg.green + '! prev ask filled({:.8f}BTC), gain:? total_gain:?'. format((float(price))))
+            print(bg.da_blue+fg.white + '! prev ask filled({:.8f}BTC).'.format(float(price))+bg.blue+
+                'gain:? total_gain:?'+bg.rs+fg.rs)
         del ask_prices[oid]
     if len(aps) > 0: continue
     
@@ -126,9 +129,9 @@ while True:
         # bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         # gain = bid_volume[oid] - bet / ap
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
-        print(fg.green + '! bid filled({:.8f}BTC). '.format(price)+fg.blue+
-            'placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
-			format((ap), gain, int(gain * btckrw))+ fg.rs)
+        print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
+            ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
+			format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
         aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid])
         ask_prices[aoid] = (ap, gain, (gain * ap))
         del bid_prices[oid]
@@ -178,6 +181,7 @@ while True:
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
+
             print(fg.red + '! bid placed({:.8f}), bet:{:.8f}BTC, bid_gop:{}, bid_prices:{}'.
                 format(bp, (bet), bid_gop[bp], list(format_8f(bid_prices).values())) + fg.rs)
             # time.sleep(5)

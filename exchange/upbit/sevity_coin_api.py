@@ -263,6 +263,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
     while res.reason == 'too_many_request_order':
+        log('too_many_request_order.. retrying')
         time.sleep(5)
         oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
     return oid, res
@@ -366,7 +367,7 @@ def get_live_orders(ticker, currency):
                 res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
                 ok = True
             except Exception as e:
-                print('[get_live_orders] error when get request response, so retrying... with exception:', e)
+                log('[get_live_orders] error when request response with exception:' + str(e))
 
         # if json conversion error occurs then return empty dictionary
         try:

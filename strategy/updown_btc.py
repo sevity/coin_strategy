@@ -31,8 +31,8 @@ UPDOWN = {
     'LOOM': 0.00000007,
     'UNI':  0.00002400,
     }
-BETTING = 0.0006 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
-COOL_TIME = 60 * 60  # 초단위
+BETTING = 0.0030 # 한번에 거는 돈의 크기(2.2만원 정도 된다 ㄷ)
+COOL_TIME = 60 * 60 * 4 # 초단위
 TIMEOUT_DAYS = 500  # temp
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')
@@ -48,6 +48,7 @@ parser.add_argument('--betting', '-b', required=False, default=BETTING, help='be
 parser.add_argument('--cooltime', '-c', required=False, default=str(COOL_TIME), 
     help='wait time between orders in sec')
 parser.add_argument('--upratio', '-u', required=False, default=2.0)
+parser.add_argument('--max_krw_value', '-m', required=False, default=1000000)
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
@@ -57,10 +58,11 @@ if TICKER not in UPDOWN:
 else:
     UPDOWN_DELTA = UPDOWN[TICKER]
 UP_RATIO = float(args.upratio)  # 이게 1.0이면 대칭 2.0이면 매도는 2배 비싸게 낸다.
+MAX_KRW_VALUE = float(args.max_krw_value)
 ###############################################################################
 btckrw = coin.get_price('BTC', 'KRW')
-print('ticker:{}, updown_delta:{:.8f}BTC, betting:{:.8f}BTC({:,}KRW), upratio:{}, cooltime:{}sec'.
-    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), UP_RATIO, COOL_TIME))
+print('ticker:{}, updown:{:.8f}BTC, bet:{:.8f}BTC({:,}KRW), upratio:{}, cooltime:{}sec, MAX_KRW:{:,}'.
+    format(TICKER, UPDOWN_DELTA, BETTING, int(BETTING * btckrw), UP_RATIO, COOL_TIME, int(MAX_KRW_VALUE)))
 assert(UPDOWN_DELTA > 0)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
@@ -172,20 +174,33 @@ while True:
         krw_txt, 'BTC price:{:,}KRW'.format(int(btckrw))
         + fg.rs)
 
+    krw_value = -1 if 'total' not in ticker else ticker['total']*p*btckrw
     print(fg.magenta + 'current price: {:.8f}BTC'.format(p) + fg.rs)
+    bOK = True if krw_value < MAX_KRW_VALUE else False
+    if bOK is False:
+        print(fg.red + 'current value({:,}KRW) exceed MAX_KRW_VALUE({:,})!! will cancel and block bids'.
+            format(int(krw_value), int(MAX_KRW_VALUE)) + fg.rs)
+        l = coin.get_live_orders(TICKER, 'BTC')
+        for (oid, askbid, price, cnt, odt) in l:
+            if askbid == 'bid':
+                coin.cancel(oid, True)
+                if oid in bids: del bids[oid]
 
     ask_price = (p + UPDOWN_DELTA * UP_RATIO); ask_cnt = float(BETTING) / ask_price 
     bid_price = (p - UPDOWN_DELTA); bid_cnt = float(BETTING) / bid_price
     if money['free'] > bid_price * bid_cnt :
         if 'free' in ticker and ticker['free'] > ask_cnt:
-            oid, new_cnt = buy(bid_price, bid_cnt)
-            sell(ask_price, new_cnt)
+            if bOK:
+                oid, new_cnt = buy(bid_price, bid_cnt)
+                sell(ask_price, new_cnt)
+            else:
+                sell(ask_price, bid_cnt)
         else:
             print('!!!!!!!!!!!! not enough {}!'.format(TICKER))
             # new_bid_price = round(a - UPDOWN_DELTA/2, 0); new_bid_cnt = float(BETTING) / new_bid_price / 3
             new_bid_price = bid_price
             new_bid_cnt = bid_cnt
-            buy(new_bid_price, new_bid_cnt)
+            if bOK: buy(new_bid_price, new_bid_cnt)
 
     else:
         print('!!!!!!!!!!!! not enough BTC!')

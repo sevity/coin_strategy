@@ -96,13 +96,13 @@ while True:
                 hit_cnts[ticker] += 1
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
-                    bet = BETTING * 20 / (hit_cnts[ticker] - 1)
+                    bet = BETTING * 1.5 / (hit_cnts[ticker] - 1)
                     oid = coin.market_buy(ticker, bet)
                 else:
                     bet = BETTING
                     oid = coin.market_buy(ticker, BETTING)
                     # hit_cnts[ticker] = 0
-                print('oid:', oid)
+                # print('oid:', oid)
                 if oid == -1:
                     print(ticker, 'out...')
                     continue

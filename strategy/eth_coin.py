@@ -19,6 +19,7 @@ from sty import fg, bg, ef, rs
 KRW_DELTA = 10000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
+MAX_BETTING = 1000000
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
@@ -64,13 +65,14 @@ for (oid, askbid, price, cnt, odt) in l:
 bAuto = False
 if BETTING == 0:
     bAuto = True
-    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 20))
+    BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 
 while True:
     if bAuto:
-        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 20)
+        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
         # print('auto BETTING: {:,} KRW'.format(BETTING))
+    BETTING = min(BETTING, MAX_BETTING)
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = int(coin.get_price('ETH', 'KRW'))  # coin price

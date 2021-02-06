@@ -54,7 +54,10 @@ class Coin:
 
     @multimethod(str, str)
     def get_live_orders(self, ticker, currency):
-        return self._api.get_live_orders(ticker, currency)
+        r = 'error'
+        while str(r) == 'error':
+            r = self._api.get_live_orders(ticker, currency)
+        return r
 
     @multimethod(str, str)
     def get_live_orders_ext(self, ticker, currency):

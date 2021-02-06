@@ -15,7 +15,7 @@ import math
 # param #######################################################################
 TARGET_KRW_BTC_RATIO = 0.1
 UPDOWN_PERCENT = 0.008  # 기본 상하방 0.8%, 성공하면 수수료 제외 1.5% 먹음
-BETTING_KRW = 30000   # 한번에 거는 돈의 크기
+BETTING_KRW = 50000   # 한번에 거는 돈의 크기
 COOL_TIME = 60 * 5  # 초단위
 ###############################################################################
 TICKER = 'BTC'
@@ -71,39 +71,57 @@ while True:
     DOWN_RATIO = 1.0
     print(fg.yellow + 'TARGET_KRW_BTC_RATIO:{:.4f}, current krw_ratio:{:.4f}'.
         format(TARGET_KRW_BTC_RATIO, krw_ratio) + fg.rs)
-    if krw_ratio < TARGET_KRW_BTC_RATIO:
-        # 돈부족 상황
-        print(fg.blue + 'KRW shortage! will place BTC ask to make KRW!' + fg.rs)
-        DOWN_RATIO = (TARGET_KRW_BTC_RATIO / krw_ratio)
-        DOWN_RATIO = min(DOWN_RATIO, 10)
-        DOWN_DELTA = UP_DELTA * DOWN_RATIO
-        DOWN_DELTA = min(DOWN_DELTA, 10)
-        UP_DELTA /= 4
-        DOWN_DELTA = 0
+
+    if TARGET_KRW_BTC_RATIO/2 < krw_ratio < TARGET_KRW_BTC_RATIO*1.5:
+        print(fg.green + 'KRW is in OK range..({:.4f} < {:.4f} < {:.4f})'.
+            format(TARGET_KRW_BTC_RATIO/2, krw_ratio, TARGET_KRW_BTC_RATIO*1.5) + fg.rs)
+        l = coin.get_live_orders('BTC', 'KRW')
+        for (oid, askbid, price, cnt, odt) in l:
+            if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
+            coin.cancel(oid)
     else:
-        print(fg.red + 'KRW surplus! will place BTC bid to reduce KRW!' + fg.rs)
-        UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
-        UP_RATIO = min(UP_RATIO, 10)
-        UP_DELTA = UP_DELTA * UP_RATIO 
-        UP_DELTA = min(UP_DELTA, 10)
-        DOWN_DELTA /= 4
-        UP_DELTA = 0
+        if krw_ratio < TARGET_KRW_BTC_RATIO:
+            # 돈부족 상황
+            print(fg.blue + 'KRW shortage! will place BTC ask to make KRW!' + fg.rs)
+            DOWN_RATIO = (TARGET_KRW_BTC_RATIO / krw_ratio)
+            DOWN_RATIO = min(DOWN_RATIO, 10)
+            DOWN_DELTA = UP_DELTA * DOWN_RATIO
+            DOWN_DELTA = min(DOWN_DELTA, 10)
+            UP_DELTA /= 4
+            DOWN_DELTA = 0
+            CANCEL_ASKBID = 'bid'
+        else:
+            print(fg.red + 'KRW surplus! will place BTC bid to reduce KRW!' + fg.rs)
+            UP_RATIO = krw_ratio / TARGET_KRW_BTC_RATIO 
+            UP_RATIO = min(UP_RATIO, 10)
+            UP_DELTA = UP_DELTA * UP_RATIO 
+            UP_DELTA = min(UP_DELTA, 10)
+            DOWN_DELTA /= 4
+            UP_DELTA = 0
+            CANCEL_ASKBID = 'ask'
 
-    print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
-        format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))
+        # 반대방향 주문 취소
+        l = coin.get_live_orders('BTC', 'KRW')
+        for (oid, askbid, price, cnt, odt) in l:
+            if askbid == CANCEL_ASKBID:
+                if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
+                coin.cancel(oid)
 
-    if UP_DELTA > 0:
-        ask_price = (btc_price + btc_price * UP_DELTA); ask_cnt = float(BETTING_KRW * DOWN_RATIO) / ask_price 
-        coin.limit_sell(TICKER, ask_price, ask_cnt)
-    if DOWN_DELTA > 0:
-        bid_price = (btc_price - btc_price * DOWN_DELTA);bid_cnt = float(BETTING_KRW * UP_RATIO) / bid_price
-        coin.limit_buy(TICKER, bid_price, bid_cnt)
+        print('UP_DELTA:{:.4f}, DOWN_DELTA:{:.4f}, UP_RATIO:{:.4f}, DOWN_RATIO:{:.4f}'.
+            format(UP_DELTA, DOWN_DELTA, UP_RATIO, DOWN_RATIO))
+
+        if UP_DELTA > 0:
+            ask_price = (btc_price + btc_price*UP_DELTA);ask_cnt = float(BETTING_KRW * DOWN_RATIO) / ask_price 
+            coin.limit_sell(TICKER, ask_price, ask_cnt)
+        if DOWN_DELTA > 0:
+            bid_price = (btc_price - btc_price * DOWN_DELTA);bid_cnt = float(BETTING_KRW * UP_RATIO) / bid_price
+            coin.limit_buy(TICKER, bid_price, bid_cnt)
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
         print("cancel pending orders...")
         l = coin.get_live_orders(TICKER, 'KRW')
         KST = timezone(timedelta(hours=9))
-        print("{} orders alive...".format(len(l)))
+        print("{} orders alive...(some of them are from btc_coin and won't be listed below)".format(len(l)))
         for (oid, askbid, price, cnt, odt) in l:
             if price % 100000 == 0: continue  # btc_coin에서 등록된건 넘어간다.
             now = datetime.now(KST)

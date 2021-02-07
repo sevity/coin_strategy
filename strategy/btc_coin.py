@@ -118,7 +118,7 @@ while True:
         bid_cont += 1
         if bid_cont >= 3:
             del bid_prices[oid]
-            print(fg.reg+'circuit break!'+fg.rs)
+            print(fg.red+'circuit break!'+fg.rs)
             send_telegram('circuit break!')
             time.sleep(60*60)
             bid_cont = 0

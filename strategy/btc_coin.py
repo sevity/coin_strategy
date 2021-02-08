@@ -95,7 +95,8 @@ while True:
         total_asset_krw = money['total'] + btc['total'] * a
         stat = {'total_btc_cnt': total_asset_krw / a, 'total_krw': total_asset_krw, 'btc_price': a,
          'btc_ratio': btc['free'] * a / total_asset_krw, 'p_orders_cnt': len(l), 'total_gain': total_gain}
-        send_metric_telegraf(stat)
+        if conf['use-grafana'] == 'yes':
+            send_metric_telegraf(stat)
 
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, money['free'] / 10)

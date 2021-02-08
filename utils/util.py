@@ -17,7 +17,7 @@ def send_metric_telegraf(m):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(
             json.dumps({'metric_name': 'updown_metrics', 'total_money_in_btc_cnt': m['total_btc_cnt'],
-                        'total_krw': m['total_krw'], 'btc_price': m['btc_price'], 'btc_ratio': m['btc_ratio'], 'p_orders_cnt': m['p_orders_cnt']}).encode(),
+                        'total_krw': m['total_krw'], 'btc_price': m['btc_price'], 'btc_ratio': m['btc_ratio'], 'p_orders_cnt': m['p_orders_cnt'], 'total_gain': m['total_gain']}).encode(),
             ('localhost', 8094)
         )
         sock.close()
@@ -37,7 +37,6 @@ def get_config():
 def load_config():
     conf = get_config()
     try:
-        print('conf: {}'.format(conf))
         return conf
     except Exception as e:
         print('err', e)

@@ -62,35 +62,53 @@ if BETTING == 0:
 bid_cont = 0
 
 # get previous bids and asks before the crash from db
-bids = redis_get('btc_bid_prices')
-if bids is not None:
-    bid_prices = json.loads(bids)
-asks = redis_get('btc_ask_prices')
-if asks is not None:
-    ask_prices = json.loads(asks)
-bidvol = redis_get('btc_bid_volume')
-if asks is not None:
-    bid_volume = json.loads(bidvol)
-bidg = redis_get('btc_bid_gop')
-if asks is not None:
-    bid_gop = json.loads(bidg, object_hook=jsonkey2int)
-
-print(bid_gop)
+res = redis_get('btc_bid_prices')
+if res is not None:
+    bid_prices = json.loads(res)
+res = redis_get('btc_ask_prices')
+if res is not None:
+    ask_prices = json.loads(res)
+res = redis_get('btc_bid_volume')
+if res is not None:
+    bid_volume = json.loads(res)
+res = redis_get('btc_bid_gop')
+if res is not None:
+    bid_gop = json.loads(res, object_hook=jsonkey2int)
+res = redis_get('btc_total_gain')
+if res is not None:
+    total_gain = json.loads(res, object_hook=jsonkey2int)
 
 while True:
+    try:
+        a = coin.get_price('BTC', 'KRW')
+        money = coin.get_asset_info('KRW')
+        btc = coin.get_asset_info('BTC')
+        l = coin.get_live_orders('BTC', 'KRW')
+    except Exception as e:
+        print('err', e)
+        time.sleep(1)
+        continue
+
+    ts = int(time.time())
+    if ts % 60 == 0:   #every 1min, load config and record stats
+        conf = load_config()
+        total_asset_krw = money['total'] + btc['total'] * a
+        stat = {'total_btc_cnt': total_asset_krw / a, 'total_krw': total_asset_krw, 'btc_price': a,
+         'btc_ratio': btc['free'] * a / total_asset_krw, 'p_orders_cnt': len(l), 'total_gain': total_gain}
+        send_metric_telegraf(stat)
+
     if bAuto:
-        BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
+        BETTING = max(MIN_BET_FOR_AUTO, money['free'] / 10)
         # print('auto BETTING: {:,} KRW'.format(BETTING))
     BETTING = min(BETTING, MAX_BETTING)
 
     # 먼저 현재 KRW_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
-    cp = int(coin.get_price('BTC', 'KRW'))  # coin price
+    cp = int(a)  # coin price
     bp = int(cp  / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
     ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
-    l = coin.get_live_orders('BTC', 'KRW')
     for (oid, askbid, price, cnt, odt) in l:
         if askbid=='ask' and oid in aps:
             del aps[oid]
@@ -109,6 +127,7 @@ while True:
                 format(int(float(price))) + bg.rs + fg.rs)
         del ask_prices[oid]
         redis_set('btc_ask_prices', json.dumps(ask_prices))
+    redis_set('btc_total_gain', json.dumps(total_gain))
     if len(aps) > 0: continue
     
     # check bid fill
@@ -121,13 +140,6 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         bid_cont += 1
-        if bid_cont >= 3:
-            del bid_prices[oid]
-            log_and_send_msg(bot_info, fg.red+'circuit break!'+fg.rs, True)
-            time.sleep(60*60)
-            bid_cont = 0
-            break
-
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
@@ -145,6 +157,26 @@ while True:
         redis_set('btc_bid_gop', json.dumps(bid_gop))
         redis_set('btc_bid_volume', json.dumps(bid_volume))
         # time.sleep(5)
+    if bid_cont >= 3:   # btc dump event
+        log_and_send_msg(bot_info, fg.red + 'circuit break!' + fg.rs, True)
+        # wail until ask is placed for circuit break conditions or circuit-break-sec is passed
+        cb_start = int(time.time())
+        exit_cb = False
+        while not exit_cb:
+            l = coin.get_live_orders('BTC', 'KRW')
+            t_aps = copy.deepcopy(ask_prices)
+            for (oid, askbid, price, cnt, odt) in l:
+                if askbid == 'ask' and oid in t_aps:
+                   del t_aps[oid]
+            exit_cb = len(t_aps) >= int(conf['circuit-break-ask-cnt'])
+            if not exit_cb:
+                now = int(time.time())
+                cb_end = cb_start + int(conf['circuit-break-sec'])
+                exit_cb = now >= cb_end
+                if not exit_cb:
+                    time.sleep(2)
+        bid_cont = 0
+        continue
     if len(bps) > 0: continue
 
     bfound = False

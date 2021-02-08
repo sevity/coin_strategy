@@ -123,7 +123,7 @@ while True:
         bid_cont += 1
         if bid_cont >= 3:
             del bid_prices[oid]
-            log_and_send_msg(bot_info, fg.white+'circuit break!'+fg.rs, True)
+            log_and_send_msg(bot_info, fg.red+'circuit break!'+fg.rs, True)
             time.sleep(60*60)
             bid_cont = 0
             break

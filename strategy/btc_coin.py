@@ -117,13 +117,6 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         bid_cont += 1
-        if bid_cont >= 3:
-            del bid_prices[oid]
-            print(fg.red+'circuit break!'+fg.rs)
-            send_telegram('circuit break!')
-            time.sleep(60*60)
-            bid_cont = 0
-            break
 
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
@@ -137,6 +130,12 @@ while True:
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
         # time.sleep(5)
+    if bid_cont >= 3:
+        print(fg.red+'circuit break!'+fg.rs)
+        send_telegram('circuit break!')
+        time.sleep(60*60)
+        bid_cont = 0
+        continue
     if len(bps) > 0: continue
 
     bfound = False

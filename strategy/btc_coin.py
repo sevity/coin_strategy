@@ -13,6 +13,7 @@ from collections import deque
 import ast
 from sty import fg, bg, ef, rs
 import argparse
+from utils.util import *
 
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
@@ -28,19 +29,14 @@ MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
 ###############################################################################
 
-f = open("../upbit_api_key.txt", 'r')      
+f = open("../conf/upbit_api_key.txt", 'r')
 access_key = f.readline().rstrip()         
 secret_key = f.readline().rstrip()         
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
-token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
-bot = telegram.Bot(token=token)
-def send_telegram(msg):
-    # print(msg)
-    try:
-        bot.sendMessage(chat_id=170583240, text=msg)
-    except:
-        pass
+
+conf = load_config()
+
 def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴
     a = float(a)
     b = float(b)
@@ -55,14 +51,8 @@ bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 ask_prices={}
 total_gain = 0
-l = coin.get_live_orders('BTC', 'KRW')
-for (oid, askbid, price, cnt, odt) in l:
-    if askbid=='bid':
-        if price % 100000 != 0: continue  # btc_regulate에서 건건 취소하지 않는다.
-        coin.cancel(oid)
-    else:
-        ask_prices[oid] = (int(float(price)), 0, 0)
-# print('ask_prices:', ask_prices)
+
+bot_info = get_telegram_bot_info()
 
 bAuto = False
 if BETTING == 0:
@@ -70,6 +60,23 @@ if BETTING == 0:
     BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 bid_cont = 0
+
+# get previous bids and asks before the crash from db
+bids = redis_get('btc_bid_prices')
+if bids is not None:
+    bid_prices = json.loads(bids)
+asks = redis_get('btc_ask_prices')
+if asks is not None:
+    ask_prices = json.loads(asks)
+bidvol = redis_get('btc_bid_volume')
+if asks is not None:
+    bid_volume = json.loads(bidvol)
+bidg = redis_get('btc_bid_gop')
+if asks is not None:
+    bid_gop = json.loads(bidg, object_hook=jsonkey2int)
+
+print(bid_gop)
+
 while True:
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
@@ -92,18 +99,16 @@ while True:
         bid_cont = 0
         total_gain += gain
         if gain > 0:
-            print(bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))+bg.blue+
+            log_and_send_msg(bot_info, bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))+bg.blue+
                 ', gain: {:.8f}({:,}KRW).'.
-                format(gain, krw, total_gain, int(total_gain*price))+bg.li_yellow+fg.black + 
+                format(gain, krw, total_gain, int(total_gain*price))+bg.li_yellow+fg.black +
                 'total_gain:{:.8f}({:,}KRW)'.
-                format(total_gain, int(float(total_gain*price)))+ bg.rs+fg.rs)
-            send_telegram('[BTC] ask filled({:,}), gain: {:.8f}({:,}KRW), total_gain:{:.8f}({:,}KRW)'.
-                format(int(float(price)), gain, krw, total_gain, int(total_gain*price), 
-                total_gain, int(float(total_gain*price))))
+                format(total_gain, int(float(total_gain*price)))+ bg.rs+fg.rs, True)
         else:
             print(bg.da_blue + fg.white + '! prev ask filled({:,}), gain:? total_gain:?'.
                 format(int(float(price))) + bg.rs + fg.rs)
         del ask_prices[oid]
+        redis_set('btc_ask_prices', json.dumps(ask_prices))
     if len(aps) > 0: continue
     
     # check bid fill
@@ -118,8 +123,7 @@ while True:
         bid_cont += 1
         if bid_cont >= 3:
             del bid_prices[oid]
-            print(fg.reg+'circuit break!'+fg.rs)
-            send_telegram('circuit break!')
+            log_and_send_msg(bot_info, fg.white+'circuit break!'+fg.rs, True)
             time.sleep(60*60)
             bid_cont = 0
             break
@@ -127,14 +131,19 @@ while True:
         ap = float(price) + KRW_DELTA - MINOR_DELTA * 2
         bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         gain = bid_volume[oid] - bet / ap
-        print(bg.da_red + fg.white + '! bid filled({:,}).'.format(price)+bg.rs+fg.blue+
+        log_and_send_msg(bot_info, bg.da_red + fg.white + '! bid filled({:,}).'.format(price)+bg.rs+fg.blue+
             ' placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
 			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
+        redis_set('btc_ask_prices', json.dumps(ask_prices))
         del bid_prices[oid]
+        del bid_volume[oid]
+        redis_set('btc_bid_prices', json.dumps(bid_prices))
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
+        redis_set('btc_bid_gop', json.dumps(bid_gop))
+        redis_set('btc_bid_volume', json.dumps(bid_volume))
         # time.sleep(5)
     if len(bps) > 0: continue
 
@@ -145,11 +154,13 @@ while True:
             bfound = True
         if askbid=='ask' and int(float(price)) == ap:
             afound = True
+
     # ask없는 bid에 대해 주문
     # print(afound, bfound)
+
     if abs(cp - bp) > KRW_DELTA/4 and bfound is False and afound is False:
         free_krw = int(coin.get_asset_info('KRW')['free'])
-        print('\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow + 
+        log_and_send_msg(bot_info, '\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow +
             ' free KRW:{:,},'.format(free_krw) + fg.rs + 'current BTC price:{:,} KRW, bid:{:,}, ask:{:,}'.
             format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
@@ -157,11 +168,13 @@ while True:
             if price <= bp:
                 coin.cancel(oid)
                 del bid_prices[oid]
+                redis_set('btc_bid_prices', json.dumps(bid_prices))
                 break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
         bid_gop[bp] = min(5, bid_gop[bp])
+        redis_set('btc_bid_gop', json.dumps(bid_gop))
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
         oid = coin.limit_buy('BTC', bp, bet / bp)
@@ -176,12 +189,15 @@ while True:
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('BTC', bp, bet / bp)
             time.sleep(2)
+        redis_set('btc_bid_gop', json.dumps(bid_gop))
         bid_prices[oid] = bp
+        redis_set('btc_bid_prices', json.dumps(bid_prices))
         bid_volume[oid] = bet / bp
-        print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
-            format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
-        # time.sleep(5)
+        redis_set('btc_bid_volume', json.dumps(bid_volume))
 
+        log_and_send_msg(bot_info, fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
+                  format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs, True)
+        time.sleep(5)   #originally commented out
 
 
 

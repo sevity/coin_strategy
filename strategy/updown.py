@@ -2,11 +2,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from coin import *
-import time
 from datetime import datetime, timezone, timedelta
-import json
-import telegram
-import threading
 from utils.util import *
 
 # param #######################################################################
@@ -23,7 +19,6 @@ BTC_BOX_CHECK = False
 BTC_BOX_MIN = 36000000 #minimum boundary in krw OF BTC box
 BTC_BOX_MAX = 38000000 #maximum boundary in krw OF BTC box
 BTC_LOCK_PENDING_CHECK = True
-THREAD_COOL_TIME = 5 #초단위
 ###############################################################################
 # 상하방 양쪽으로 걸어서 박스권에서 왔다갔다 할경우 소액씩 계속 먹는 전략
 # TODO: 지금은 가격이 떨어지면 BTC만 남는구조인데 거꾸로 가격이 떨어지면 KRW_LOCK을 늘리고 가격이 오르면 BTC_LOCK을 올리는식으로 해보자.
@@ -68,68 +63,6 @@ def check_pending_ask(bLog=True):
     return False
 
 
-def log_and_send_msg(bot_info, msg, do_send=False):
-    print(msg)
-    try:
-        log_file_name = global_conf['log-file-name']
-        log_file = open("../log/{}".format(log_file_name), "a+")
-        log_file.write("\n{}".format(msg))
-    except:
-        pass
-    if do_send:
-        try:
-            bot_info['bot'].sendMessage(chat_id=bot_info['chat_id'], text=msg)
-        except:
-            pass
-
-
-def get_config():
-    try:
-        with open("../conf/conf.json", "r") as conf_file:
-            return json.load(conf_file)
-    except Exception as e:
-        print('err', e)
-
-
-def write_config(json_data):
-    try:
-        with open("../conf/conf.json", "w") as conf_file:
-            return json.dump(json_data, conf_file)
-    except Exception as e:
-        print('err', e)
-
-
-def load_config():
-    global UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK, BTC_BOX_CHECK, BTC_BOX_MIN, BTC_BOX_MAX
-    conf = get_config()
-    try:
-        UPDOWN = float(conf['up-down-percent']) / 100
-        BETTING = float(conf['betting-krw'])
-        COOL_TIME = int(conf['cool-time-seconds'])
-        TIMEOUT_HOURS = int(conf['timeout-hours'])
-        BTC_LOCK = float(conf['btc-lock-percent']) / 100
-        BTC_LOCK_V = float(conf['btc-lock-abs-amount'])
-        BTC_LOCK_PENDING_CHECK = conf['btc-lock-pending-check'] == 'yes'
-        BTC_BOX_CHECK = conf['btc-box-check'] == 'yes'
-        BTC_BOX_MAX = float(conf['btc-box-max-krw'])
-        BTC_BOX_MIN = float(conf['btc-box-min-krw'])
-        print('conf: {}'.format(conf))
-        return conf
-    except Exception as e:
-        print('err', e)
-        sys.exit()
-
-
-def get_telegram_bot_info():
-    try:
-        with open("../conf/telegram.json", "r") as telegram_file:
-            j = json.load(telegram_file)
-            return {'bot': telegram.Bot(token=j['token']), 'chat_id': j['chat_id']}
-    except Exception as e:
-        print('err', e)
-        pass
-
-
 def check_and_cancel_pending_orders():
     try:
         # 고착화를 막기위해 일정기간 이상의 미체결 주문 청산
@@ -169,130 +102,37 @@ def check_and_cancel_pending_orders():
         sys.exit()
 
 
-# 공유된 변수를 위한 클래스
-class ThreadVariable():
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.status = 'start'
-        self.ret = self.status
-
-    def get(self):
-        self.lock.acquire()
-        try:
-            self.ret = self.status
-        finally:
-            self.lock.release()
-        return self.ret
-
-    # 한 Thread만 접근할 수 있도록 설정한다
-    def set(self, value):
-        self.lock.acquire()
-        try:
-            self.status = value
-        finally:
-            self.lock.release()
-
-
 global run_status
 run_status = ThreadVariable()
 
 
-class CommandProcessor (threading.Thread):
-    offset_pos = 0
-    commands = ['start', 'stop', 'exit', 'none', 'set']
-
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.command = 'start'
-        self.prev_command = 'start'
-
-    @staticmethod
-    def make_error(param):
-        log_and_send_msg(bot_info, 'wrong command error! {} \n (only support for start/stop/exit/set parameter)'.format(param), True)
-
-    @staticmethod
-    def get_telegram_command():
-        updates = bot_info['bot'].getUpdates(offset=CommandProcessor.offset_pos)
-        commander = bot_info['chat_id']
-        is_empty = len(updates) == 0
-        if not is_empty:
-            try:
-                CommandProcessor.offset_pos = updates[-1].update_id
-                CommandProcessor.offset_pos = CommandProcessor.offset_pos + 1
-                # get last command
-                u = updates[-1]
-                if u.message['chat']['id'] == commander:
-                    text = u.message['text']
-                    return text
-
-            except Exception as e:
-                return 'none'
-        else:
-            return 'none'
-
-    def run(self):
-        global run_status
-        while True:
-            try:
-                res = CommandProcessor.get_telegram_command()
-                args = res.split(' ')
-                argc = len(args)
-            except Exception as e:
-                log_and_send_msg(bot_info, "telegram get commands make errors: {}".format(e))
-            try:
-                if argc == 0:
-                    self.make_error('empty command')
-                else:
-                    arg = args[0]
-                    if arg != 'none':
-                        self.prev_command = self.command
-                        self.command = res
-                    if arg == 'exit':
-                        log_and_send_msg(bot_info, 'exit command has been received, exiting ... ', True)
-                        run_status.set('exit')
-                        sys.exit()
-                    elif arg == 'stop':
-                        if self.command != self.prev_command:
-                            run_status.set('stop')
-                            log_and_send_msg(bot_info, 'stop command has been received, pausing ... ', True)
-                    elif arg == 'start':
-                        if self.command != self.prev_command:
-                            run_status.set('start')
-                            log_and_send_msg(bot_info, 'start command has been received, starting ... ', True)
-                    elif arg == 'set':
-                        if self.command != self.prev_command:
-                            arg = args[1]
-                            if arg == 'parameter':
-                                name = args[2]
-                                value = args[3]
-                                config_json = get_config()
-                                if name in config_json:
-                                    config_json[name] = value
-                                    write_config(config_json)
-                                    log_and_send_msg(bot_info, 'setting parameter with name {}, value {} \n json conf file will be {}'.format(name, value, config_json), True)
-                                else:
-                                    log_and_send_msg(bot_info, 'unknown parameter name {} : refer to current conf.json file {}'.format(name, config_json), True)
-                            else:
-                                self.make_error(arg)
-                    elif arg != 'none':
-                        if self.command != self.prev_command:
-                            self.make_error(arg)
-            except Exception as e:
-                self.make_error('with an error: {}'.format(e))
-            time.sleep(THREAD_COOL_TIME)
-
-
 bot_info = get_telegram_bot_info()
-command_handling_thread = CommandProcessor()
+command_handling_thread = CommandProcessor(bot_info, run_status)
 command_handling_thread.daemon = True
 command_handling_thread.start()
-global_conf = load_config()
+conf = load_config()
+
+
+def update_params(c):
+    global UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK, BTC_BOX_CHECK, BTC_BOX_MIN, BTC_BOX_MAX
+    UPDOWN = float(c['up-down-percent']) / 100
+    BETTING = float(c['betting-krw'])
+    COOL_TIME = int(c['cool-time-seconds'])
+    TIMEOUT_HOURS = int(c['timeout-hours'])
+    BTC_LOCK = float(c['btc-lock-percent']) / 100
+    BTC_LOCK_V = float(c['btc-lock-abs-amount'])
+    BTC_LOCK_PENDING_CHECK = c['btc-lock-pending-check'] == 'yes'
+    BTC_BOX_CHECK = c['btc-box-check'] == 'yes'
+    BTC_BOX_MAX = float(c['btc-box-max-krw'])
+    BTC_BOX_MIN = float(c['btc-box-min-krw'])
+
 
 while True:
     if run_status.get() == 'exit':
         sys.exit()
     elif run_status.get() == 'start':
-        global_conf = load_config()
+        conf = load_config()
+        update_params(conf)
         try:
             a = coin.get_price('BTC', 'KRW')
             money = coin.get_asset_info('KRW')

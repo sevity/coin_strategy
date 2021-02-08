@@ -17,7 +17,7 @@ from sty import fg, bg, ef, rs
 BETTING = 5000
 MAX_TICKER = 20  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
 MAX_TICK = 100 # 몇틱기다리는지 설정(이 안에 급상승해야함)
-THRESHOLD = 0.015  # 1.5%상승하면 올라탐
+THRESHOLD = 0.010  # 1.5%상승하면 올라탐
 PROFIT_CUT = 0.3  # 30%이상 상승하면 익절하고 스톱함
 LOSS_CUT = 0.05  # 수익률이 5%이하로 떨어지면 손절함
 ban_tickers = []  # 떡상 직후등 피해야할코인들 나열
@@ -96,7 +96,7 @@ while True:
                 hit_cnts[ticker] += 1
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
-                    bet = BETTING * 1.5 / (hit_cnts[ticker] - 1)
+                    bet = BETTING * 1.9 / (hit_cnts[ticker] - 1)
                     oid = coin.market_buy(ticker, bet)
                 else:
                     bet = BETTING
@@ -117,7 +117,7 @@ while True:
                     info = coin.get_asset_info(ticker)
                     if 'free' in info:
                         cnt = info['free']
-                        a = tick_round(bid_price*1.02)
+                        a = tick_round(bid_price*1.04)
                         b = ask1+coin.get_tick_size(ask1)
                         p = max(a, b)
                         print(fg.blue + 'ask_price:', p, fg.rs)

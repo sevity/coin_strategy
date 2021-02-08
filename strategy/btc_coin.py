@@ -92,7 +92,8 @@ while True:
         bid_cont = 0
         total_gain += gain
         if gain > 0:
-            print(bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))+bg.blue+
+            print(bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))
+                +bg.blue+fg.black+
                 ', gain: {:.8f}({:,}KRW).'.
                 format(gain, krw, total_gain, int(total_gain*price))+bg.li_yellow+fg.black + 
                 'total_gain:{:.8f}({:,}KRW)'.

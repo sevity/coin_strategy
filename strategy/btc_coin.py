@@ -150,12 +150,12 @@ while True:
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         redis_set('btc_ask_prices', json.dumps(ask_prices))
         del bid_prices[oid]
-        del bid_volume[oid]
         redis_set('btc_bid_prices', json.dumps(bid_prices))
+        del bid_volume[oid]
+        redis_set('btc_bid_volume', json.dumps(bid_volume))
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
         redis_set('btc_bid_gop', json.dumps(bid_gop))
-        redis_set('btc_bid_volume', json.dumps(bid_volume))
         # time.sleep(5)
     if bid_cont >= 3:   # btc dump event
         log_and_send_msg(bot_info, fg.red + 'circuit break!' + fg.rs, True)

@@ -400,6 +400,8 @@ def get_live_orders(ticker, currency):
             except Exception as e:
                 log(res.reason + ', ' +  res.text)
                 log('[get_live_orders] error when appending... with exception:' + str(e))
+                time.sleep(5)
+                return 'error' 
 
     return r
 

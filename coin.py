@@ -3,6 +3,9 @@ from multimethods import multimethod #https://pypi.org/project/multimethods/
 import exchange.bithumb.sevity_coin_api
 import exchange.upbit.sevity_coin_api
 import exchange.binance.sevity_coin_api
+from sty import fg, bg, ef, rs
+def log(msg):
+    print('  ' + fg.li_black + msg + fg.rs)
 
 class Coin:
     def __init__(self, exchange_name, api_key, secret_key):
@@ -57,6 +60,8 @@ class Coin:
         r = 'error'
         while str(r) == 'error':
             r = self._api.get_live_orders(ticker, currency)
+            if str(r) == 'error':
+                log('get_live_orders retry..')
         return r
 
     @multimethod(str, str)

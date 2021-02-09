@@ -176,11 +176,11 @@ while True:
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('BTC', bp, bet / bp)
             time.sleep(2)
-        bid_prices[oid] = bp
-        bid_volume[oid] = bet / bp
-        print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
-            format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
-        # time.sleep(5)
+        if oid != -1:
+            bid_prices[oid] = bp
+            bid_volume[oid] = bet / bp
+            print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
+                format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
 
 
 

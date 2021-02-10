@@ -161,7 +161,7 @@ while True:
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
             oid = coin.limit_buy('ETH', bp, bet / bp)
             time.sleep(2)
-        if oid == -1:
+        if oid != -1:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
             print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.

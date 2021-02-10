@@ -78,6 +78,25 @@ res = redis_get('btc_total_gain')
 if res is not None:
     total_gain = json.loads(res, object_hook=jsonkey2int)
 
+def get_soft_max(p, bf, delta, w_size):
+    print(bf)
+    wps = {}
+    sp = max(0, p-delta*int(w_size/2))
+    i = 0
+    wps_sum = 0.0
+    while i < w_size:
+        if sp in bf:
+            wps[sp] = math.exp(bf[sp]+1)
+        else:
+            wps[sp] = math.exp(1)   #default is 1 for the empty bid gop
+        wps_sum += wps[sp]
+        i += 1
+        sp += delta
+    for key in wps:
+       wps[key] /= wps_sum
+    print(wps)
+    return wps[p]
+
 while True:
     try:
         a = coin.get_price('BTC', 'KRW')
@@ -108,6 +127,7 @@ while True:
     bp = int(cp  / KRW_DELTA) * KRW_DELTA + MINOR_DELTA # bid price
     ap = bp + KRW_DELTA - MINOR_DELTA * 2  # ask price
 
+    cb_count = 0  # circuit break count initialization for filled ask
     # check ask fill
     aps = copy.deepcopy(ask_prices)
     for (oid, askbid, price, cnt, odt) in l:
@@ -116,6 +136,7 @@ while True:
     # 체결된 ask에 대해 gain기록
     for oid, (price, gain, krw) in aps.items():
         bid_cont = 0
+        cb_count = 0    #reset cb_count for every filled ask
         total_gain += gain
         if gain > 0:
             log_and_send_msg(bot_info, bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))+bg.blue+
@@ -146,7 +167,7 @@ while True:
         gain = bid_volume[oid] - bet / ap
         log_and_send_msg(bot_info, bg.da_red + fg.white + '! bid filled({:,}).'.format(price)+bg.rs+fg.blue+
             ' placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
-			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs)
+			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs, True)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         redis_set('btc_ask_prices', json.dumps(ask_prices))
@@ -154,13 +175,14 @@ while True:
         redis_set('btc_bid_prices', json.dumps(bid_prices))
         del bid_volume[oid]
         redis_set('btc_bid_volume', json.dumps(bid_volume))
-        if bid_gop[price] < 1: bid_gop[price] *= 2
-        else: bid_gop[price] += 1
+        # if bid_gop[price] < 1: bid_gop[price] *= 2
+        bid_gop[price] += 1
         redis_set('btc_bid_gop', json.dumps(bid_gop))
         # time.sleep(5)
     if bid_cont >= 3:   # btc dump event
         log_and_send_msg(bot_info, fg.red + 'circuit break!' + fg.rs, True)
         # wail until ask is placed for circuit break conditions or circuit-break-sec is passed
+        # if circuit breaks occur in a row without filled asks in-between them, then double the number of the exit conditions
         cb_start = int(time.time())
         exit_cb = False
         while not exit_cb:
@@ -169,13 +191,14 @@ while True:
             for (oid, askbid, price, cnt, odt) in l:
                 if askbid == 'ask' and oid in t_aps:
                    del t_aps[oid]
-            exit_cb = len(t_aps) >= int(conf['circuit-break-ask-cnt'])
+            exit_cb = len(t_aps) >= int(conf['circuit-break-ask-cnt']) * pow(2, cb_count)
             if not exit_cb:
                 now = int(time.time())
-                cb_end = cb_start + int(conf['circuit-break-sec'])
+                cb_end = cb_start + int(conf['circuit-break-sec']) * pow(2, cb_count)
                 exit_cb = now >= cb_end
                 if not exit_cb:
                     time.sleep(2)
+        cb_count += 1
         bid_cont = 0
         continue
     if len(bps) > 0: continue
@@ -205,46 +228,33 @@ while True:
                 break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
-        bid_gop[bp] = max(1, bid_gop[bp])
-        bid_gop[bp] = min(5, bid_gop[bp])
         redis_set('btc_bid_gop', json.dumps(bid_gop))
 
-        bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-        oid = coin.limit_buy('BTC', bp, bet / bp)
+        bet_ratio = 1.0
+        # bet = BETTING * bet_ratio * bid_gop[bp] / (1.0 + FEE)
+        sm_bet = get_soft_max(bp, bid_gop, KRW_DELTA, int(conf['softmax-window-size'])) * free_krw
+        bet_base = max(sm_bet, int(conf['betting-min']))
+        bet_base = min(bet_base, int(conf['betting-max']))
+        bet = bet_base * bet_ratio
 
+        oid = coin.limit_buy('BTC', bp, bet / bp)
         while oid == -1:
             print('!!! no money!({:,}KRW)'.format(int(bet)))
-            bid_gop[bp] /= 2
-            if bid_gop[bp] < 0.1:
+            bet_ratio /= 2
+            if bet_base * bet_ratio < int(conf['betting-min']):
                 print('! will have 30 secs break..')
-                bid_gop[bp] = 1
+                bet_ratio = 1
                 time.sleep(30)
                 break
-            bet = BETTING * bid_gop[bp] / (1.0 + FEE)
+            bet = bet_base * bet_ratio / (1.0 + FEE)
             oid = coin.limit_buy('BTC', bp, bet / bp)
             time.sleep(2)
 
         if oid != -1:
-            redis_set('btc_bid_gop', json.dumps(bid_gop))
             bid_prices[oid] = bp
             redis_set('btc_bid_prices', json.dumps(bid_prices))
             bid_volume[oid] = bet / bp
             redis_set('btc_bid_volume', json.dumps(bid_volume))
             log_and_send_msg(bot_info, fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
-                      format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs, True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                             format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs, True)
 

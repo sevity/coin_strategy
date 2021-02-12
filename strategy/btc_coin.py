@@ -17,7 +17,7 @@ import argparse
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 200000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 400000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
 BETTING = 0  # AUTO
 MAX_BETTING = 2000000
@@ -125,6 +125,8 @@ while True:
             ' placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
 			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
+        while aoid == -1:
+            coin.limit_sell('BTC', ap, coin.get_asset_info('BTC')['free']) 
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2

@@ -15,8 +15,12 @@
   "redis-port": "6379",
   "circuit-break-sec": "3600",
   "circuit-break-ask-cnt": "2",
+  "circuit-break-bid-cnt": "3",
   "use-grafana": "no",
   "softmax-window-size": "5",
   "betting-min": "20000",
-  "betting-max": "500000"
+  "betting-max": "500000",
+  "betting-margin-percent": "0.3",
+  "delta": "150000",
+  "bid_price_up_margin": "20000"
 }

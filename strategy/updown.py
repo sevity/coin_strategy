@@ -102,16 +102,14 @@ def check_and_cancel_pending_orders():
         sys.exit()
 
 
+bot_info = get_telegram_bot_info()
+conf = load_config()
+
 global run_status
 run_status = ThreadVariable()
-
-
-bot_info = get_telegram_bot_info()
 command_handling_thread = CommandProcessor(bot_info, run_status)
 command_handling_thread.daemon = True
 command_handling_thread.start()
-conf = load_config()
-
 
 def update_params(c):
     global UPDOWN, BETTING, COOL_TIME, TIMEOUT_HOURS, BTC_LOCK, BTC_LOCK_V, BTC_LOCK_PENDING_CHECK, BTC_BOX_CHECK, BTC_BOX_MIN, BTC_BOX_MAX

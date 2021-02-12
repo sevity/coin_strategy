@@ -70,6 +70,7 @@ if BETTING == 0:
     BETTING = max(MIN_BET_FOR_AUTO, int(coin.get_asset_info('KRW')['free'] / 10))
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 bid_cont = 0
+cb = None  # circuit break
 while True:
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
@@ -89,7 +90,7 @@ while True:
             del aps[oid]
     # 체결된 ask에 대해 gain기록
     for oid, (price, gain, krw) in aps.items():
-        bid_cont = 0
+        bid_cont -= 1
         total_gain += gain
         if gain > 0:
             print(bg.da_blue+fg.white + '! ask filled({:,}).'.format(int(float(price)))
@@ -106,6 +107,12 @@ while True:
                 format(int(float(price))) + bg.rs + fg.rs)
         del ask_prices[oid]
     if len(aps) > 0: continue
+
+    if cb is not None:
+        if bid_cont <= 0 or (datetime.now() - cb).seconds > 60*60:
+            cb = None
+            bid_cont = 0
+            continue
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
@@ -137,8 +144,8 @@ while True:
     if bid_cont >= 3:
         print(fg.red+'circuit break!'+fg.rs)
         send_telegram('circuit break!')
-        time.sleep(60*60)
-        bid_cont = 0
+        cb = datetime.now()
+        bid_cont = 2
         continue
     if len(bps) > 0: continue
 

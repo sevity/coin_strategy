@@ -97,7 +97,7 @@ while True:
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
                     bet = BETTING * 1.9 / (hit_cnts[ticker] - 1)
-                    bet = min(bet, 5000)
+                    bet = max(bet, 5000)
                     oid = coin.market_buy(ticker, bet)
                 else:
                     bet = BETTING

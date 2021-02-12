@@ -262,6 +262,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+    log('res.reason:', res.reason)
     while res.reason == 'too_many_request_order':
         log('too_many_request_order.. retrying')
         time.sleep(5)

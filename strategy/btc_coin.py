@@ -126,7 +126,9 @@ while True:
 			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs)
         aoid = coin.limit_sell('BTC', ap, bet / ap)
         while aoid == -1:
-            coin.limit_sell('BTC', ap, coin.get_asset_info('BTC')['free']) 
+            cnt = bet / ap
+            cnt = min(cnt, coin.get_asset_info('BTC')['free'])
+            coin.limit_sell('BTC', ap, cnt) 
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2

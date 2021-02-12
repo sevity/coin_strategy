@@ -24,6 +24,16 @@ def send_metric_telegraf(m):
     except socket.error as e:
         print(f'Got error: {e}')
 
+def send_metric_telegraf_auto(metric_name, value_dict):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        data = {'metric_name':metric_name} | value_dict
+        sock.sendto(json.dumps(data).encode(),
+            ('localhost', 8094)
+        )
+        sock.close()
+    except socket.error as e:
+        print(f'Got error: {e}')
 
 def get_config():
     global CONF_FILE
@@ -150,6 +160,7 @@ class CommandProcessor (threading.Thread):
         self.run_status = run_status
 
     def run(self):
+        argc = 0
         while True:
             try:
                 res = get_telegram_command(self.bot_info)
@@ -159,9 +170,9 @@ class CommandProcessor (threading.Thread):
                 log_and_send_msg(self.bot_info, "telegram get commands make errors: {}".format(e))
             try:
                 if argc == 0:
-                    self.make_error('empty command')
+                    make_error(self.bot_info, 'empty command')
                 else:
-                    arg = args[0]
+                    arg = args[0].lower()
                     if arg != 'none':
                         self.prev_command = self.command
                         self.command = res
@@ -191,12 +202,12 @@ class CommandProcessor (threading.Thread):
                                 else:
                                     log_and_send_msg(self.bot_info, 'unknown parameter name {} : refer to current conf.json file {}'.format(name, config_json), True)
                             else:
-                                make_error(arg)
+                                make_error(self.bot_info, arg)
                     elif arg != 'none':
                         if self.command != self.prev_command:
-                            make_error(arg)
+                            make_error(self.bot_info, arg)
             except Exception as e:
-                make_error('with an error: {}'.format(e))
+                make_error(self.bot_info, 'with an error: {}'.format(e))
             time.sleep(THREAD_COOL_TIME)
 
 

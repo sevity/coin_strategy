@@ -267,6 +267,28 @@ def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
         log('too_many_request_order.. retrying')
         time.sleep(5)
         oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+    if oid == -1:
+        retry = True
+        retry_count = 0
+        while retry:
+            if retry_count > 5:
+                break
+            try:
+                error = json.loads(res.content)
+                err_name = error['error']['name']
+                if err_name == 'too_many_request_order':
+                    log('too_many_request_order.. from res.. retrying')
+                    time.sleep(2 * pow(2, retry_count))
+                    oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+                    if oid != -1:
+                        retry = False
+                else:
+                    log('different order error: {}'.format(error))
+                    retry = False
+            except Exception as ex:
+                log('Exception in order_new_wrap with {}'.format(ex))
+                retry = False
+            retry_count += 1
     return oid, res
 
 def limit_buy(ticker, price, cnt, bLog=True):

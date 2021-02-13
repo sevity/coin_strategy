@@ -295,7 +295,7 @@ def market_sell(ticker, cnt, bLog=True):
     return r
 
 def cancel(oid, bLog=True):
-    if bLog: print(fg.li_black + '  order_cancel...', oid + fg.rs)
+    if bLog: log('order_cancel...' + str(oid))
     query = {
         'uuid': oid,
     }
@@ -323,7 +323,7 @@ def cancel(oid, bLog=True):
         except:
             time.sleep(1.0)
     if res.ok == False or res.status_code != 200:
-        print('  cancel fail...', oid, res.ok, res, res.text)
+        log('cancel fail...' + str(oid) + str(res.ok) + str(res) + str(res.text))
     return res
 
 

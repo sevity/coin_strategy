@@ -42,6 +42,7 @@ coin = Coin('upbit',access_key,secret_key)
 token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
+    return
     # print(msg)
     try:
         bot.sendMessage(chat_id=170583240, text=msg)

@@ -112,7 +112,7 @@ while True:
         if bid_cont <= 0 or (datetime.now() - cb).seconds > 60*60:
             cb = None
             bid_cont = 0
-            continue
+        continue
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
@@ -165,9 +165,9 @@ while True:
             format(cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if price <= bp:
-                coin.cancel(oid)
-                del bid_prices[oid]
+            if price < bp:
+                r = coin.cancel(oid)
+                if r.ok: del bid_prices[oid]
                 break
 
         if bp not in  bid_gop: bid_gop[bp] = 1

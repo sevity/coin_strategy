@@ -263,11 +263,20 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
-    log('res.reason:' + str(res.reason))
+    # log('res.reason:' + str(res.reason))
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
         time.sleep(5)
         oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+    return oid, res
+
+def order_new_wrap_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
+    oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog)
+    log('res.reason:' + str(res.reason))
+    while str(res.reason) == 'Too Many Requests':
+        log('too_many_request_order.. retrying')
+        time.sleep(5)
+        oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog)
     return oid, res
 
 def limit_buy(ticker, price, cnt, bLog=True):
@@ -277,10 +286,10 @@ def limit_sell(ticker, price, cnt, bLog=True):
     return order_new_wrap(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
 def limit_buy_btc(ticker, price, cnt, bLog=True):
-    return order_new_btc(ticker, price, cnt, 'bid', 'limit', bLog)[0]
+    return order_new_wrap_btc(ticker, price, cnt, 'bid', 'limit', bLog)[0]
 
 def limit_sell_btc(ticker, price, cnt, bLog=True):
-    return order_new_btc(ticker, price, cnt, 'ask', 'limit', bLog)[0]
+    return order_new_wrap_btc(ticker, price, cnt, 'ask', 'limit', bLog)[0]
 
 def market_buy(ticker, price, bLog=True):
     return order_new(ticker, price, 0, 'bid', 'price' , bLog)[0]

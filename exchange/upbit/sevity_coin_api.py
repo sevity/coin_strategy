@@ -46,6 +46,7 @@ def get_price(ticker, currency):
             return (ask1+bid1)/2
         except:
             if 'error' in j:
+                print(j['error'])
                 if int(j['error']['name']) == 404:
                     return None
             time.sleep(1.0)
@@ -262,7 +263,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
-    # log('res.reason:' + str(res.reason))
+    log('res.reason:' + str(res.reason))
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
         time.sleep(5)

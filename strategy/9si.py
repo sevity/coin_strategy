@@ -30,7 +30,7 @@ total_tickers = [
     'ELF', 'SOLVE', 'ADA', 'DMT', 'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'THETA',
     'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS',
     'XTZ', 'KAVA', 'ATOM', 'ETC', 'LINK', 'BTG', 'NEO', 'REP', 'LTC', 'JST', 'CRO', 'TON', 'SXP', 'LAMB',
-    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS', 'BSV', 'BTT', 
+    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS', 'BSV', 'BTT', 'PCI'
     ]
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 ###############################################################################
@@ -115,7 +115,7 @@ while True:
                 ask1 = coin.get_ask1(ticker, 'KRW')
                 bid_price = ask1
                 print(fg.red + 'bid_price(from ask1):', bid_price, fg.rs)
-                for x in range(0, 5):
+                for x in range(0, 30):
                     info = coin.get_asset_info(ticker)
                     if 'free' in info:
                         cnt = info['free']

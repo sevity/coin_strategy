@@ -272,7 +272,7 @@ def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
 
 def order_new_wrap_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
     oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog)
-    log('res.reason:' + str(res.reason))
+    # log('res.reason:' + str(res.reason))
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
         time.sleep(5)
@@ -384,7 +384,7 @@ def get_live_orders(ticker, currency):
         try:
             rj = res.json()
         except Exception as e:
-            log('[get_live_orders] error when making response to json, with exception:' +  str(e))
+            log('[get_live_orders] error when making response to json, with exception:' +  str(e) + str(res.reason))
             time.sleep(5)
             return 'error'
 

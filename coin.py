@@ -61,7 +61,8 @@ class Coin:
         while str(r) == 'error':
             r = self._api.get_live_orders(ticker, currency)
             if str(r) == 'error':
-                log('get_live_orders retry..')
+                pass
+                #log('get_live_orders retry..')
         return r
 
     @multimethod(str, str)

@@ -380,11 +380,16 @@ def get_live_orders(ticker, currency):
             except Exception as e:
                 log('[get_live_orders] error when request response with exception:' + str(e))
 
+        if res.ok == False:
+            log('[get_live_orders] ' + str(res.reason))
+            time.sleep(5)
+            return 'error'
+
         # if json conversion error occurs then return empty dictionary
         try:
             rj = res.json()
         except Exception as e:
-            log('[get_live_orders] error when making response to json, with exception:' +  str(e) + str(res.reason))
+            log('[get_live_orders] error when making response to json, with exception:' +  str(e))
             time.sleep(5)
             return 'error'
 

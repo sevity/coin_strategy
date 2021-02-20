@@ -22,6 +22,8 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'BFC':0.00000005,
     'XRP':0.00000010,
     'XLM':0.00000020,
+    'EOS':0.00000200,
+    'OMG':0.00000250,
     }
 BETTING = 0.005    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -163,7 +165,7 @@ while True:
                 for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
                     if oid_ == oid:
                         if fsame(order_cnt, remain_cnt):
-                            coin.cancel(oid)
+                            r = coin.cancel(oid)
                             if r.ok: del bid_prices[oid]
                             break
 

@@ -170,7 +170,7 @@ while True:
                 for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
                     if oid_ == oid:
                         if fsame(order_cnt, remain_cnt):
-                            coin.cancel(oid)
+                            r = coin.cancel(oid)
                             if r.ok: del bid_prices[oid]
                             break
 

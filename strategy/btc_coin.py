@@ -135,7 +135,7 @@ while True:
         while aoid == -1:
             cnt = bet / ap
             cnt = min(cnt, coin.get_asset_info('BTC')['free'])
-            coin.limit_sell('BTC', ap, cnt) 
+            aoid = coin.limit_sell('BTC', ap, cnt) 
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -166,9 +166,13 @@ while True:
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
             if price < bp:
-                r = coin.cancel(oid)
-                if r.ok: del bid_prices[oid]
-                break
+                l = coin.get_live_orders_ext(TICKER, 'KRW')
+                for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
+                    if oid_ == oid:
+                        if fsame(order_cnt, remain_cnt):
+                            coin.cancel(oid)
+                            if r.ok: del bid_prices[oid]
+                            break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

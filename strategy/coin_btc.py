@@ -88,9 +88,6 @@ while True:
     cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
     bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA # bid price
     ap = bp + BTC_DELTA - MINOR_DELTA * 2  # ask price
-    #bp = round(bp, len(str(BTC_DELTA))-2)
-    #ap = round(ap, len(str(BTC_DELTA))-2)
-    # print(cp, bp, ap)
     btckrw = coin.get_price('BTC', 'KRW')
 
     # check ask fill
@@ -127,14 +124,13 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         ap = float(price) + BTC_DELTA - MINOR_DELTA * 2
-        # ap = round(ap, len(str(BTC_DELTA))-2)
-        # bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
-        # gain = bid_volume[oid] - bet / ap
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
             ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
 			format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
         aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid])
+        while aoid == -1:
+            aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid])
         ask_prices[aoid] = (ap, gain, (gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -162,13 +158,13 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if price <= bp:
+            if price < bp:
                 l = coin.get_live_orders_ext(TICKER, 'BTC')
                 for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
                     if oid_ == oid:
                         if fsame(order_cnt, remain_cnt):
                             coin.cancel(oid)
-                            del bid_prices[oid]
+                            if r.ok: del bid_prices[oid]
                             break
 
         if bp not in  bid_gop: bid_gop[bp] = 1

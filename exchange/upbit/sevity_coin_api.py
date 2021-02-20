@@ -190,7 +190,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
             pass
     
     if res.ok == False:
-        print(' ' + fg.li_black, res, res.text, fg.rs)
+        log('order_new.. ' + res.text)
         return (-1, res)
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
@@ -381,7 +381,8 @@ def get_live_orders(ticker, currency):
                 log('[get_live_orders] error when request response with exception:' + str(e))
 
         if res.ok == False:
-            log('[get_live_orders] ' + str(res.reason))
+            if str(res.reason) != 'Too Many Requests':
+                log('[get_live_orders] ' + str(res.reason))
             time.sleep(5)
             return 'error'
 

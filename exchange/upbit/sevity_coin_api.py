@@ -249,7 +249,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
             pass
 
     if res.ok == False:
-        log('order_new.. ' + res.text)
+        # log('order_new.. ' + res.text)
         return (-1, res)
     
     oid = json.loads(res.content)['uuid']

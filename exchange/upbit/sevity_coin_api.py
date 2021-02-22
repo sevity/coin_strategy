@@ -247,13 +247,11 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
             ok = True
         except:
             pass
-    
+
     if res.ok == False:
-        print(' ' + fg.li_black, res, res.text, fg.rs)
-        en = json.loads(res.text)['error']['name']
-        if en == 'under_min_total_market_ask':  # 최소 주문 금액은 500.0 KRW입니다.
-            return (-1, res)
+        log('order_new.. ' + res.text)
         return (-1, res)
+    
     oid = json.loads(res.content)['uuid']
     # print(' ', oid)
     # print(oid, res)

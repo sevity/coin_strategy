@@ -20,7 +20,7 @@ import argparse
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.0004,  
     'BFC':0.00000005,
-    'XRP':0.00000010,
+    'XRP':0.00000020,
     'XLM':0.00000020,
     'EOS':0.00000200,
     'OMG':0.00000250,
@@ -46,9 +46,10 @@ access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()         
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
-token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
+token = '1604518349:AAFoH7TE40SaoegpSGBd5Oe4NsceqH78JTI'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
+    # print(msg)
     try:
         bot.sendMessage(chat_id=170583240, text=msg)
     except:

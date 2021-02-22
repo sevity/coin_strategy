@@ -33,7 +33,7 @@ access_key = f.readline().rstrip()
 secret_key = f.readline().rstrip()         
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
-token = '1267448247:AAE7QjHpSijbtNS9_dnaLm6zfUGX3FhmF78'
+token = '1604518349:AAFoH7TE40SaoegpSGBd5Oe4NsceqH78JTI'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
     # print(msg)

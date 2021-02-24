@@ -554,38 +554,42 @@ def get_live_orders(currency):
     return r
 
 def get_fill_order(oid):
-    query = {
-        'state': 'done',
-    }
-    query_string = urlencode(query)
+    try:
+        query = {
+            'state': 'done',
+        }
+        query_string = urlencode(query)
 
-    uuids = [
-        oid,
-        #...
-    ]
-    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+        uuids = [
+            oid,
+            #...
+        ]
+        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
 
-    query['uuids[]'] = uuids
-    query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
+        query['uuids[]'] = uuids
+        query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
 
-    m = hashlib.sha512()
-    m.update(query_string)
-    query_hash = m.hexdigest()
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
 
-    payload = {
-        'access_key': g_api_key,
-        'nonce': str(uuid.uuid4()),
-        'query_hash': query_hash,
-        'query_hash_alg': 'SHA512',
-    }
+        payload = {
+            'access_key': g_api_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
 
-    jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
-    authorize_token = 'Bearer {}'.format(jwt_token)
-    headers = {"Authorization": authorize_token}
+        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
 
-    res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
-    j = res.json()
-    if len(j) == 0:
+        res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+        j = res.json()
+        if len(j) == 0:
+            return {}
+    except Exception as e:
+        log('[get_fill_order] error ' + str(e))
         return {}
 
     global g_ask_fee, g_bid_fee

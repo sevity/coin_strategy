@@ -204,6 +204,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
         c2 = False
         while c1 is False and c2 is False:
             l = get_live_orders(ticker, 'KRW')
+            if len(l) < 5: continue
             for (_oid, askbid, price, cnt, odt) in l:
                 if _oid == oid: c1 = True
             r = get_fill_order(oid)
@@ -273,6 +274,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
         c2 = False
         while c1 is False and c2 is False:
             l = get_live_orders(ticker, 'BTC')
+            if len(l) < 5: continue
             for (_oid, askbid, price, cnt, odt) in l:
                 if _oid == oid: c1 = True
             r = get_fill_order(oid)
@@ -586,20 +588,20 @@ def get_fill_order(oid):
 
         res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
         j = res.json()
+        log(j)
         if len(j) == 0:
             return {}
+        global g_ask_fee, g_bid_fee
+        if g_ask_fee == -1 or g_bid_fee == -1:
+            ticker = j[0]['market'].split('-')[1]
+            info = get_info(ticker, 'KRW')
+            g_ask_fee = info['ask_fee']
+            g_bid_fee = info['bid_fee']
+
     except Exception as e:
         log('[get_fill_order] error ' + str(e))
         return {}
 
-    global g_ask_fee, g_bid_fee
-    if g_ask_fee == -1 or g_bid_fee == -1:
-        ticker = j[0]['market'].split('-')[1]
-        info = get_info(ticker, 'KRW')
-        g_ask_fee = info['ask_fee']
-        g_bid_fee = info['bid_fee']
-
-    print(j)
 
     r = {}
     r['askbid'] = j[0]['side']

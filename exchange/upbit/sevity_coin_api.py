@@ -200,10 +200,12 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
     elif bLog and ord_type=='price': print(fg.li_black + '  market_buy order_new...', ticker, 
         'amount:{:,}KRW'.format(int(price)), askbid, oid.split('-')[0] + fg.rs)
     if bConfirm:
-        c = False
-        while c is False:
+        c = 0
+        while c > -1:
+            time.sleep(c)
             s = get_order_state(oid)
-            if s == 'ack' or s == 'fill': c = True
+            if s == 'ack' or s == 'fill': c = -2
+            c += 1
         log('order confirmed')
     return (oid,res)
 
@@ -265,10 +267,12 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
         'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid.split('-')[0] + fg.rs)
 
     if bConfirm:
-        c = False
-        while c is False:
+        c = 0
+        while c > -1:
+            time.sleep(c)
             s = get_order_state(oid)
-            if s == 'ack' or s == 'fill': c = True
+            if s == 'ack' or s == 'fill': c = -2
+            c += 1
         log('order confirmed')
     return (oid,res)
 

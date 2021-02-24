@@ -33,24 +33,24 @@ class Coin:
     def get_balance_all(self):
         return self._api.get_balance_all(False)
 
-    def market_buy(self, ticker, cnt, bLog=True):
-        r =  self._api.market_buy(ticker, cnt, bLog)
+    def market_buy(self, ticker, cnt, bLog=True, bConfirm=False):
+        r =  self._api.market_buy(ticker, cnt, bLog, bConfirm)
         return r
 
-    def market_sell(self, ticker, cnt, bLog=True):
-        return self._api.market_sell(ticker, cnt, bLog)
+    def market_sell(self, ticker, cnt, bLog=True, bConfirm=False):
+        return self._api.market_sell(ticker, cnt, bLog, bConfirm)
 
-    def limit_buy(self, ticker, price, cnt, bLog=True):
-        return self._api.limit_buy(ticker, price, cnt, bLog)
+    def limit_buy(self, ticker, price, cnt, bLog=True, bConfirm=False):
+        return self._api.limit_buy(ticker, price, cnt, bLog, bConfirm)
 
-    def limit_sell(self, ticker, price, cnt, bLog=True):
-        return self._api.limit_sell(ticker, price, cnt, bLog)
+    def limit_sell(self, ticker, price, cnt, bLog=True, bConfirm=False):
+        return self._api.limit_sell(ticker, price, cnt, bLog, bConfirm)
         
-    def limit_buy_btc(self, ticker, price, cnt, bLog=True):
-        return self._api.limit_buy_btc(ticker, price, cnt, bLog)
+    def limit_buy_btc(self, ticker, price, cnt, bLog=True, bConfirm=False):
+        return self._api.limit_buy_btc(ticker, price, cnt, bLog, bConfirm)
 
-    def limit_sell_btc(self, ticker, price, cnt, bLog=True):
-        return self._api.limit_sell_btc(ticker, price, cnt, bLog)
+    def limit_sell_btc(self, ticker, price, cnt, bLog=True, bConfirm=False):
+        return self._api.limit_sell_btc(ticker, price, cnt, bLog, bConfirm)
 
     def cancel(self, oid, bLog=True):
         return self._api.cancel(oid, bLog)

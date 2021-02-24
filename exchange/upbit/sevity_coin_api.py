@@ -139,7 +139,7 @@ def get_asset_info(currency):
 
 
 
-def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
+def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True):
     if ticker=='BTC':
         price = round(price, -3) # minimum 1000 won
 
@@ -199,9 +199,19 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True):
         'cnt:{:,.4f}, amount:{:,}KRW'.format(cnt, int(price*cnt)), askbid, oid.split('-')[0] + fg.rs)
     elif bLog and ord_type=='price': print(fg.li_black + '  market_buy order_new...', ticker, 
         'amount:{:,}KRW'.format(int(price)), askbid, oid.split('-')[0] + fg.rs)
+    if bConfirm:
+        c1 = False
+        c2 = False
+        while c1 is False and c2 is False:
+            l = get_live_orders(ticker, 'KRW')
+            for (_oid, askbid, price, cnt, odt) in l:
+                if _oid == oid: c1 = True
+            r = get_fill_order(oid)
+            if 'price' in r: c2 = True
+        log('order confirmed')
     return (oid,res)
 
-def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
+def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = False):
     query = {
         'market': 'BTC-{}'.format(ticker),
         'side': askbid,
@@ -257,43 +267,55 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
     # print(oid, res)
     if bLog and ord_type!='price': print(fg.li_black + '  order_new...', ticker, 'price:{:.8f}'.format(price),
         'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid.split('-')[0] + fg.rs)
+
+    if bConfirm:
+        c1 = False
+        c2 = False
+        while c1 is False and c2 is False:
+            l = get_live_orders(ticker, 'BTC')
+            for (_oid, askbid, price, cnt, odt) in l:
+                if _oid == oid: c1 = True
+            r = get_fill_order(oid)
+            if 'price' in r: c2 = True
+        log('order confirmed')
+
     return (oid,res)
 
-def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True):
-    oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirmed = False):
+    oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog, bConfirmed)
     # log('res.reason:' + str(res.reason))
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
-        time.sleep(5)
-        oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog)
+        time.sleep(15)
+        oid, res = order_new(ticker, price, cnt, askbid, 'limit', bLog, bConfirmed)
     return oid, res
 
-def order_new_wrap_btc(ticker, price, cnt, askbid, ord_type, bLog = True):
-    oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog)
+def order_new_wrap_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirmed = False):
+    oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog, bConfirmed)
     # log('res.reason:' + str(res.reason))
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
-        time.sleep(5)
-        oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog)
+        time.sleep(15)
+        oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog, bConfirmed)
     return oid, res
 
-def limit_buy(ticker, price, cnt, bLog=True):
-    return order_new_wrap(ticker, price, cnt, 'bid', 'limit', bLog)[0]
+def limit_buy(ticker, price, cnt, bLog=True, bConfirmed=False):
+    return order_new_wrap(ticker, price, cnt, 'bid', 'limit', bLog, bConfirmed)[0]
 
-def limit_sell(ticker, price, cnt, bLog=True):
-    return order_new_wrap(ticker, price, cnt, 'ask', 'limit', bLog)[0]
+def limit_sell(ticker, price, cnt, bLog=True, bConfirmed=False):
+    return order_new_wrap(ticker, price, cnt, 'ask', 'limit', bLog, bConfirmed)[0]
 
-def limit_buy_btc(ticker, price, cnt, bLog=True):
-    return order_new_wrap_btc(ticker, price, cnt, 'bid', 'limit', bLog)[0]
+def limit_buy_btc(ticker, price, cnt, bLog=True, bConfirmed=False):
+    return order_new_wrap_btc(ticker, price, cnt, 'bid', 'limit', bLog, bConfirmed)[0]
 
-def limit_sell_btc(ticker, price, cnt, bLog=True):
-    return order_new_wrap_btc(ticker, price, cnt, 'ask', 'limit', bLog)[0]
+def limit_sell_btc(ticker, price, cnt, bLog=True, bConfirmed=False):
+    return order_new_wrap_btc(ticker, price, cnt, 'ask', 'limit', bLog, bConfirmed)[0]
 
 def market_buy(ticker, price, bLog=True):
     return order_new(ticker, price, 0, 'bid', 'price' , bLog)[0]
 
-def market_sell(ticker, cnt, bLog=True):
-    (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market', bLog)
+def market_sell(ticker, cnt, bLog=True, bConfirmed=False):
+    (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market', bLog, bConfirmed)
     if oid == -1: return {}
     print("market sell done..", ticker, cnt)
     r = {}

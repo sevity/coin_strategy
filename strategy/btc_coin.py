@@ -55,11 +55,12 @@ bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 ask_prices={}
 total_gain = 0
-l = coin.get_live_orders('BTC', 'KRW')
-for (oid, askbid, price, cnt, odt) in l:
+l = coin.get_live_orders_ext('BTC', 'KRW')
+for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
         if price % 100000 != 0: continue  # btc_regulate에서 건건 취소하지 않는다.
-        coin.cancel(oid)
+        if fsame(order_cnt, remain_cnt):
+            r = coin.cancel(oid)
     else:
         ask_prices[oid] = (int(float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
@@ -131,11 +132,11 @@ while True:
         print(bg.da_red + fg.white + '! bid filled({:,}).'.format(price)+bg.rs+fg.blue+
             ' placing ask({:,}).. gain will be: {:.8f}({:,}KRW)'.
 			format(int(ap), gain, int(gain * ap)) + bg.rs+fg.rs)
-        aoid = coin.limit_sell('BTC', ap, bet / ap)
+        aoid = coin.limit_sell('BTC', ap, bet / ap, True, True)
         while aoid == -1:
             cnt = bet / ap
             cnt = min(cnt, coin.get_asset_info('BTC')['free'])
-            aoid = coin.limit_sell('BTC', ap, cnt) 
+            aoid = coin.limit_sell('BTC', ap, cnt, True, True) 
         ask_prices[aoid] = (ap, gain, int(gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -179,7 +180,7 @@ while True:
         bid_gop[bp] = min(5, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-        oid = coin.limit_buy('BTC', bp, bet / bp)
+        oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
         while oid == -1:
             print('!!! no money!({:,}KRW)'.format(int(bet)))
             bid_gop[bp] /= 2
@@ -189,7 +190,7 @@ while True:
                 time.sleep(30)
                 break
             bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-            oid = coin.limit_buy('BTC', bp, bet / bp)
+            oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
             time.sleep(2)
         if oid != -1:
             bid_prices[oid] = bp

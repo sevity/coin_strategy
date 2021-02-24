@@ -24,6 +24,10 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XLM':0.00000020,
     'EOS':0.00000200,
     'OMG':0.00000250,
+    'ADA':0.00000040,
+    'LOOM':0.00000010,
+    'CRO':0.00000010,
+    'ENJ':0.00000020,
     }
 BETTING = 0.005    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -69,10 +73,11 @@ bid_volume={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
 ask_prices={}
 total_gain = 0
-l = coin.get_live_orders(TICKER, 'BTC')
-for (oid, askbid, price, cnt, odt) in l:
+l = coin.get_live_orders_ext(TICKER, 'BTC')
+for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
-        coin.cancel(oid)
+        if fsame(order_cnt, remain_cnt):
+            r = coin.cancel(oid)
     else:
         ask_prices[oid] = ((float(price)), 0, 0)
 # print('ask_prices:', ask_prices)
@@ -131,9 +136,9 @@ while True:
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
             ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
 			format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
-        aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid])
+        aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
         while aoid == -1:
-            aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid])
+            aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
         ask_prices[aoid] = (ap, gain, (gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
@@ -175,7 +180,7 @@ while True:
         bid_gop[bp] = min(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-        oid = coin.limit_buy_btc(TICKER, bp, bet / bp)
+        oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:
             print('!!! no money!({:.8}BTC)'.format(bet))
             time.sleep(60)

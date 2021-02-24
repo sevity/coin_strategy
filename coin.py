@@ -73,6 +73,9 @@ class Coin:
     def get_live_orders(self, currency):
         return self._api.get_live_orders(currency)
 
+    def get_order_state(self, oid):
+        return self._api.get_order_state(oid)
+
     def get_fill_order(self, oid):
         return self._api.get_fill_order(oid)
 

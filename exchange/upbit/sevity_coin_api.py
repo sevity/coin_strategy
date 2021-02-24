@@ -200,17 +200,10 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
     elif bLog and ord_type=='price': print(fg.li_black + '  market_buy order_new...', ticker, 
         'amount:{:,}KRW'.format(int(price)), askbid, oid.split('-')[0] + fg.rs)
     if bConfirm:
-        c1 = False
-        c2 = False
-        while c1 is False and c2 is False:
-            l = get_live_orders(ticker, 'KRW')
-            if l == 'error':
-                time.sleep(10)
-                continue
-            for (_oid, askbid, price, cnt, odt) in l:
-                if _oid == oid: c1 = True
-            r = get_fill_order(oid)
-            if 'price' in r: c2 = True
+        c = False
+        while c is False:
+            s = get_order_state(oid)
+            if s == 'ack' or s == 'fill': c = True
         log('order confirmed')
     return (oid,res)
 
@@ -272,19 +265,11 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
         'cnt:{:,.8f}, amount:{:.8f}BTC'.format(cnt, (price*cnt)), askbid, oid.split('-')[0] + fg.rs)
 
     if bConfirm:
-        c1 = False
-        c2 = False
-        while c1 is False and c2 is False:
-            l = get_live_orders(ticker, 'BTC')
-            if l == 'error':
-                time.sleep(10)
-                continue
-            for (_oid, askbid, price, cnt, odt) in l:
-                if _oid == oid: c1 = True
-            r = get_fill_order(oid)
-            if 'price' in r: c2 = True
+        c = False
+        while c is False:
+            s = get_order_state(oid)
+            if s == 'ack' or s == 'fill': c = True
         log('order confirmed')
-
     return (oid,res)
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirmed = False):
@@ -558,6 +543,53 @@ def get_live_orders(currency):
         except:
             pass
     return r
+
+def get_order_state(oid):
+    try:
+        query = {
+            # 'state': 'done',
+        }
+        query_string = urlencode(query)
+
+        uuids = [
+            oid,
+            #...
+        ]
+        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
+
+        query['uuids[]'] = uuids
+        query_string = "{0}".format(uuids_query_string).encode()
+
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': g_api_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+
+        jwt_token = jwt.encode(payload, g_api_secret).decode('utf-8')
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+        j = res.json()
+        if len(j) == 0:
+            return ''
+
+    except Exception as e:
+        log('[get_order_state] error: ' + str(e))
+        return ''
+
+    log('j: ' + str(j))
+    state = j[0]['state']
+    if state == 'wait': return 'ack'
+    if state == 'done': return 'fill'
+    return ''
+
 
 def get_fill_order(oid):
     try:

@@ -592,20 +592,20 @@ def get_fill_order(oid):
 
         res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
         j = res.json()
-        log(j)
         if len(j) == 0:
             return {}
-        global g_ask_fee, g_bid_fee
-        if g_ask_fee == -1 or g_bid_fee == -1:
-            ticker = j[0]['market'].split('-')[1]
-            info = get_info(ticker, 'KRW')
-            g_ask_fee = info['ask_fee']
-            g_bid_fee = info['bid_fee']
 
     except Exception as e:
-        log('[get_fill_order] error ' + str(e))
+        log('[get_fill_order] error: ' + str(e))
         return {}
 
+    log('j: ' + str(j))
+    global g_ask_fee, g_bid_fee
+    if g_ask_fee == -1 or g_bid_fee == -1:
+        ticker = j[0]['market'].split('-')[1]
+        info = get_info(ticker, 'KRW')
+        g_ask_fee = info['ask_fee']
+        g_bid_fee = info['bid_fee']
 
     r = {}
     r['askbid'] = j[0]['side']

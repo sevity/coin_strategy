@@ -324,7 +324,15 @@ def market_sell(ticker, cnt, bLog=True, bConfirmed=False):
     # print('  debug info..', 'get_fill_order..', r)
     return r
 
-def cancel(oid, bLog=True):
+def cancel_wrap(oid, bLog):
+    res = cancel_sub(oid, bLog)
+    # log('res.reason:' + str(res.reason))
+    while str(res.reason) == 'Too Many Requests':
+        log('too_many_request_order.. retrying')
+        time.sleep(15)
+        res = cancel_sub(oid, bLog)
+    return res
+def cancel_sub(oid, bLog=True):
     if bLog: log('order_cancel...' + str(oid))
     query = {
         'uuid': oid,
@@ -355,6 +363,8 @@ def cancel(oid, bLog=True):
     if res.ok == False or res.status_code != 200:
         log('cancel fail...' + str(oid) + str(res.ok) + str(res) + str(res.text))
     return res
+def cancel(oid, bLog=True):
+    return cancel_wrap(oid, bLog)
 
 
 @dispatch(str, str)

@@ -204,7 +204,9 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
         c2 = False
         while c1 is False and c2 is False:
             l = get_live_orders(ticker, 'KRW')
-            if len(l) < 5: continue
+            if l == 'error':
+                time.sleep(10)
+                continue
             for (_oid, askbid, price, cnt, odt) in l:
                 if _oid == oid: c1 = True
             r = get_fill_order(oid)
@@ -274,7 +276,9 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
         c2 = False
         while c1 is False and c2 is False:
             l = get_live_orders(ticker, 'BTC')
-            if len(l) < 5: continue
+            if l == 'error':
+                time.sleep(10)
+                continue
             for (_oid, askbid, price, cnt, odt) in l:
                 if _oid == oid: c1 = True
             r = get_fill_order(oid)

@@ -551,18 +551,9 @@ def get_live_orders(currency):
 def get_order_state(oid):
     try:
         query = {
-            # 'state': 'done',
+            'uuid': oid,
         }
-        query_string = urlencode(query)
-
-        uuids = [
-            oid,
-            #...
-        ]
-        uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
-
-        query['uuids[]'] = uuids
-        query_string = "{0}".format(uuids_query_string).encode()
+        query_string = urlencode(query).encode()
 
         m = hashlib.sha512()
         m.update(query_string)
@@ -579,21 +570,18 @@ def get_order_state(oid):
         authorize_token = 'Bearer {}'.format(jwt_token)
         headers = {"Authorization": authorize_token}
 
-        res = requests.get(server_url + "/v1/orders", params=query, headers=headers)
+        res = requests.get(server_url + "/v1/order", params=query, headers=headers)
         j = res.json()
         if len(j) == 0:
             return ''
-
     except Exception as e:
         log('[get_order_state] error: ' + str(e))
         return ''
 
-    log('j: ' + str(j))
-    state = j[0]['state']
+    state = j['state']
     if state == 'wait': return 'ack'
     if state == 'done': return 'fill'
     return ''
-
 
 def get_fill_order(oid):
     try:

@@ -306,8 +306,8 @@ def limit_buy_btc(ticker, price, cnt, bLog=True, bConfirmed=False):
 def limit_sell_btc(ticker, price, cnt, bLog=True, bConfirmed=False):
     return order_new_wrap_btc(ticker, price, cnt, 'ask', 'limit', bLog, bConfirmed)[0]
 
-def market_buy(ticker, price, bLog=True):
-    return order_new(ticker, price, 0, 'bid', 'price' , bLog)[0]
+def market_buy(ticker, price, bLog=True, bConfirm=False):
+    return order_new(ticker, price, 0, 'bid', 'price' , bLog, bConfirmed)[0]
 
 def market_sell(ticker, cnt, bLog=True, bConfirmed=False):
     (oid, res) = order_new(ticker, 0, cnt, 'ask', 'market', bLog, bConfirmed)

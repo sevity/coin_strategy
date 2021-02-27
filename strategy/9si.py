@@ -31,7 +31,7 @@ total_tickers = [
     'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS',
     'XTZ', 'KAVA', 'ATOM', 'ETC', 'LINK', 'BTG', 'NEO', 'REP', 'LTC', 'JST', 'CRO', 'TON', 'SXP', 'LAMB',
     'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS', 'BSV', 'BTT', 'PCI', 'GLM',
-    'DOGE', 'AQT', 'SSX', 'META', 'CBK',
+    'DOGE', 'AQT', 'SSX', 'META', 'CBK', 'OBSR',
     ]
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯
 ###############################################################################

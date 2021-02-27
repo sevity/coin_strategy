@@ -4,6 +4,7 @@ import exchange.bithumb.sevity_coin_api
 import exchange.upbit.sevity_coin_api
 import exchange.binance.sevity_coin_api
 from sty import fg, bg, ef, rs
+import time
 def log(msg):
     print('  ' + fg.li_black + msg + fg.rs)
 
@@ -61,7 +62,7 @@ class Coin:
         while str(r) == 'error':
             r = self._api.get_live_orders(ticker, currency)
             if str(r) == 'error':
-                pass
+                time.sleep(5)
                 #log('get_live_orders retry..')
         return r
 

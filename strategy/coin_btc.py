@@ -76,7 +76,7 @@ bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 �
 ask_prices={}
 total_gain = 0
 l = coin.get_live_orders_ext(TICKER, 'BTC')
-# print(l)
+print(':l', l)
 for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
         if fsame(order_cnt, remain_cnt):

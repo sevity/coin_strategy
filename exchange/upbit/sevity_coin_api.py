@@ -455,15 +455,6 @@ def get_live_orders_ext(ticker, currency):
     }
     query_string = urlencode(query)
 
-    uuids = [
-        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
-        #...
-    ]
-    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
-
-    #query['uuids[]'] = uuids
-    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
-
     m = hashlib.sha512()
     m.update(query_string.encode())
     query_hash = m.hexdigest()
@@ -490,6 +481,7 @@ def get_live_orders_ext(ticker, currency):
     try:
         rj = res.json()
     except:
+        return 'error'
         return r
 
     for ord in res.json():
@@ -501,6 +493,7 @@ def get_live_orders_ext(ticker, currency):
             remaining_volume = float(ord['remaining_volume'])
             r.append((ord['uuid'], ord['side'], price, ordered_volume, remaining_volume, ct))
         except:
+            return 'error'
             pass
     return r
 
@@ -510,15 +503,6 @@ def get_live_orders(currency):
         'state': 'wait',
     }
     query_string = urlencode(query)
-
-    uuids = [
-        '9ca023a5-851b-4fec-9f0a-48cd83c2eaae',
-        #...
-    ]
-    uuids_query_string = '&'.join(["uuids[]={}".format(uuid) for uuid in uuids])
-
-    #query['uuids[]'] = uuids
-    #query_string = "{0}&{1}".format(query_string, uuids_query_string).encode()
 
     m = hashlib.sha512()
     m.update(query_string.encode())

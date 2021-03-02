@@ -113,9 +113,10 @@ while True:
     for oid, (price, gain, btc) in aps.items():
         total_gain += gain
         if gain > 0:
-            print(bg.da_blue+fg.white + '! ask filled({:.8f}BTC).'.format(float(price))+bg.blue+
+            print(bg.da_blue+fg.white + '! ask filled({:.8f}BTC).'.format(float(price))
+                +bg.blue+fg.black+
                 ' gain: {:.8f}BTC({:,}KRW), '.
-                format(gain, int(gain*btckrw),total_gain,int(total_gain*btckrw)) + fg.li_yellow + 
+                format(gain, int(gain*btckrw),total_gain,int(total_gain*btckrw))+bg.li_yellow+fg.black+
                 'total_gain:{:.8f}BTC({:,}KRW)'.
                 format(total_gain, (int(total_gain*btckrw)))+ bg.rs+fg.rs)
             send_telegram('[{}-BTC] ask filled({:.8f}BTC), gain: {:.8f}BTC({:,}KRW), total_gain:{:.8f}BTC({:,}KRW)'.
@@ -124,6 +125,8 @@ while True:
         else:
             print(bg.da_blue+fg.white + '! prev ask filled({:.8f}BTC).'.format(float(price))+bg.blue+
                 'gain:? total_gain:?'+bg.rs+fg.rs)
+            send_telegram('[{}-BTC] ask filled({:.8f}BTC), gain:?, total_gain:?)'.
+                format(TICKER, float(price)))
         del ask_prices[oid]
     if len(aps) > 0: 
         # print('aa')

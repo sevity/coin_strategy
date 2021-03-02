@@ -18,17 +18,18 @@ import argparse
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.0008,  
+    'ETH':0.0015,  
     'BFC':0.00000005,
     'XRP':0.00000040,
     'XLM':0.00000040,
     'EOS':0.00000400,
-    'OMG':0.00000500,
-    'ADA':0.00000080,
+    'OMG':0.00000800,
+    'ADA':0.00000150,
     'LOOM':0.00000010,
-    'CRO':0.00000020,
-    'ENJ':0.00000040,
-    'DOGE':0.00000010,
+    'CRO':0.00000040,
+    'ENJ':0.00000080,
+    'DOGE':0.00000005,
+    'VET':0.00000020,
     }
 BETTING = 0.005    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -75,13 +76,16 @@ bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 �
 ask_prices={}
 total_gain = 0
 l = coin.get_live_orders_ext(TICKER, 'BTC')
+# print(l)
 for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
         if fsame(order_cnt, remain_cnt):
             r = coin.cancel(oid)
+        else:
+            pass
     else:
         ask_prices[oid] = ((float(price)), 0, 0)
-# print('ask_prices:', ask_prices)
+print('prev ask_prices:', ask_prices)
 
 bAuto = False
 if BETTING == 0:
@@ -121,7 +125,9 @@ while True:
             print(bg.da_blue+fg.white + '! prev ask filled({:.8f}BTC).'.format(float(price))+bg.blue+
                 'gain:? total_gain:?'+bg.rs+fg.rs)
         del ask_prices[oid]
-    if len(aps) > 0: continue
+    if len(aps) > 0: 
+        # print('aa')
+        continue
     
     # check bid fill
     bps = copy.deepcopy(bid_prices)
@@ -145,7 +151,9 @@ while True:
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
         # time.sleep(5)
-    if len(bps) > 0: continue
+    if len(bps) > 0:
+        # print('bb')
+        continue
 
 
 
@@ -156,8 +164,9 @@ while True:
             bfound = True
         if askbid=='ask' and fsame(price, ap):
             afound = True
-    msg = 'bfound:{}, afound:{}'.format(bfound, afound)
-    # if pmsg != msg: print(msg)
+    msg = 'ap:{:.8f}, bp:{:.8f}, bfound:{}, afound:{}'. format(
+            ap, bp, bfound, afound)
+    if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:

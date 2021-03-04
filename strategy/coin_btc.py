@@ -186,7 +186,6 @@ while True:
                     if fsame(order_cnt, remain_cnt):
                         r = coin.cancel(oid)
                         if r.ok: del bid_prices[oid]
-                        break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

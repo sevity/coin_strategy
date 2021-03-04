@@ -562,7 +562,7 @@ def get_order_state(oid):
         log('[get_order_state] error: ' + str(e))
         return ''
 
-    if 'stat' in j:
+    if 'state' in j:
         state = j['state']
         if state == 'wait': return 'ack'
         if state == 'done': return 'fill'

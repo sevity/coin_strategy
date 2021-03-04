@@ -76,7 +76,7 @@ bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 �
 ask_prices={}
 total_gain = 0
 l = coin.get_live_orders_ext(TICKER, 'BTC')
-print(':l', l)
+# print(':l', l)
 for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
         if fsame(order_cnt, remain_cnt):
@@ -167,8 +167,8 @@ while True:
             bfound = True
         if askbid=='ask' and fsame(price, ap):
             afound = True
-    msg = 'ap:{:.8f}, bp:{:.8f}, bfound:{}, afound:{}'. format(
-            ap, bp, bfound, afound)
+    msg = 'bp:{:.8f}, ap:{:.8f}, bfound:{}, afound:{}'. format(
+            bp, ap, bfound, afound)
     if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문

@@ -179,14 +179,14 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if price < bp:
-                l = coin.get_live_orders_ext(TICKER, 'BTC')
-                for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
-                    if oid_ == oid:
-                        if fsame(order_cnt, remain_cnt):
-                            r = coin.cancel(oid)
-                            if r.ok: del bid_prices[oid]
-                            break
+            # if price < bp:
+            l = coin.get_live_orders_ext(TICKER, 'BTC')
+            for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
+                if oid_ == oid:
+                    if fsame(order_cnt, remain_cnt):
+                        r = coin.cancel(oid)
+                        if r.ok: del bid_prices[oid]
+                        break
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

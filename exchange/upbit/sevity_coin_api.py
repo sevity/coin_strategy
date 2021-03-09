@@ -558,14 +558,15 @@ def get_order_state(oid):
         j = res.json()
         if len(j) == 0:
             return ''
+
+        if 'state' in j:
+            state = j['state']
+            if state == 'wait': return 'ack'
+            if state == 'done': return 'fill'
     except Exception as e:
         log('[get_order_state] error: ' + str(e))
         return ''
 
-    if 'state' in j:
-        state = j['state']
-        if state == 'wait': return 'ack'
-        if state == 'done': return 'fill'
     return ''
 
 def get_fill_order(oid):

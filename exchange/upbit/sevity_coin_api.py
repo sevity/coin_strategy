@@ -206,7 +206,7 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
             s = get_order_state(oid)
             if s == 'ack' or s == 'fill': c = -2
             c += 1
-        log('order confirmed')
+        # log('order confirmed')
     return (oid,res)
 
 def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = False):

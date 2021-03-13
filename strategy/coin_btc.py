@@ -28,8 +28,13 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'LOOM':0.00000010,
     'CRO':0.00000040,
     'ENJ':0.00000080,
+    'MANA':0.00000080,
     'DOGE':0.00000005,
-    'VET':0.00000020,
+    'VET':0.00000010,
+    'PLA':0.00000100,
+    'IGNIS':0.00000020,
+    'LINK' :0.00002000,
+    'UNI' :0.00002000,
     }
 BETTING = 0.005    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -169,7 +174,7 @@ while True:
             afound = True
     msg = 'bp:{:.8f}, ap:{:.8f}, bfound:{}, afound:{}'. format(
             bp, ap, bfound, afound)
-    if pmsg != msg: print(msg)
+    # if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:

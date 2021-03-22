@@ -204,7 +204,8 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
         while c > -1:
             time.sleep(c)
             s = get_order_state(oid)
-            if s == 'ack' or s == 'fill': c = -2
+            if s == 'ack' or s == 'fill' or s == 'partial_fill':
+                c = -2
             c += 1
         # log('order confirmed')
     return (oid,res)
@@ -271,7 +272,8 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
         while c > -1:
             time.sleep(c)
             s = get_order_state(oid)
-            if s == 'ack' or s == 'fill': c = -2
+            if s == 'ack' or s == 'fill' or s == 'partial_fill':
+                c = -2
             c += 1
         # log('order confirmed')
     return (oid,res)
@@ -533,6 +535,7 @@ def get_live_orders(currency):
     return r
 
 def get_order_state(oid):
+    state = ''
     try:
         query = {
             'uuid': oid,
@@ -558,15 +561,21 @@ def get_order_state(oid):
         j = res.json()
         if len(j) == 0:
             return ''
-
-        if 'state' in j:
-            state = j['state']
-            if state == 'wait': return 'ack'
-            if state == 'done': return 'fill'
+        state = j['state']
+        req_vol = float(j['volume'])
+        remaining_vol = float(j['remaining_volume'])
+        if state == 'done' and remaining_vol != 0:
+            raise Exception(f'state is done but remaining volume is not zero ({remaining_vol})')
+        elif remaining_vol != 0 and remaining_vol != req_vol:
+            state = 'partial_fill'
+        elif state == 'wait' and remaining_vol == 0:
+            raise Exception(f'state is wait but remaining volume is zero ({remaining_vol})')
     except Exception as e:
         log('[get_order_state] error: ' + str(e))
         return ''
-
+    if state == 'wait': return 'ack'
+    if state == 'done': return 'fill'
+    if state == 'partial_fill': return 'partial_fill'
     return ''
 
 def get_fill_order(oid):

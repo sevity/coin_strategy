@@ -45,7 +45,7 @@ def get_price(ticker, currency):
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
             return (ask1+bid1)/2
         except:
-            if 'error' in j:
+            if 'error' in j and 'name' in j['error']:
                 print(j['error'])
                 if int(j['error']['name']) == 404:
                     return None
@@ -273,7 +273,7 @@ def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = 
             s = get_order_state(oid)
             if s == 'ack' or s == 'fill': c = -2
             c += 1
-        log('order confirmed')
+        # log('order confirmed')
     return (oid,res)
 
 def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = False):

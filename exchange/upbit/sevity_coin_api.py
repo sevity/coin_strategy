@@ -45,10 +45,11 @@ def get_price(ticker, currency):
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
             return (ask1+bid1)/2
         except:
-            if 'error' in j and 'name' in j['error']:
-                print(j['error'])
+            try:
                 if int(j['error']['name']) == 404:
                     return None
+            except:
+                pass
             time.sleep(1.0)
 
 def get_ask1(ticker, currency):

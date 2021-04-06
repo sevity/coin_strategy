@@ -223,7 +223,7 @@ while True:
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
         print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
-        bet = nb
+        bet = max(0.0005, nb)  # min bet for BTC market in UPBIT
         pbp = bp
         pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)

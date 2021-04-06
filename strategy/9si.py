@@ -24,13 +24,13 @@ ban_tickers = []  # 떡상 직후등 피해야할코인들 나열
 COOL_TIME = 30
 ###############################################################################
 total_tickers = [
-    'MFT','IQ','CRE','MBL','STMX','SC','MED','EDR','TSHP','SPND','TT', 'IOST', 'AHT', 'QKC', 'ANKR', 'TFUEL', 
-    'PXL', 'SRN', 'CHZ', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS',
+    'MFT','IQ','CRE','MBL','STMX','SC','MED','EDR','TSHP','TT', 'IOST', 'AHT', 'QKC', 'ANKR', 'TFUEL', 
+    'PXL', 'CHZ', 'ORBS', 'UPP', 'MOC', 'STPT', 'VET', 'TRX', 'ZIL', 'LOOM', 'IGNIS',
     'SNT', 'CVC', 'POLY', 'BORA', 'HBAR', 'AERGO', 'DKA', 'WAXP', 'EMC2', 'XEM', 'MANA', 'ARDR', 'POWR', 'XLM',
     'ELF', 'SOLVE', 'ADA', 'DMT', 'ONG', 'STORJ', 'MLK', 'ENJ', 'GRS', 'STEEM', 'ADX', 'HIVE', 'BAT', 'THETA',
     'IOTA', 'MTL', 'ICX', 'ZRX', 'ARK', 'KMD', 'ONT', 'SBD', 'LSK', 'KNC', 'OMG', 'GAS', 'WAVES', 'QTUM', 'EOS',
     'XTZ', 'KAVA', 'ATOM', 'ETC', 'LINK', 'BTG', 'NEO', 'REP', 'LTC', 'JST', 'CRO', 'TON', 'SXP', 'LAMB',
-    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'NPXS', 'BSV', 'BTT', 'PCI', 'GLM',
+    'HUNT', 'MARO', 'PLA', 'DOT', 'QTCON', 'MVL', 'BCHA', 'BSV', 'BTT', 'PCI', 'GLM',
     'DOGE', 'AQT', 'SSX', 'META', 'CBK', 'OBSR',
     ]
 FEE = 0.0005  # 0.05%, 위아래 해서 0.1%인듯

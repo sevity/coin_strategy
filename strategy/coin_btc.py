@@ -19,7 +19,7 @@ import argparse
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.0010,  
-    'BFC':0.00000010,  # 5
+    'BFC':0.00000005,  # 5
     'SNT':0.00000020,
     'GOM2':0.00000005,
     'XRP':0.00000080,  # 40
@@ -63,6 +63,7 @@ args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 BTC_DELTA = float(DELTA[TICKER])
+TIME_INTERVAL = 30 * 60  # 30 min.
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -110,6 +111,8 @@ if BETTING == 0:
     BETTING = max(MIN_BET_FOR_AUTO, (coin.get_asset_info('BTC')['free'] / 20))
     print('auto BETTING start from: {:.8f} BTC'.format(BETTING))
 pmsg = ""
+pbp = -1  # previous bid price
+pbt = -1  # previous bid time
 while True:
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('BTC')['free'] / 20)
@@ -204,11 +207,25 @@ while True:
                         r = coin.cancel(oid)
                         if r.ok: del bid_prices[oid]
 
-        if bp not in  bid_gop: bid_gop[bp] = 1
+        if bp not in bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
         bid_gop[bp] = min(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
+        ct = datetime.now()
+        if pbt == -1:
+            td = TIME_INTERVAL
+        else:
+            td = (ct - pbt).seconds  # time diff
+        br = min(1.0, td / TIME_INTERVAL)  # bet ratio
+        # if bp < pbp:
+        #     br = 1.0
+        #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
+        nb = bet * br  # new bet
+        print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
+        bet = nb
+        pbp = bp
+        pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:
             print('!!! no money!({:.8}BTC)'.format(bet))

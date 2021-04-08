@@ -17,15 +17,16 @@ import argparse
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 1000000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 500000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-BETTING = 0  # AUTO
-MAX_BETTING = 2000000
+BETTING = 2000000  # AUTO
+MAX_BETTING = 5000000
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
+TIME_INTERVAL = 60 * 60  # 60 min.
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')      
@@ -72,6 +73,7 @@ if BETTING == 0:
     print('auto BETTING start from: {:,} KRW'.format(BETTING))
 bid_cont = 0
 cb = None  # circuit break
+pbt = -1  # previous bid time
 while True:
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('KRW')['free'] / 10)
@@ -143,6 +145,7 @@ while True:
         else: bid_gop[price] += 1
         # time.sleep(5)
     if bid_cont >= 3:
+        continue
         print(fg.red+'circuit break!'+fg.rs)
         send_telegram('circuit break!')
         cb = datetime.now()
@@ -177,22 +180,25 @@ while True:
 
         if bp not in  bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])
-        bid_gop[bp] = min(5, bid_gop[bp])
+        bid_gop[bp] = min(1, bid_gop[bp])
 
         bet = BETTING * bid_gop[bp] / (1.0 + FEE)
+        ct = datetime.now()
+        if pbt == -1:
+            td = TIME_INTERVAL
+        else:
+            td = (ct - pbt).seconds  # time diff
+        br = min(1.0, td / TIME_INTERVAL)  # bet ratio
+        nb = bet * br  # new bet
+        print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
+        bet = max(10000, nb)  # min bet for BTC market in UPBIT
+        pbp = bp
+        pbt = datetime.now()
         oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
-        while oid == -1:
-            print('!!! no money!({:,}KRW)'.format(int(bet)))
-            bid_gop[bp] /= 2
-            if bid_gop[bp] < 0.1:
-                print('! will have 30 secs break..')
-                bid_gop[bp] = 1
-                time.sleep(30)
-                break
-            bet = BETTING * bid_gop[bp] / (1.0 + FEE)
-            oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
-            time.sleep(2)
-        if oid != -1:
+        if oid == -1:
+            print('!!! no money!({:.8}BTC)'.format(bet))
+            time.sleep(60)
+        else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
             print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.

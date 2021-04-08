@@ -14,7 +14,7 @@ import ast
 from sty import fg, bg, ef, rs
 
 # param #######################################################################
-BETTING = 5000
+BETTING = 9000
 MAX_TICKER = 20  # 한턴에 보는 코인수(너무 많으면 느려지니 고정으로..) 
 MAX_TICK = 100 # 몇틱기다리는지 설정(이 안에 급상승해야함)
 THRESHOLD = 0.010  # 1.5%상승하면 올라탐
@@ -98,7 +98,7 @@ while True:
                 hit_cnts[ticker] += 1
                 oid = None
                 if ticker in hit_prices and hit_prices[ticker] < pt[-1]:
-                    bet = BETTING * 1.9 / (hit_cnts[ticker] - 1)
+                    bet = BETTING * 1.1 / (hit_cnts[ticker] - 1)
                     bet = max(bet, 5000)
                     oid = coin.market_buy(ticker, bet)
                 else:

@@ -18,13 +18,13 @@ import argparse
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.0010,  
+    'ETH':0.0005,  
     'BFC':0.00000005,  # 5
     'SNT':0.00000020,
     'GOM2':0.00000005,
     'XRP':0.00000080,  # 40
     'XLM':0.00000080,  # 40
-    'EOS':0.00001000,  # 800
+    'EOS':0.00000400,  # 800
     'OMG':0.00000800,
     'ADA':0.00000050,  # 100
     'LOOM':0.00000005, # 10
@@ -46,7 +46,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'NCASH' :0.00000002,
     'FLOW' :0.00002000,
     'PICA' :0.00000010,  # 20
-    'STORJ' :0.00000150,  # 250
+    'STORJ' :0.00000100,  # 250
     }
 BETTING = 0.005    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -223,7 +223,7 @@ while True:
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
         print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
-        bet = max(0.0005, nb)  # min bet for BTC market in UPBIT
+        bet = max(0.0006, nb)  # min bet for BTC market in UPBIT
         pbp = bp
         pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)

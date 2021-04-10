@@ -19,14 +19,14 @@ import argparse
 # param #######################################################################
 KRW_DELTA = 500000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-BETTING = 2000000  # AUTO
+BETTING = 4000000  # AUTO if 0
 MAX_BETTING = 5000000
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
-TIME_INTERVAL = 60 * 60  # 60 min.
+TIME_INTERVAL = 30 * 60  # 60 min.
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')      

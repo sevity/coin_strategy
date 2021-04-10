@@ -18,16 +18,16 @@ import argparse
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.0005,  
+    'ETH':0.0004,  
     'BFC':0.00000005,  # 5
     'SNT':0.00000020,
     'GOM2':0.00000005,
-    'XRP':0.00000080,  # 40
-    'XLM':0.00000080,  # 40
-    'EOS':0.00000400,  # 800
+    'XRP':0.00000040,  # 40
+    'XLM':0.00000040,  # 40
+    'EOS':0.00000200,  # 800
     'OMG':0.00000800,
-    'ADA':0.00000050,  # 100
-    'LOOM':0.00000005, # 10
+    'ADA':0.00000040,  # 100
+    'LOOM':0.00000010, # 10
     'CRO':0.00000040,
     'ENJ':0.00000150,  # 100
     'MANA':0.00000040,  # 80
@@ -35,10 +35,10 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'VET':0.00000005,
     'PLA':0.00000050,  # 100
     'IGNIS':0.00000020,
-    'LINK' :0.00002000,
+    'LINK' :0.00001000,  # 2000
     'UNI' :0.00002000,
     'LTC' :0.00020000,
-    'STX' :0.00000100,  # 100
+    'STX' :0.00000150,  # 100
     'BAT' :0.00000050,  # 100
     'COMP' :0.00040000,
     'NPXS' :0.00000001,
@@ -215,6 +215,7 @@ while True:
         ct = datetime.now()
         if pbt == -1:
             td = TIME_INTERVAL
+            pbt = datetime.now() - timedelta(seconds=td)
         else:
             td = (ct - pbt).seconds  # time diff
         br = min(1.0, td / TIME_INTERVAL)  # bet ratio
@@ -222,14 +223,15 @@ while True:
         #     br = 1.0
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
-        print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
+        print('time diff:{:,}s, bet ratio:{:.4f}, bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(td, br, bet, nb))
         bet = max(0.0006, nb)  # min bet for BTC market in UPBIT
         pbp = bp
-        pbt = datetime.now()
+        # pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:
             print('!!! no money!({:.8}BTC)'.format(bet))
-            time.sleep(60)
+            pbt += timedelta(seconds=td/2)
+            # time.sleep(60)
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
@@ -237,6 +239,7 @@ while True:
             print(fg.red + '! bid placed({:.8f}), bet:{:.8f}BTC, bid_gop:{}, bid_prices:{}'.
                 format(bp, (bet), bid_gop[bp], list(format_8f(bid_prices).values())) + fg.rs)
             # time.sleep(5)
+            pbt = datetime.now()
 
 
 

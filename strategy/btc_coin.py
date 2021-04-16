@@ -17,9 +17,9 @@ import argparse
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 500000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 600000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-BETTING = 4000000  # AUTO if 0
+BETTING = 2000000  # AUTO if 0
 MAX_BETTING = 5000000
 ###############################################################################
 # legacy or fixed
@@ -186,23 +186,26 @@ while True:
         ct = datetime.now()
         if pbt == -1:
             td = TIME_INTERVAL
+            pbt = datetime.now() - timedelta(seconds=td)
         else:
-            td = (ct - pbt).seconds  # time diff
+            td = min(TIME_INTERVAL * 2, (ct - pbt).seconds)  # time diff
         br = min(1.0, td / TIME_INTERVAL)  # bet ratio
         nb = bet * br  # new bet
         print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
         bet = max(10000, nb)  # min bet for BTC market in UPBIT
         pbp = bp
-        pbt = datetime.now()
+        # pbt = datetime.now()
         oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
         if oid == -1:
-            print('!!! no money!({:.8}BTC)'.format(bet))
-            time.sleep(60)
+            print('!!! no money!({:.8}KRW)'.format(bet))
+            pbt += timedelta(seconds=td/2)
+            # time.sleep(60)
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
             print(fg.red + '! bid placed({:,}), bet:{:,}KRW, bid_gop:{}, bid_prices:{}'.
                 format(bp, int(bet), bid_gop[bp], list(bid_prices.values())) + fg.rs)
+            pbt = datetime.now()
 
 
 

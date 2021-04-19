@@ -197,7 +197,7 @@ while True:
         # pbt = datetime.now()
         oid = coin.limit_buy('BTC', bp, bet / bp, True, True)
         if oid == -1:
-            print('!!! no money!({:.8}KRW)'.format(bet))
+            print('!!! no money!({:,}KRW)'.format(bet))
             pbt += timedelta(seconds=td/2)
             # time.sleep(60)
         else:

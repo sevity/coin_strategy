@@ -28,18 +28,18 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'OMG':0.00000800,
     'ADA':0.00000060,  # 100
     'LOOM':0.00000010, # 10
-    'CRO':0.00000040,
+    'CRO':0.00000010,
     'ENJ':0.00000150,  # 100
     'MANA':0.00000050,  # 80
     'DOGE':0.00000005,
-    'VET':0.00000005,
-    'PLA':0.00000050,  # 100
+    'VET':0.00000020,  # 10
+    'PLA':0.00000030,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
     'UNI' :0.00002000,
     'LTC' :0.00020000,
     'STX' :0.00000150,  # 100
-    'BAT' :0.00000050,  # 100
+    'BAT' :0.00000100,  # 100
     'COMP' :0.00040000,
     'NPXS' :0.00000001,
     'DENT' :0.00000002,
@@ -49,9 +49,9 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XEM' :0.00000020,  # 20
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
-    'DOT' :0.00002000,  
-    'ETC' :0.00002000,  
-    'RVN' :0.00000005,  
+    'DOT' :0.00002500,  
+    'ETC' :0.00003000,  
+    'RVN' :0.00000010,  
     'FIL' :0.00005000,  
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
@@ -205,13 +205,16 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
+            if coin.get_order_state(oid) == 'ack':
+                r = coin.cancel(oid)
+                if r.ok: del bid_prices[oid]
             # if price < bp:
-            l = coin.get_live_orders_ext(TICKER, 'BTC')
-            for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
-                if oid_ == oid:
-                    if fsame(order_cnt, remain_cnt):
-                        r = coin.cancel(oid)
-                        if r.ok: del bid_prices[oid]
+            # l = coin.get_live_orders_ext(TICKER, 'BTC')
+            # for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
+            #    if oid_ == oid:
+            #        if fsame(order_cnt, remain_cnt):  # 부분체결이 없는것만 골라서 취소해준다는거
+            #            r = coin.cancel(oid)
+            #            if r.ok: del bid_prices[oid]
 
         if bp not in bid_gop: bid_gop[bp] = 1
         bid_gop[bp] = max(1, bid_gop[bp])

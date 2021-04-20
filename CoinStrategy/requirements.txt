@@ -20,7 +20,7 @@ pandas==1.0.3
 pip==20.0.2
 pluggy==0.13.1
 pudb==2019.2
-py==1.8.1
+py==1.10.0
 pycurl==7.43.0.5
 Pygments==2.6.1
 pylint==2.4.4

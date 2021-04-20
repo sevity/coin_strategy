@@ -1,5 +1,5 @@
 attrs==20.2.0
-autobahn==20.7.1
+autobahn==20.12.3
 Automat==20.2.0
 binance==0.3
 certifi==2020.6.20

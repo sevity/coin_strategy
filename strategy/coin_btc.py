@@ -18,8 +18,8 @@ import argparse
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.0006,  
-    'BFC':0.00000005,  # 5
+    'ETH':0.0008,  
+    'BFC':0.00000008,  # 5
     'SNT':0.00000020,
     'GOM2':0.00000005,
     'XRP':0.00000060,  # 40
@@ -31,7 +31,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'CRO':0.00000010,
     'ENJ':0.00000150,  # 100
     'MANA':0.00000050,  # 80
-    'DOGE':0.00000005,
+    'DOGE':0.00000015,
     'VET':0.00000020,  # 10
     'PLA':0.00000030,  # 100
     'IGNIS':0.00000020,
@@ -65,9 +65,12 @@ MINOR_DELTA = 0  # sholud be multiple of 1000
 parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
+parser.add_argument('--collect', '-c', required=False, action='store_true', help='cancel parital pending bid to gather token')
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
+COLLECT = args.collect  # True or False
+if COLLECT: print('collect token option is ON!')
 BTC_DELTA = float(DELTA[TICKER])
 TIME_INTERVAL = 30 * 60  # 30 min.
 ###############################################################################
@@ -205,7 +208,7 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if coin.get_order_state(oid) == 'ack':
+            if collect is True or coin.get_order_state(oid) == 'ack':
                 r = coin.cancel(oid)
                 if r.ok: del bid_prices[oid]
             # if price < bp:

@@ -26,7 +26,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XLM':0.00000040,  # 40
     'EOS':0.00000400,  # 800
     'OMG':0.00000800,
-    'ADA':0.00000060,  # 100
+    'ADA':0.00000100,  # 100
     'LOOM':0.00000010, # 10
     'CRO':0.00000010,
     'ENJ':0.00000150,  # 100
@@ -52,7 +52,8 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'DOT' :0.00002500,  
     'ETC' :0.00003000,  
     'RVN' :0.00000010,  
-    'FIL' :0.00005000,  
+    'FIL' :0.00010000,  
+    'BCH' :0.00050000,  
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -208,9 +209,26 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            if collect is True or coin.get_order_state(oid) == 'ack':
+            print(1)
+            os = coin.get_order_state(oid)
+            if os == 'ack':
                 r = coin.cancel(oid)
                 if r.ok: del bid_prices[oid]
+            else:
+                print('os : {}'.format(os))
+                if COLLECT is True:
+                    print(2)
+                    l = coin.get_live_orders_ext(TICKER, 'BTC')
+                    for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
+                        fc = order_cnt - remain_cnt  # filled cnt
+                        if oid_ == oid and fc > 0:
+                            msg = '[{}-BTC] {:.2f}{} collected!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC, {}'.format(
+                                    TICKER, fc, TICKER, fc*cp, int(fc*cp*btckrw), price, odt)
+                            send_telegram(msg)
+                            print(bg.green + msg + bg.rs)
+                    r = coin.cancel(oid)
+                    if r.ok: del bid_prices[oid]
+
             # if price < bp:
             # l = coin.get_live_orders_ext(TICKER, 'BTC')
             # for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:

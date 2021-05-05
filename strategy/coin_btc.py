@@ -128,12 +128,15 @@ try:
     bid_prices=load_obj(TICKER+'_bid_prices')
     bid_volume=load_obj(TICKER+'_bid_volume')
     ask_prices=load_obj(TICKER+'_ask_prices')
+    total_gain=load_obj(TICKER+'_total_gain')
 except:
     bid_prices={}
     bid_volume={}
     ask_prices={}
+    total_gain = 0
+btckrw = coin.get_price('BTC', 'KRW')
+print('total_gain:{:.8f}BTC({:,}KRW)'.format(total_gain, (int(total_gain*btckrw))))
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
-total_gain = 0
 l = coin.get_live_orders_ext(TICKER, 'BTC')
 # print(':l', l)
 for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
@@ -147,7 +150,6 @@ for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
             bp = price
             bet = bp * (order_cnt - remain_cnt)
             cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
-            btckrw = coin.get_price('BTC', 'KRW')
             msg = '[{}-BTC] {:.2f}{} collected_0!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC'.format(
                     TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
             send_telegram(msg)
@@ -201,6 +203,7 @@ while True:
                 format(TICKER, float(price)))
         del ask_prices[oid]
     save_obj(ask_prices, TICKER+'_ask_prices')
+    save_obj(total_gain, TICKER+'_total_gain')
     if len(aps) > 0: 
         # print('aa')
         continue
@@ -263,13 +266,11 @@ while True:
             format(TICKER, cp, bp, ap) + fg.rs)
         bps = copy.deepcopy(bid_prices)
         for oid, price in bps.items():
-            print(1)
             os = coin.get_order_state(oid)
             if os == 'ack':
                 r = coin.cancel(oid)
                 if r.ok: del bid_prices[oid]
             else:
-                print('os : {}'.format(os))
                 if COLLECT is True:
                     print(2)
                     l = coin.get_live_orders_ext(TICKER, 'BTC')

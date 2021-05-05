@@ -26,7 +26,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'GOM2':0.00000005,
     'XRP':0.00000080,  # 80
     'XLM':0.00000040,  # 40
-    'PUNDIX':0.00000040,  # 40
+    'PUNDIX':0.00000150,
     'EOS':0.00000800,  # 800
     'OMG':0.00000800,
     'ADA':0.00000050,  # 50
@@ -53,14 +53,16 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
     'DOT' :0.00002000,  
-    'ETC' :0.00003000,  
+    'ETC' :0.00005000,  # 3000
     'RVN' :0.00000010,  
     'FIL' :0.00010000,  
+    'BSV' :0.00010000,  
     'BCH' :0.00050000,  
     'MKR' :0.00300000,  
     'SRM' :0.00000500,  
-    'SXP' :0.00000100,  
+    'SXP' :0.00000200,  
     'ALGO' :0.00000050,  
+    'PSG' :0.00002000,  
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -74,13 +76,16 @@ parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 parser.add_argument('--collect', '-c', required=False, action='store_true', help='cancel parital pending bid to gather token')
+parser.add_argument('--buying_start', '-bs', required=False, action='store_true', help='first bid will not be asked')
 args = parser.parse_args()
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COLLECT = args.collect  # True or False
 if COLLECT: print('collect token option is ON!')
+BUYING_START = args.buying_start
+if BUYING_START: print('buying start option is ON!')
 BTC_DELTA = float(DELTA[TICKER])
-TIME_INTERVAL = 30 * 60  # 30 min.
+TIME_INTERVAL = 20 * 60  # 30 min.
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -117,6 +122,14 @@ for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
         if fsame(order_cnt, remain_cnt):
             r = coin.cancel(oid)
         else:
+            # TODO: bid부분체결 수량만큼 ask잡아줌
+            r = coin.cancel(oid)  # 지금은 임시로 collect처리함
+            bp = price
+            bet = bp * (order_cnt - remain_cnt)
+            msg = '[{}-BTC] {:.2f}{} collected_0!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC'.format(
+                    TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
+            send_telegram(msg)
+            print(bg.magenta + msg + bg.rs)
             pass
     else:
         ask_prices[oid] = ((float(price)), 0, 0)
@@ -178,15 +191,24 @@ while True:
 
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
-        ap = float(price) + BTC_DELTA - MINOR_DELTA * 2
-        gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
-        print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
-            ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
-			format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
-        aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
-        while aoid == -1:
+        if BUYING_START is True:
+            BUYING_START = False
+            bp = price
+            bet = bp*bid_volume[oid]
+            msg = '[{}-BTC] {:.2f}{} collected_bs!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC'.format(
+                    TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
+            send_telegram(msg)
+            print(bg.magenta + msg + bg.rs)
+        else:
+            ap = float(price) + BTC_DELTA - MINOR_DELTA * 2
+            gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
+            print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
+                ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
+                            format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
             aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
-        ask_prices[aoid] = (ap, gain, (gain * ap))
+            while aoid == -1:
+                aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
+            ask_prices[aoid] = (ap, gain, (gain * ap))
         del bid_prices[oid]
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
@@ -229,7 +251,7 @@ while True:
                     for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
                         fc = order_cnt - remain_cnt  # filled cnt
                         if oid_ == oid and fc > 0:
-                            msg = '[{}-BTC] {:.2f}{} collected!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC, {}'.format(
+                            msg = '[{}-BTC] {:.2f}{} collected_c!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC, {}'.format(
                                     TICKER, fc, TICKER, fc*cp, int(fc*cp*btckrw), price, odt)
                             send_telegram(msg)
                             print(bg.green + msg + bg.rs)
@@ -261,7 +283,7 @@ while True:
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
         print('time diff:{:,}s, bet ratio:{:.4f}, bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(td, br, bet, nb))
-        bet = max(0.0006, nb)  # min bet for BTC market in UPBIT
+        bet = max(0.0015, nb)  # min bet for BTC market in UPBIT
         pbp = bp
         # pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
@@ -273,7 +295,7 @@ while True:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
 
-            print(fg.red + '! bid placed({:.8f}), bet:{:.8f}BTC, bid_gop:{}, bid_prices:{}'.
+            print(fg.red + '! bid placed({:.8f}), bet:{:.8f}btc, bid_gop:{}, bid_prices:{}'.
                 format(bp, (bet), bid_gop[bp], list(format_8f(bid_prices).values())) + fg.rs)
             # time.sleep(5)
             pbt = datetime.now()

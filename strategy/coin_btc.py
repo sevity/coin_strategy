@@ -126,6 +126,8 @@ for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
             r = coin.cancel(oid)  # 지금은 임시로 collect처리함
             bp = price
             bet = bp * (order_cnt - remain_cnt)
+            cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
+            btckrw = coin.get_price('BTC', 'KRW')
             msg = '[{}-BTC] {:.2f}{} collected_0!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC'.format(
                     TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
             send_telegram(msg)

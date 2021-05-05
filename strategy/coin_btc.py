@@ -14,6 +14,17 @@ import ast
 from sty import fg, bg, ef, rs
 import argparse
 
+import pickle
+from pathlib import Path
+def save_obj(obj, name):
+    Path("../obj").mkdir(parents=True, exist_ok=True)
+    with open('../obj/coin_btc_'+ name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name):
+    with open('../obj/coin_btc_' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
+
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
@@ -56,13 +67,15 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETC' :0.00005000,  # 3000
     'RVN' :0.00000010,  
     'FIL' :0.00010000,  
-    'BSV' :0.00010000,  
+    'BSV' :0.00020000,  
     'BCH' :0.00050000,  
     'MKR' :0.00300000,  
     'SRM' :0.00000500,  
+    'XTZ' :0.00000500,  
     'SXP' :0.00000200,  
     'ALGO' :0.00000050,  
     'PSG' :0.00002000,  
+    'ATOM' :0.00001500,  
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -110,15 +123,22 @@ def format_8f(dict):
 
 print('BTC_DELTA:{:.8f}'.format(BTC_DELTA), 'BETTING:{:.4f}'.format(BETTING))
 
-bid_prices={}
-bid_volume={}
+
+try:
+    bid_prices=load_obj(TICKER+'_bid_prices')
+    bid_volume=load_obj(TICKER+'_bid_volume')
+    ask_prices=load_obj(TICKER+'_ask_prices')
+except:
+    bid_prices={}
+    bid_volume={}
+    ask_prices={}
 bid_gop={}  # 이가격대 bid낸 횟수, 횟수가 오를수록 돈도 많이 건다
-ask_prices={}
 total_gain = 0
 l = coin.get_live_orders_ext(TICKER, 'BTC')
 # print(':l', l)
 for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
     if askbid=='bid':
+        if oid in bid_prices: continue
         if fsame(order_cnt, remain_cnt):
             r = coin.cancel(oid)
         else:
@@ -132,8 +152,8 @@ for (oid, askbid, price, order_cnt, remain_cnt, odt) in l:
                     TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
             send_telegram(msg)
             print(bg.magenta + msg + bg.rs)
-            pass
     else:
+        if oid in ask_prices: continue
         ask_prices[oid] = ((float(price)), 0, 0)
 print('prev ask_prices:', ask_prices)
 
@@ -180,6 +200,7 @@ while True:
             send_telegram('[{}-BTC] ask filled({:.8f}BTC), gain:?, total_gain:?)'.
                 format(TICKER, float(price)))
         del ask_prices[oid]
+    save_obj(ask_prices, TICKER+'_ask_prices')
     if len(aps) > 0: 
         # print('aa')
         continue
@@ -215,6 +236,8 @@ while True:
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
         # time.sleep(5)
+    save_obj(bid_prices, TICKER+'_bid_prices')
+    save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:
         # print('bb')
         continue
@@ -260,6 +283,7 @@ while True:
                     r = coin.cancel(oid)
                     if r.ok: del bid_prices[oid]
 
+        save_obj(bid_prices, TICKER+'_bid_prices')
             # if price < bp:
             # l = coin.get_live_orders_ext(TICKER, 'BTC')
             # for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
@@ -296,6 +320,8 @@ while True:
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp
+            save_obj(bid_prices, TICKER+'_bid_prices')
+            save_obj(bid_volume, TICKER+'_bid_volume')
 
             print(fg.red + '! bid placed({:.8f}), bet:{:.8f}btc, bid_gop:{}, bid_prices:{}'.
                 format(bp, (bet), bid_gop[bp], list(format_8f(bid_prices).values())) + fg.rs)

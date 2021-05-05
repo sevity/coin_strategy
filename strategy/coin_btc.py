@@ -233,8 +233,8 @@ while True:
                 aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
             ask_prices[aoid] = (ap, gain, (gain * ap))
         del bid_prices[oid]
-        if bid_gop[price] < 1: bid_gop[price] *= 2
-        else: bid_gop[price] += 1
+        #if bid_gop[price] < 1: bid_gop[price] *= 2
+        #else: bid_gop[price] += 1
         # time.sleep(5)
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')

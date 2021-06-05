@@ -1,5 +1,5 @@
 attrs==20.2.0
-autobahn==20.7.1
+autobahn==20.12.3
 Automat==20.2.0
 binance==0.3
 certifi==2020.6.20
@@ -20,7 +20,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.20
 pycurl==7.43.0.6
-Pygments==2.7.1
+Pygments==2.7.4
 PyHamcrest==2.0.2
 PyJWT==1.7.1
 pyOpenSSL==19.1.0
@@ -38,6 +38,6 @@ tornado==6.0.4
 Twisted==20.3.0
 txaio==20.4.1
 tzlocal==2.1
-urllib3==1.25.10
+urllib3==1.26.5
 urwid==2.1.1
 zope.interface==5.1.0

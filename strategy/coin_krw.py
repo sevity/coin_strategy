@@ -99,9 +99,9 @@ while True:
             print(bg.da_blue + fg.white +
                   '! ask filled({:,}).'.format(int(float(price)))
                   + bg.blue + fg.black +
-                  ', gain: {:.8f}({:,}KRW).'.format(gain, krw, total_gain, int(total_gain*price))
+                  ', gain: {:,}KRW.'.format(int(gain))
                   + bg.li_yellow + fg.black +
-                  'total_gain:{:.8f}({:,}KRW)'.format(total_gain, int(float(total_gain*price)))
+                  'total_gain:{:,}KRW'.format(int(total_gain))
                   + bg.rs + fg.rs)
         else:
             print(bg.da_blue + fg.white +
@@ -132,7 +132,7 @@ while True:
     for oid, price in bps.items():
         bid_cont += 1
 
-        ap = float(price) + DELTA - MINOR_DELTA * 2
+        ap = int(price) + DELTA - MINOR_DELTA * 2
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         #bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         #gain = bid_volume[oid] - bet / ap

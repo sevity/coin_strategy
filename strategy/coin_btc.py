@@ -30,7 +30,7 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00160000, # 80000 
-    'BFC':0.00000005,  # 5
+    'BFC':0.00000008,  # 5
     'TRX':0.00000008,  # 5
     'CHZ':0.00000030,  # 
     'GLM':0.00000030,  # 
@@ -79,7 +79,10 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SXP' :0.00000200,  
     'ALGO' :0.00000100,    # 50
     'PSG' :0.00004000,    # 2000
-    'ATOM' :0.00001500,  
+    'ATOM' :0.00003000,  # 1500
+    'SAND' :0.00000050,  
+    'POWR' :0.00000030,  
+    'NEAR' :0.00000500,  
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -107,14 +110,15 @@ TIME_INTERVAL = 20 * 60  # 30 min.
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
 secret_key = f.readline().rstrip()         
+token = f.readline().rstrip()
+chat_id = f.readline().rstrip()
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
-token = '1604518349:AAFoH7TE40SaoegpSGBd5Oe4NsceqH78JTI'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
     # print(msg)
     try:
-        bot.sendMessage(chat_id=170583240, text=msg)
+        bot.sendMessage(chat_id=chat_id, text=msg)
     except:
         pass
 def fsame(a, b, diff=0.00000001):  # default: 0.01%이내로 같으면 true 리턴
@@ -315,14 +319,17 @@ while True:
         nb = bet * br  # new bet
         print('time diff:{:,}s, bet ratio:{:.4f}, bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(td, br, bet, nb))
         bet = max(bet / 5,  nb)  # set min bet according to bet size
-        bet = max(0.0006, bet)  # min bet for BTC market in UPBIT
+        bet = max(MIN_BET_FOR_AUTO, bet)  # min bet for BTC market in UPBIT
         pbp = bp
         # pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:
             print('!!! no money!({:.8}BTC)'.format(bet))
             pbt += timedelta(seconds=td/2)
-            # time.sleep(60)
+            if fsame(bet, MIN_BET_FOR_AUTO):
+                time.sleep(60)
+            else:
+                time.sleep(10)
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp

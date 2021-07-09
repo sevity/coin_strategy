@@ -81,14 +81,10 @@ while True:
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
-    #print('before aps:', aps)
     l = coin.get_live_orders(TICKER, 'KRW')
-    #print('get_live_orders:', l)
     for (oid, askbid, price, cnt, odt) in l:
-        #print(oid, askbid, price, cnt, odt)
         if askbid=='ask' and oid in aps:
             del aps[oid]
-    #print('after aps:', aps)
 
     # record gain for ask done
     for oid, (price, gain, krw) in aps.items():
@@ -99,9 +95,9 @@ while True:
             print(bg.da_blue + fg.white +
                   '! ask filled({:,}).'.format(int(float(price)))
                   + bg.blue + fg.black +
-                  ', gain: {:.8f}({:,}KRW).'.format(gain, krw, total_gain, int(total_gain*price))
+                  ', gain: {:,}KRW.'.format(int(gain))
                   + bg.li_yellow + fg.black +
-                  'total_gain:{:.8f}({:,}KRW)'.format(total_gain, int(float(total_gain*price)))
+                  'total_gain:{:,}KRW'.format(int(total_gain))
                   + bg.rs + fg.rs)
         else:
             print(bg.da_blue + fg.white +
@@ -110,9 +106,11 @@ while True:
         del ask_prices[oid]
 
     if len(aps) > 0:
+        print('aps:{}'.format(aps))
         continue
 
     if cb is not None:
+        print('cb:{}'.format(cb))
         if bid_cont <= 0 or (datetime.now() - cb).seconds > 60*60:
             cb = None
             bid_cont = 0
@@ -132,7 +130,7 @@ while True:
     for oid, price in bps.items():
         bid_cont += 1
 
-        ap = float(price) + DELTA - MINOR_DELTA * 2
+        ap = int(price) + DELTA - MINOR_DELTA * 2
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         #bet = price * bid_volume[oid] * (1.0 + FEE) / (1.0 - FEE)
         #gain = bid_volume[oid] - bet / ap
@@ -152,6 +150,8 @@ while True:
         if bid_gop[price] < 1: bid_gop[price] *= 2
         else: bid_gop[price] += 1
     if bid_cont >= 3:
+        print('bid_cont:{}'.format(bid_cont))
+        time.sleep(10)
         continue
         print(fg.red + 'circuit break!' + fg.rs)
         send_telegram('circuit break!')
@@ -159,6 +159,7 @@ while True:
         bid_cont = 2
         continue
     if len(bps) > 0:
+        print('bps:{}'.format(bps))
         continue
 
     bfound = False
@@ -197,7 +198,7 @@ while True:
             pbt = datetime.now() - timedelta(seconds=td)
         else:
             td = min(TIME_INTERVAL * 2, (ct - pbt).seconds)  # time diff
-        br = min(1.0, td / TIME_INTERVAL)  # bet ratio
+        br = 1 #min(1.0, td / TIME_INTERVAL)  # bet ratio
         nb = bet * br  # new bet
         print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
         bet = max(10000, nb)  # min bet for BTC market in UPBIT

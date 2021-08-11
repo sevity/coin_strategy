@@ -1,3 +1,4 @@
+#TODO: 400원에 팔고 다시 400원에 사는경우 매수 금액을 1/3로 줄이는거 검토해보자
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -29,33 +30,34 @@ def load_obj(name):
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.00160000, # 80000 
+    'ETH':0.00320000, # 80000 
     'BFC':0.00000008,  # 5
+    'OBSR':0.00000002,  # 
     'TRX':0.00000008,  # 5
-    'CHZ':0.00000030,  # 
+    'CHZ':0.00000100,  # 30
     'GLM':0.00000030,  # 
-    'MED':0.00000010,  # 5
+    'MED':0.00000030,  # 5
     'SNT':0.00000020,
     'GOM2':0.00000005,
     'XRP':0.00000080,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
-    'OMG':0.00000800,
+    'OMG':0.00002400,  # 800
     'ADA':0.00000200,  # 50
-    'LOOM':0.00000020, # 10
-    'CRO':0.00000010,
+    'LOOM':0.00000050, # 10
+    'CRO':0.00000040,  # 10
     'ENJ':0.00000150,  # 100
     'MANA':0.00000050,  # 80
-    'DOGE':0.00000030,  # 15
+    'DOGE':0.00000090,  # 15
     'VET':0.00000010,  # 10
     'PLA':0.00000200,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
     'UNI' :0.00002000,
-    'LTC' :0.00020000,  # 10000
-    'STX' :0.00000100,  # 100
-    'BAT' :0.00000200,  # 100
+    'LTC' :0.00040000,  # 10000
+    'STX' :0.00000400,  # 100
+    'BAT' :0.00000400,  # 100
     'SYS' :0.00000200,  # 100
     'COMP' :0.00040000,
     'BTT' :0.00000001,
@@ -67,19 +69,20 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
     'DOT' :0.00002000,  
-    'ETC' :0.00006000,  # 3000
+    'REP' :0.00002000,  
+    'ETC' :0.00012000,  # 3000
     'RVN' :0.00000010,  
-    'FIL' :0.00020000,  # 10000
+    'FIL' :0.00040000,  # 10000
     'BSV' :0.00030000,  
     'BCH' :0.00050000,  
     'WAVE' :0.00005000,  
     'MKR' :0.00300000,  
     'SRM' :0.00001000,  # 500
-    'XTZ' :0.00001000,  # 500
+    'XTZ' :0.00003000,  # 500
     'SXP' :0.00000200,  
-    'ALGO' :0.00000100,    # 50
+    'ALGO' :0.00000300,    # 50
     'PSG' :0.00004000,    # 2000
-    'ATOM' :0.00003000,  # 1500
+    'ATOM' :0.00006000,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
     'NEAR' :0.00000500,  
@@ -233,16 +236,19 @@ while True:
                     TICKER, bet/bp, TICKER, bet/bp*cp, int(bet/bp*cp*btckrw), bp)
             send_telegram(msg)
             print(bg.magenta + msg + bg.rs)
+            ap = bp * 2
         else:
             ap = float(price) + BTC_DELTA - MINOR_DELTA * 2
-            gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
-            print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
-                ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
-                            format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
+
+        gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
+        print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
+            ' placing ask({:.8f}).. gain will be: {:.8f}BTC({:,}KRW)'.
+                        format((ap), gain, int(gain * btckrw))+ fg.rs + bg.rs)
+        aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
+        while aoid == -1:
             aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
-            while aoid == -1:
-                aoid = coin.limit_sell_btc(TICKER, ap, bid_volume[oid], True, True)
-            ask_prices[aoid] = (ap, gain, (gain * ap))
+        ask_prices[aoid] = (ap, gain, (gain * ap))
+
         del bid_prices[oid]
         #if bid_gop[price] < 1: bid_gop[price] *= 2
         #else: bid_gop[price] += 1
@@ -280,7 +286,6 @@ while True:
                 if r.ok: del bid_prices[oid]
             else:
                 if COLLECT is True:
-                    print(2)
                     l = coin.get_live_orders_ext(TICKER, 'BTC')
                     for (oid_, askbid, price, order_cnt, remain_cnt, odt) in l:
                         fc = order_cnt - remain_cnt  # filled cnt
@@ -318,7 +323,7 @@ while True:
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
         print('time diff:{:,}s, bet ratio:{:.4f}, bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(td, br, bet, nb))
-        bet = max(bet / 5,  nb)  # set min bet according to bet size
+        bet = max(bet / 10,  nb)  # set min bet according to bet size
         bet = max(MIN_BET_FOR_AUTO, bet)  # min bet for BTC market in UPBIT
         pbp = bp
         # pbt = datetime.now()

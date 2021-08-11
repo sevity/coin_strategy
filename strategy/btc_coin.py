@@ -26,20 +26,21 @@ MAX_BETTING = 5000000
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
-TIME_INTERVAL = 30 * 60  # 60 min.
+TIME_INTERVAL = 60 * 60  # 60 min.
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
 secret_key = f.readline().rstrip()         
+token = f.readline().rstrip()
+chat_id = f.readline().rstrip()
 f.close()                                  
 coin = Coin('upbit',access_key,secret_key) 
-token = '1604518349:AAFoH7TE40SaoegpSGBd5Oe4NsceqH78JTI'
 bot = telegram.Bot(token=token)
 def send_telegram(msg):
     # print(msg)
     try:
-        bot.sendMessage(chat_id=170583240, text=msg)
+        bot.sendMessage(chat_id=chat_id, text=msg)
     except:
         pass
 def fsame(a, b, diff=0.0001):  # default: 0.01%이내로 같으면 true 리턴

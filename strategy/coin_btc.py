@@ -1,4 +1,4 @@
-#TODO: 400원에 팔고 다시 400원에 사는경우 매수 금액을 1/3로 줄이는거 검토해보자#
+#TODO: 400원에 팔고 다시 400원에 사는경우 매수 금액을 1/3로 줄이는거 검토해보자#..
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))

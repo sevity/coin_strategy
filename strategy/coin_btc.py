@@ -30,36 +30,39 @@ def load_obj(name):
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.00320000, # 80000 
-    'BFC':0.00000008,  # 5
+    'ETH':0.00160000, # 80000 
+    'BFC':0.00000120,  # 5
+    'ZRX':0.00000120,  
+    'LRC':0.00000150,  
     'OBSR':0.00000002,  # 
     'TRX':0.00000008,  # 5
     'CHZ':0.00000100,  # 30
     'GLM':0.00000030,  # 
     'MED':0.00000030,  # 5
-    'SNT':0.00000020,
+    'SNT':0.00000080,  # 20
     'GOM2':0.00000005,
-    'XRP':0.00000080,  # 80
+    'XRP':0.00000240,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
-    'OMG':0.00002400,  # 800
+    'OMG':0.00001600,  # 800
     'ADA':0.00000200,  # 50
-    'LOOM':0.00000050, # 10
-    'CRO':0.00000040,  # 10
+    'LOOM':0.00000030, # 10
+    'CRO':0.00000020,  # 10
     'ENJ':0.00000150,  # 100
-    'MANA':0.00000050,  # 80
+    'MANA':0.00000240,  # 80
     'DOGE':0.00000090,  # 15
     'VET':0.00000010,  # 10
     'PLA':0.00000200,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
+    'CRV' :0.00000200,  
     'UNI' :0.00002000,
-    'LTC' :0.00040000,  # 10000
-    'STX' :0.00000400,  # 100
-    'BAT' :0.00000400,  # 100
+    'LTC' :0.00020000,  # 10000
+    'STX' :0.00000100,  # 100
+    'BAT' :0.00000200,  # 100
     'SYS' :0.00000200,  # 100
-    'COMP' :0.00040000,
+    'COMP' :0.00080000, # 40000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
     'NCASH' :0.00000002,
@@ -68,20 +71,20 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XEM' :0.00000040,  # 40
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
-    'DOT' :0.00002000,  
+    'DOT' :0.00006000,  # 2000
     'REP' :0.00002000,  
-    'ETC' :0.00012000,  # 3000
+    'ETC' :0.00018000,  # 3000
     'RVN' :0.00000010,  
-    'FIL' :0.00040000,  # 10000
+    'FIL' :0.00020000,  # 10000
     'BSV' :0.00030000,  
-    'BCH' :0.00050000,  
+    'BCH' :0.00200000, # 50000 
     'WAVE' :0.00005000,  
     'MKR' :0.00300000,  
     'SRM' :0.00001000,  # 500
-    'XTZ' :0.00003000,  # 500
+    'XTZ' :0.00001000,  # 500
     'SXP' :0.00000200,  
-    'ALGO' :0.00000300,    # 50
-    'PSG' :0.00004000,    # 2000
+    'ALGO' :0.00000100,    # 50
+    'PSG' :0.00008000,    # 2000
     'ATOM' :0.00006000,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
@@ -94,6 +97,8 @@ BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정�
 FEE = 0.0025
 MIN_BET_FOR_AUTO = 0.0006
 MINOR_DELTA = 0  # sholud be multiple of 1000
+BID_OFFSET = -0.1  # -0.1 means 10%(of BTC_DELTA) lower price
+ASK_OFFSET = 0.1
 
 parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
@@ -184,8 +189,8 @@ while True:
 
     # 먼저 현재 BTC_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
-    bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA # bid price
-    ap = bp + BTC_DELTA - MINOR_DELTA * 2  # ask price
+    bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA + BID_OFFSET * BTC_DELTA # bid price
+    ap = bp + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
     btckrw = coin.get_price('BTC', 'KRW')
 
     # check ask fill
@@ -229,7 +234,7 @@ while True:
     # 체결된 bid에 대해 ask걸기 
     for oid, price in bps.items():
         if BUYING_START is True:
-            BUYING_START = False
+            # BUYING_START = False  # temp
             bp = price
             bet = bp*bid_volume[oid]
             msg = '[{}-BTC] {:.2f}{} collected_bs!({:.8f}BTC, {:,}KRW) price:{:.8f}BTC'.format(
@@ -238,7 +243,7 @@ while True:
             print(bg.magenta + msg + bg.rs)
             ap = bp * 2
         else:
-            ap = float(price) + BTC_DELTA - MINOR_DELTA * 2
+            ap = float(price) + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA
 
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
@@ -268,9 +273,9 @@ while True:
             bfound = True
         if askbid=='ask' and fsame(price, ap):
             afound = True
-    msg = 'bp:{:.8f}, ap:{:.8f}, bfound:{}, afound:{}'. format(
-            bp, ap, bfound, afound)
-    # if pmsg != msg: print(msg)
+    msg = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}, bfound:{}, afound:{}, cp-bp({:.8f})>{:.8f}:{}'. format(
+            bp, ap, cp, bfound, afound, abs(cp-bp), BTC_DELTA/4, abs(cp-bp)>BTC_DELTA/4)
+    if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:

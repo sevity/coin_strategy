@@ -31,7 +31,7 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00160000, # 80000 
-    'BFC':0.00000120,  # 5
+    'BFC':0.00000080,  # 5
     'ZRX':0.00000120,  
     'LRC':0.00000150,  
     'OBSR':0.00000002,  # 
@@ -45,7 +45,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
-    'OMG':0.00001600,  # 800
+    'OMG':0.00001000,  # 800
     'ADA':0.00000200,  # 50
     'LOOM':0.00000030, # 10
     'CRO':0.00000020,  # 10
@@ -56,7 +56,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'PLA':0.00000200,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
-    'CRV' :0.00000200,  
+    'CRV' :0.00000120,  
     'UNI' :0.00002000,
     'LTC' :0.00020000,  # 10000
     'STX' :0.00000100,  # 100
@@ -192,6 +192,8 @@ while True:
     bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA + BID_OFFSET * BTC_DELTA # bid price
     ap = bp + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
     btckrw = coin.get_price('BTC', 'KRW')
+    # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
+    # print(mm)
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)

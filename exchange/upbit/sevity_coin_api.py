@@ -43,7 +43,7 @@ def get_price(ticker, currency):
             j = json.loads(response.text)
             ask1 = float(j[0]["orderbook_units"][0]["ask_price"])
             bid1 = float(j[0]["orderbook_units"][0]["bid_price"])
-            return (ask1+bid1)/2
+            return round((ask1+bid1)/2, 8)  # round(..,8) for BTC market
         except:
             try:
                 if int(j['error']['name']) == 404:

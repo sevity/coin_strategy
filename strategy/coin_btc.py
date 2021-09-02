@@ -97,7 +97,6 @@ BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정�
 # legacy or fixed
 FEE = 0.0025
 MIN_BET_FOR_AUTO = 0.0006
-MINOR_DELTA = 0  # sholud be multiple of 1000
 BID_OFFSET = -0.1  # -0.1 means 10%(of BTC_DELTA) lower price
 ASK_OFFSET = 0.1
 
@@ -184,18 +183,22 @@ if BETTING == 0:
 pmsg = ""
 pbp = -1  # previous bid price
 pbt = -1  # previous bid time
+pafp = -1  # previous ask fill price
 while True:
     if bAuto:
         BETTING = max(MIN_BET_FOR_AUTO, coin.get_asset_info('BTC')['free'] / 20)
 
     # 먼저 현재 BTC_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
-    bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA + BID_OFFSET * BTC_DELTA # bid price
-    ap = bp + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
+    bb = BID_OFFSET * BTC_DELTA
+    bp = int((cp-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
+    ap = bp + BTC_DELTA + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
     if pbp > 0 and bp - pbp > bp:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
         print('!! bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA))
         bp = pbp + BTC_DELTA
         print('!! changed bp:{:.8f}'.format(bp))
+    elif pafp > 0 and fsame(pafp, bp):
+        print('11 previous ask fill price is same as bid price!')
     btckrw = coin.get_price('BTC', 'KRW')
     # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
     # print(mm)
@@ -209,6 +212,7 @@ while True:
     # 체결된 ask에 대해 gain기록
     for oid, (price, gain, btc) in aps.items():
         total_gain += gain
+        pafp = price
         if gain > 0:
             print(bg.da_blue+fg.white + '! ask filled({:.8f}BTC).'.format(float(price))
                 +bg.blue+fg.black+
@@ -259,7 +263,7 @@ while True:
                     [20] * 1 +
                     [30] * 1)
             print('!! multiple:{}'.format(multiple))
-            ap = float(price) + BTC_DELTA * multiple - MINOR_DELTA * 2 + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
+            ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
 
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+

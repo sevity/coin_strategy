@@ -31,7 +31,7 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00160000, # 80000 
-    'BFC':0.00000080,  # 5
+    'BFC':0.00000100,  # 5
     'ZRX':0.00000120,  
     'LRC':0.00000150,  
     'OBSR':0.00000002,  # 
@@ -56,12 +56,13 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'PLA':0.00000200,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
-    'CRV' :0.00000120,  
+    'CRV' :0.00000200,   # 100
     'UNI' :0.00002000,
     'LTC' :0.00020000,  # 10000
     'STX' :0.00000100,  # 100
     'BAT' :0.00000200,  # 100
     'SYS' :0.00000200,  # 100
+    'HBD' :0.00000100,  # 100
     'COMP' :0.00080000, # 40000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
@@ -74,7 +75,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'DOT' :0.00006000,  # 2000
     'REP' :0.00002000,  
     'ETC' :0.00018000,  # 3000
-    'RVN' :0.00000010,  
+    'RVN' :0.00000020,  # 10
     'FIL' :0.00020000,  # 10000
     'BSV' :0.00030000,  
     'BCH' :0.00200000, # 50000 
@@ -83,7 +84,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SRM' :0.00001000,  # 500
     'XTZ' :0.00001000,  # 500
     'SXP' :0.00000200,  
-    'ALGO' :0.00000100,    # 50
+    'ALGO' :0.00000150,    # 50
     'PSG' :0.00008000,    # 2000
     'ATOM' :0.00006000,  # 1500
     'SAND' :0.00000050,  
@@ -191,6 +192,10 @@ while True:
     cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
     bp = int(cp  / BTC_DELTA) * BTC_DELTA + MINOR_DELTA + BID_OFFSET * BTC_DELTA # bid price
     ap = bp + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
+    if pbp > 0 and bp - pbp > bp:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
+        print('!! bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA))
+        bp = pbp + BTC_DELTA
+        print('!! changed bp:{:.8f}'.format(bp))
     btckrw = coin.get_price('BTC', 'KRW')
     # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
     # print(mm)
@@ -277,7 +282,7 @@ while True:
             afound = True
     msg = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}, bfound:{}, afound:{}, cp-bp({:.8f})>{:.8f}:{}'. format(
             bp, ap, cp, bfound, afound, abs(cp-bp), BTC_DELTA/4, abs(cp-bp)>BTC_DELTA/4)
-    if pmsg != msg: print(msg)
+    # if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:

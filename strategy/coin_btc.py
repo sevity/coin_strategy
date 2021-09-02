@@ -98,7 +98,7 @@ BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정�
 FEE = 0.0025
 MIN_BET_FOR_AUTO = 0.0006
 BID_OFFSET = -0.1  # -0.1 means 10%(of BTC_DELTA) lower price
-ASK_OFFSET = 0.1
+ASK_OFFSET = 0
 
 parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC market')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
@@ -298,7 +298,7 @@ while True:
     # if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
-    if abs(cp - bp) > BTC_DELTA/4 and bfound is False and afound is False:
+    if abs(cp - bp) > BTC_DELTA / 3 and bfound is False and afound is False:
         free_btc = (coin.get_asset_info('BTC')['free'])
         print('\n' + datetime.now().strftime("%m-%d %H:%M:%S") + fg.li_yellow + 
             ' free BTC:{:.8f},'.format(free_btc)+fg.rs+'current {} price:{:.8f}BTC, bid:{:.8f}, ask:{:.8f}'.

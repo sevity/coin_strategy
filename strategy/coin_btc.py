@@ -114,7 +114,7 @@ if COLLECT: print('collect token option is ON!')
 BUYING_START = args.buying_start
 if BUYING_START: print('buying start option is ON!')
 BTC_DELTA = float(DELTA[TICKER])
-TIME_INTERVAL = 20 * 60  # 30 min.
+TIME_INTERVAL = 1 * 60  # 60 sec.  pbp도입에 따라 사실상 폐지
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         

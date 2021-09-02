@@ -250,7 +250,16 @@ while True:
             print(bg.magenta + msg + bg.rs)
             ap = bp * 2
         else:
-            ap = float(price) + BTC_DELTA - MINOR_DELTA * 2 + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA
+            multiple = random.choice(
+                    [ 1] * 70 +
+                    [ 2] * 15 +
+                    [ 3] * 10 +
+                    [ 5] * 2 +
+                    [10] * 1 +
+                    [20] * 1 +
+                    [30] * 1)
+            print('!! multiple:{}'.format(multiple))
+            ap = float(price) + BTC_DELTA * multiple - MINOR_DELTA * 2 + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
 
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+

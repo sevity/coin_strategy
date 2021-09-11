@@ -10,6 +10,7 @@ import os
 import jwt
 import uuid
 import hashlib
+import math
 from urllib.parse import urlencode
 from datetime import datetime, timezone, timedelta
 from multipledispatch import dispatch # https://www.geeksforgeeks.org/python-method-overloading/
@@ -212,6 +213,8 @@ def order_new(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = True
     return (oid,res)
 
 def order_new_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = False):
+    price = math.floor(price*100000000)/100000000  # 사토시 이하 버림처리
+    # print('price:{:.8f}'.format(price))
     query = {
         'market': 'BTC-{}'.format(ticker),
         'side': askbid,

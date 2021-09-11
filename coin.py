@@ -5,6 +5,7 @@ import exchange.upbit.sevity_coin_api
 import exchange.binance.sevity_coin_api
 from sty import fg, bg, ef, rs
 import time
+import math
 def log(msg):
     print('  ' + fg.li_black + msg + fg.rs)
 
@@ -102,3 +103,6 @@ class Coin:
         if price < 1000000: return 100
         if price < 2000000: return 500
         return 1000 # BTC
+
+    def satoshi_floor(self, price):
+        return math.floor(price*100000000)/100000000

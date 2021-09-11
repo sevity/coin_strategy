@@ -31,9 +31,10 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00160000, # 80000 
-    'BFC':0.00000100,  # 5
-    'ZRX':0.00000120,  
-    'LRC':0.00000150,  
+    'BFC':0.00000050,  # 5
+    'MARO':0.00000010,  # 5
+    'ZRX':0.00000050,  # 50
+    'LRC':0.00000050,  
     'OBSR':0.00000002,  # 
     'TRX':0.00000008,  # 5
     'CHZ':0.00000100,  # 30
@@ -45,9 +46,9 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
-    'OMG':0.00001000,  # 800
+    'OMG':0.00000500,  # 500
     'ADA':0.00000200,  # 50
-    'LOOM':0.00000030, # 10
+    'LOOM':0.00000010, # 10
     'CRO':0.00000020,  # 10
     'ENJ':0.00000150,  # 100
     'MANA':0.00000240,  # 80
@@ -56,30 +57,31 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'PLA':0.00000200,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
-    'CRV' :0.00000200,   # 100
+    'CRV' :0.00000100,   # 100
     'UNI' :0.00002000,
-    'LTC' :0.00020000,  # 10000
+    'LTC' :0.00010000,  # 10000
     'STX' :0.00000100,  # 100
-    'BAT' :0.00000200,  # 100
+    'BAT' :0.00000050,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000100,  # 100
-    'COMP' :0.00080000, # 40000
+    'COMP' :0.00020000, # 20000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
     'NCASH' :0.00000002,
     'FLOW' :0.00002000,
     'PICA' :0.00000010,  # 20
-    'XEM' :0.00000040,  # 40
+    'XEM' :0.00000015,  # 40
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
     'DOT' :0.00006000,  # 2000
     'REP' :0.00002000,  
-    'ETC' :0.00018000,  # 3000
-    'RVN' :0.00000020,  # 10
-    'FIL' :0.00020000,  # 10000
+    'ETC' :0.00004000,  # 3000
+    'RVN' :0.00000010,  # 5
+    'FIL' :0.00005000,  # 10000
     'BSV' :0.00030000,  
     'BCH' :0.00200000, # 50000 
     'WAVE' :0.00005000,  
+    'AXS' :0.00005000,  # 5000
     'MKR' :0.00300000,  
     'SRM' :0.00001000,  # 500
     'XTZ' :0.00001000,  # 500
@@ -197,8 +199,11 @@ while True:
         print('!! bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA))
         bp = pbp + BTC_DELTA
         print('!! changed bp:{:.8f}'.format(bp))
-    elif pafp > 0 and fsame(pafp, bp):
-        print('11 previous ask fill price is same as bid price!')
+        send_telegram('bp change too big!')
+    elif pafp > 0 and fsame(pafp, bp, 0.000000001):
+        print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
+                .format(pafp, bp))
+    bp = coin.satoshi_floor(bp)
     btckrw = coin.get_price('BTC', 'KRW')
     # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
     # print(mm)
@@ -255,13 +260,13 @@ while True:
             ap = bp * 2
         else:
             multiple = random.choice(
-                    [ 1] * 70 +
+                    [ 1] * 75 +
                     [ 2] * 15 +
-                    [ 3] * 10 +
-                    [ 5] * 2 +
-                    [10] * 1 +
-                    [20] * 1 +
-                    [30] * 1)
+                    [ 3] * 5 +
+                    [ 4] * 4 +
+                    [ 5] * 3 +
+                    [ 7] * 2 +
+                    [10] * 1)
             print('!! multiple:{}'.format(multiple))
             ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
 

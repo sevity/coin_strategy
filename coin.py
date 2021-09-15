@@ -106,3 +106,9 @@ class Coin:
 
     def satoshi_floor(self, price):
         return math.floor(price*100000000)/100000000
+
+    def satoshi_round(self, price):
+        return round(price, 8)
+
+
+

@@ -203,7 +203,8 @@ while True:
     elif pafp > 0 and fsame(pafp, bp, 0.000000001):
         print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
                 .format(pafp, bp))
-    bp = coin.satoshi_floor(bp)
+    # bp = coin.satoshi_floor(bp)
+    bp = coin.satoshi_round(bp)
     btckrw = coin.get_price('BTC', 'KRW')
     # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
     # print(mm)
@@ -260,11 +261,11 @@ while True:
             ap = bp * 2
         else:
             multiple = random.choice(
-                    [ 1] * 75 +
-                    [ 2] * 15 +
-                    [ 3] * 5 +
-                    [ 4] * 4 +
-                    [ 5] * 3 +
+                    [ 1] * 128 +
+                    [ 2] * 32 +
+                    [ 3] * 16 +
+                    [ 4] * 8 +
+                    [ 5] * 4 +
                     [ 7] * 2 +
                     [10] * 1)
             print('!! multiple:{}'.format(multiple))

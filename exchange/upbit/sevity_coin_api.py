@@ -415,6 +415,8 @@ def get_live_orders(ticker, currency):
         if res.ok == False:
             if str(res.reason) != 'Too Many Requests':
                 log('[get_live_orders] ' + str(res.reason))
+            if str(res.reason) == 'Bad Request':  # BTC마켓에만 있는데 원화로 요청한 경우 여기로 온다.
+                return 'bad request'
             time.sleep(5)
             return 'error'
 

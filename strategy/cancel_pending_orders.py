@@ -25,9 +25,10 @@ coin = Coin('upbit',access_key,secret_key)
 
 if market == 'ALL':
     l = coin.get_live_orders(ticker, 'KRW')
-    for (oid, askbid_, price, cnt, odt) in l:
-        if askbid == 'all' or askbid_ == askbid:
-            coin.cancel(oid, True)
+    if l != 'bad request':
+        for (oid, askbid_, price, cnt, odt) in l:
+            if askbid == 'all' or askbid_ == askbid:
+                coin.cancel(oid, True)
     l = coin.get_live_orders(ticker, 'BTC')
     for (oid, askbid_, price, cnt, odt) in l:
         if askbid == 'all' or askbid_ == askbid:
@@ -38,4 +39,4 @@ else:
         if askbid == 'all' or askbid_ == askbid:
             coin.cancel(oid, True)
 
-
+os.system("rm ../obj/*{}*".format(ticker))

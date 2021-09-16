@@ -65,6 +65,8 @@ class Coin:
             if str(r) == 'error':
                 time.sleep(5)
                 #log('get_live_orders retry..')
+            if str(r) == 'bad request':
+                return r
         return r
 
     @multimethod(str, str)

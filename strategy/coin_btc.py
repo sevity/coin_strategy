@@ -47,6 +47,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
     'OMG':0.00000500,  # 500
+    'TON':0.00000500,  # 500
     'ADA':0.00000200,  # 50
     'LOOM':0.00000010, # 10
     'CRO':0.00000020,  # 10
@@ -54,12 +55,12 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'MANA':0.00000240,  # 80
     'DOGE':0.00000090,  # 15
     'VET':0.00000010,  # 10
-    'PLA':0.00000200,  # 100
+    'PLA':0.00000100,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
-    'CRV' :0.00000100,   # 100
+    'CRV' :0.00000500,   # 100
     'UNI' :0.00002000,
-    'LTC' :0.00010000,  # 10000
+    'LTC' :0.00005000,  # 10000
     'STX' :0.00000100,  # 100
     'BAT' :0.00000050,  # 50
     'SYS' :0.00000200,  # 100
@@ -92,6 +93,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
     'NEAR' :0.00000500,  
+    'SC'   :0.00000005,  # 5
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -115,7 +117,7 @@ if COLLECT: print('collect token option is ON!')
 BUYING_START = args.buying_start
 if BUYING_START: print('buying start option is ON!')
 BTC_DELTA = float(DELTA[TICKER])
-TIME_INTERVAL = 1 * 60  # 60 sec.  pbp도입에 따라 사실상 폐지
+TIME_INTERVAL = 5 * 60  # 60 sec.  pbp도입에 따라 사실상 폐지
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -260,16 +262,23 @@ while True:
             print(bg.magenta + msg + bg.rs)
             ap = bp * 2
         else:
-            multiple = random.choice(
-                    [ 1] * 128 +
-                    [ 2] * 32 +
-                    [ 3] * 16 +
-                    [ 4] * 8 +
-                    [ 5] * 4 +
-                    [ 7] * 2 +
-                    [10] * 1)
-            print('!! multiple:{}'.format(multiple))
-            ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
+            ap = -1
+            while ap == -1:
+                multiple = random.choice(
+                        [ 1] * 128 +
+                        [ 2] * 32 +
+                        [ 3] * 16 +
+                        [ 4] * 8 +
+                        [ 5] * 4 +
+                        [ 7] * 2 +
+                        [10] * 1)
+                print('!! multiple:{}'.format(multiple))
+                ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
+                for (_, askbid, price, _, _) in l:
+                    if askbid=='ask' and fsame(price, ap):
+                        print('!! same ap found!')
+                        ap = -1
+                        break
 
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+

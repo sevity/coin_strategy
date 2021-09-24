@@ -274,8 +274,8 @@ while True:
                         [10] * 1)
                 print('!! multiple:{}'.format(multiple))
                 ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
-                for (_, askbid, price, _, _) in l:
-                    if askbid=='ask' and fsame(price, ap):
+                for (_, askbid_, price_, _, _) in l:
+                    if askbid_=='ask' and fsame(price_, ap):
                         print('!! same ap found!')
                         ap = -1
                         break

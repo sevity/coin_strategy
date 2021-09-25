@@ -294,7 +294,10 @@ def order_new_wrap(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm =
 
 def order_new_wrap_btc(ticker, price, cnt, askbid, ord_type, bLog = True, bConfirm = False):
     oid, res = order_new_btc(ticker, price, cnt, askbid, 'limit', bLog, bConfirm)
-    # log('res.reason:' + str(res.reason))
+    if str(res.reason) == 'Bad Request':
+        log('res.text:' + res.text)
+        time.sleep(15)
+
     while str(res.reason) == 'Too Many Requests':
         log('too_many_request_order.. retrying')
         time.sleep(15)

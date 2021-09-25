@@ -274,11 +274,12 @@ while True:
                         [10] * 1)
                 print('!! multiple:{}'.format(multiple))
                 ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
-                for (_, askbid_, price_, _, _) in l:
-                    if askbid_=='ask' and fsame(price_, ap):
-                        print('!! same ap found!')
-                        ap = -1
-                        break
+# 아래거 활성화 시켰더니 사실상 거의 1배수로만 동작해서 제거함(좀더 도박성 높임)
+#                for (_, askbid_, price_, _, _) in l:
+#                    if askbid_=='ask' and fsame(price_, ap):
+#                        print('!! same ap found!')
+#                        ap = -1
+#                        break
 
         gain = ap * bid_volume[oid] * (1.0 - FEE) - price * bid_volume[oid] * (1.0 + FEE)
         print(bg.da_red + fg.white + '! bid filled({:.8f}BTC).'.format(price)+bg.rs+fg.blue+
@@ -362,7 +363,9 @@ while True:
         #     br = 1.0
         #     print('new bid price is lower than previous. so bet ratio will be 1.0(full bet)')
         nb = bet * br  # new bet
-        print('time diff:{:,}s, bet ratio:{:.4f}, bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(td, br, bet, nb))
+        print('time diff:{:,}s, '.format(td) + fg.li_magenta + 
+                'bet ratio:{:.4f}'.format(br) + fg.rs + 
+                ', bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(bet, nb))
         bet = max(bet / 10,  nb)  # set min bet according to bet size
         bet = max(MIN_BET_FOR_AUTO, bet)  # min bet for BTC market in UPBIT
         pbp = bp
@@ -381,8 +384,8 @@ while True:
             save_obj(bid_prices, TICKER+'_bid_prices')
             save_obj(bid_volume, TICKER+'_bid_volume')
 
-            print(fg.red + '! bid placed({:.8f}), bet:{:.8f}btc, bid_gop:{}, bid_prices:{}'.
-                format(bp, (bet), bid_gop[bp], list(format_8f(bid_prices).values())) + fg.rs)
+            print(fg.red + '! bid placed({:.8f}), bet:{:.8f}btc, bid_prices:{}'.
+                format(bp, (bet), list(format_8f(bid_prices).values())) + fg.rs)
             # time.sleep(5)
             pbt = datetime.now()
 

@@ -60,12 +60,12 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'LINK' :0.00002000,  # 2000
     'CRV' :0.00000500,   # 100
     'UNI' :0.00002000,
-    'LTC' :0.00005000,  # 10000
+    'LTC' :0.00015000,  # 10000
     'STX' :0.00000100,  # 100
     'BAT' :0.00000050,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000100,  # 100
-    'COMP' :0.00020000, # 20000
+    'COMP' :0.00040000, # 20000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
     'NCASH' :0.00000002,
@@ -240,7 +240,8 @@ while True:
     save_obj(ask_prices, TICKER+'_ask_prices')
     save_obj(total_gain, TICKER+'_total_gain')
     if len(aps) > 0: 
-        # print('aa')
+        print('after ask filled, wait 2 hours not to bid too soon!')
+        time.sleep(60 * 60 * 2)
         continue
     
     # check bid fill
@@ -297,7 +298,8 @@ while True:
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:
-        # print('bb')
+        print('after bid filled, wait 2 hours not to bid too soon!')
+        time.sleep(60 * 60 * 2)
         continue
 
 
@@ -372,12 +374,12 @@ while True:
         # pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:
-            print('!!! no money!({:.8}BTC)'.format(bet))
+            print('!!! no BTC money!(need: {:.8}BTC)'.format(bet))
             pbt += timedelta(seconds=td/2)
             if fsame(bet, MIN_BET_FOR_AUTO):
-                time.sleep(60)
+                time.sleep(60 * 60)
             else:
-                time.sleep(10)
+                time.sleep(60 * 60)
         else:
             bid_prices[oid] = bp
             bid_volume[oid] = bet / bp

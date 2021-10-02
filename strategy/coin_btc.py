@@ -42,7 +42,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'MED':0.00000030,  # 5
     'SNT':0.00000080,  # 20
     'GOM2':0.00000005,
-    'XRP':0.00000240,  # 80
+    'XRP':0.00000160,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
@@ -62,7 +62,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'UNI' :0.00002000,
     'LTC' :0.00015000,  # 10000
     'STX' :0.00000100,  # 100
-    'BAT' :0.00000050,  # 50
+    'BAT' :0.00000100,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000100,  # 100
     'COMP' :0.00040000, # 20000
@@ -77,7 +77,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'DOT' :0.00006000,  # 2000
     'REP' :0.00002000,  
     'ETC' :0.00004000,  # 3000
-    'RVN' :0.00000010,  # 5
+    'RVN' :0.00000005,  # 5
     'FIL' :0.00005000,  # 10000
     'BSV' :0.00030000,  
     'BCH' :0.00200000, # 50000 
@@ -197,14 +197,18 @@ while True:
     bb = BID_OFFSET * BTC_DELTA
     bp = int((cp-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
     ap = bp + BTC_DELTA + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
-    if pbp > 0 and bp - pbp > bp:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
-        print('!! bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA))
+    if pbp > 0 and bp - pbp > BTC_DELTA + 0.000000005:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
+        m = '[{}-BTC] bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(
+                TICKER, bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA)
+        print(m)
+        send_telegram(m)
         bp = pbp + BTC_DELTA
         print('!! changed bp:{:.8f}'.format(bp))
-        send_telegram('bp change too big!')
+        pbp = bp
     elif pafp > 0 and fsame(pafp, bp, 0.000000001):
         print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
                 .format(pafp, bp))
+        send_telegram(' previous ask fill price is same as bid price!')
     # bp = coin.satoshi_floor(bp)
     bp = coin.satoshi_round(bp)
     btckrw = coin.get_price('BTC', 'KRW')

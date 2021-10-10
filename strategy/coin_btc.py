@@ -31,7 +31,7 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00160000, # 80000 
-    'BFC':0.00000050,  # 5
+    'BFC':0.00000025,  # 5
     'MARO':0.00000010,  # 5
     'ZRX':0.00000050,  # 50
     'LRC':0.00000050,  
@@ -42,16 +42,17 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'MED':0.00000030,  # 5
     'SNT':0.00000080,  # 20
     'GOM2':0.00000005,
-    'XRP':0.00000160,  # 80
+    'XRP':0.00000080,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00001600,  # 800
     'OMG':0.00000500,  # 500
     'TON':0.00000500,  # 500
     'ADA':0.00000200,  # 50
-    'LOOM':0.00000010, # 10
+    'LOOM':0.00000100, # 10
     'CRO':0.00000020,  # 10
-    'ENJ':0.00000150,  # 100
+    'ENJ':0.00000100,  # 100
+    'IOST':0.00000100,  # 100
     'MANA':0.00000240,  # 80
     'DOGE':0.00000090,  # 15
     'VET':0.00000010,  # 10
@@ -62,9 +63,9 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'UNI' :0.00002000,
     'LTC' :0.00015000,  # 10000
     'STX' :0.00000100,  # 100
-    'BAT' :0.00000100,  # 50
+    'BAT' :0.00000150,  # 50
     'SYS' :0.00000200,  # 100
-    'HBD' :0.00000100,  # 100
+    'HBD' :0.00000200,  # 100
     'COMP' :0.00040000, # 20000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
@@ -82,13 +83,13 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'BSV' :0.00030000,  
     'BCH' :0.00200000, # 50000 
     'WAVE' :0.00005000,  
-    'AXS' :0.00005000,  # 5000
+    'AXS' :0.00020000,  # 5000
     'MKR' :0.00300000,  
     'SRM' :0.00001000,  # 500
     'XTZ' :0.00001000,  # 500
     'SXP' :0.00000200,  
     'ALGO' :0.00000150,    # 50
-    'PSG' :0.00008000,    # 2000
+    'PSG' :0.00002000,    # 2000
     'ATOM' :0.00006000,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
@@ -197,20 +198,21 @@ while True:
     bb = BID_OFFSET * BTC_DELTA
     bp = int((cp-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
     ap = bp + BTC_DELTA + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
-    if pbp > 0 and bp - pbp > BTC_DELTA + 0.000000005:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
+    if pbp > 0 and bp - pbp > BTC_DELTA * 1.5 + 0.000000005:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
         m = '[{}-BTC] bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(
                 TICKER, bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA)
         print(m)
         send_telegram(m)
         bp = pbp + BTC_DELTA
-        print('!! changed bp:{:.8f}'.format(bp))
-        pbp = bp
+        print('!! changed bp:{:.8f}.. 30 min wait'.format(bp))
+        time.sleep(60 * 30)
     elif pafp > 0 and fsame(pafp, bp, 0.000000001):
         print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
                 .format(pafp, bp))
         send_telegram(' previous ask fill price is same as bid price!')
     # bp = coin.satoshi_floor(bp)
     bp = coin.satoshi_round(bp)
+    pbp = bp
     btckrw = coin.get_price('BTC', 'KRW')
     # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
     # print(mm)
@@ -374,7 +376,7 @@ while True:
                 ', bet:{:.8f}BTC, new bet:{:.8f}BTC'.format(bet, nb))
         bet = max(bet / 10,  nb)  # set min bet according to bet size
         bet = max(MIN_BET_FOR_AUTO, bet)  # min bet for BTC market in UPBIT
-        pbp = bp
+        # pbp = bp
         # pbt = datetime.now()
         oid = coin.limit_buy_btc(TICKER, bp, bet / bp, True, True)
         if oid == -1:

@@ -106,13 +106,14 @@ BID_OFFSET = -0.1  # -0.1 means 10%(of BTC_DELTA) lower price
 ASK_OFFSET = 0
 
 parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC market')
-parser.add_argument('--verbose', '-v', required=False, action='store_false', help='print debug messages.')
+parser.add_argument('--verbose', '-v', required=False, action='store_true', help='print debug messages.')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 parser.add_argument('--collect', '-c', required=False, action='store_true', help='cancel parital pending bid to gather token')
 parser.add_argument('--buying_start', '-bs', required=False, action='store_true', help='first bid will not be asked')
 args = parser.parse_args()
-verbose = args.ticker
+VERBOSE = args.verbose
+if VERBOSE: print('verbose option is ON!')
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COLLECT = args.collect  # True or False
@@ -217,7 +218,7 @@ while True:
     pbp = bp
     btckrw = coin.get_price('BTC', 'KRW')
     mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
-    # if verbose: print(mm)
+    # if VERBOSE: print(mm)
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
@@ -321,7 +322,8 @@ while True:
             afound = True
     msg = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}, bfound:{}, afound:{}, cp-bp({:.8f})>{:.8f}:{}'. format(
             bp, ap, cp, bfound, afound, abs(cp-bp), BTC_DELTA/4, abs(cp-bp)>BTC_DELTA/4)
-    if verbose and pmsg != msg: print(msg)
+    if VERBOSE:
+        if pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA / 3 and bfound is False and afound is False:

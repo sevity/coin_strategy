@@ -54,7 +54,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ENJ':0.00000100,  # 100
     'IOST':0.00000100,  # 100
     'MANA':0.00000240,  # 80
-    'DOGE':0.00000090,  # 15
+    'DOGE':0.00000100,  # 15
     'VET':0.00000010,  # 10
     'PLA':0.00000100,  # 100
     'IGNIS':0.00000020,
@@ -90,7 +90,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SXP' :0.00000200,  
     'ALGO' :0.00000150,    # 50
     'PSG' :0.00002000,    # 2000
-    'ATOM' :0.00006000,  # 1500
+    'ATOM' :0.00020000,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
     'NEAR' :0.00000500,  
@@ -106,11 +106,13 @@ BID_OFFSET = -0.1  # -0.1 means 10%(of BTC_DELTA) lower price
 ASK_OFFSET = 0
 
 parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC market')
+parser.add_argument('--verbose', '-v', required=False, action='store_false', help='print debug messages.')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
 parser.add_argument('--collect', '-c', required=False, action='store_true', help='cancel parital pending bid to gather token')
 parser.add_argument('--buying_start', '-bs', required=False, action='store_true', help='first bid will not be asked')
 args = parser.parse_args()
+verbose = args.ticker
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COLLECT = args.collect  # True or False
@@ -196,7 +198,7 @@ while True:
     # 먼저 현재 BTC_DELTA간격에 놓여있는 bid-ask pair를 확인한다.
     cp = float(coin.get_price(TICKER, 'BTC'))  # coin price
     bb = BID_OFFSET * BTC_DELTA
-    bp = int((cp-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
+    bp = int((cp+0.00000001-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
     ap = bp + BTC_DELTA + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
     if pbp > 0 and bp - pbp > BTC_DELTA * 1.5 + 0.000000005:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
         m = '[{}-BTC] bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(
@@ -214,8 +216,8 @@ while True:
     bp = coin.satoshi_round(bp)
     pbp = bp
     btckrw = coin.get_price('BTC', 'KRW')
-    # mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
-    # print(mm)
+    mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
+    # if verbose: print(mm)
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
@@ -272,7 +274,7 @@ while True:
             ap = -1
             while ap == -1:
                 multiple = random.choice(
-                        [ 1] * 128 +
+                        [ 1] * 64 +
                         [ 2] * 32 +
                         [ 3] * 16 +
                         [ 4] * 8 +
@@ -319,7 +321,7 @@ while True:
             afound = True
     msg = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}, bfound:{}, afound:{}, cp-bp({:.8f})>{:.8f}:{}'. format(
             bp, ap, cp, bfound, afound, abs(cp-bp), BTC_DELTA/4, abs(cp-bp)>BTC_DELTA/4)
-    # if pmsg != msg: print(msg)
+    if verbose and pmsg != msg: print(msg)
     pmsg = msg
     # ask없는 bid에 대해 주문
     if abs(cp - bp) > BTC_DELTA / 3 and bfound is False and afound is False:

@@ -17,16 +17,16 @@ import argparse
 # 설명 ########################################################################
 # BTC개수를 늘리는걸 최우선으로 하여, KRW로 bid후 ask하는 전략
 # param #######################################################################
-KRW_DELTA = 3000000  # 이걸 기준으로 촘촘하게 주문을 낸다.
+KRW_DELTA = 1000000  # 이걸 기준으로 촘촘하게 주문을 낸다.
 # BETTING = 10000    # 초기버전은 고정배팅으로 가보자
-BETTING = 1500000  # AUTO if 0
+BETTING = 2500000  # AUTO if 0
 MAX_BETTING = 5000000
 ###############################################################################
 # legacy or fixed
 FEE = 0.0005
 MIN_BET_FOR_AUTO = 200000
 MINOR_DELTA = 0  # sholud be multiple of 1000
-TIME_INTERVAL = 60 * 60  # 60 min.
+TIME_INTERVAL = 60 * 10  # 60 min.
 ###############################################################################
 
 f = open("../upbit_api_key.txt", 'r')      
@@ -193,7 +193,7 @@ while True:
         br = min(1.0, td / TIME_INTERVAL)  # bet ratio
         nb = bet * br  # new bet
         print('time diff: {}s, bet ratio: {}, bet:{}, new bet:{}'.format(td, br, bet, nb))
-        bet = max(10000, nb)  # min bet for BTC market in UPBIT
+        bet = max(500000, nb)  # min bet for BTC market in UPBIT
         pbp = bp
         # pbt = datetime.now()
         oid = coin.limit_buy('BTC', bp, bet / bp, True, True)

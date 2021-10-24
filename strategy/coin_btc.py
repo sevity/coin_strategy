@@ -30,7 +30,7 @@ def load_obj(name):
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.00160000, # 80000 
+    'ETH':0.00060000, # 80000 
     'BFC':0.00000025,  # 5
     'MARO':0.00000010,  # 5
     'ZRX':0.00000050,  # 50
@@ -42,7 +42,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'MED':0.00000030,  # 5
     'SNT':0.00000080,  # 20
     'GOM2':0.00000005,
-    'XRP':0.00000080,  # 80
+    'XRP':0.00000040,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00000600,  # 800
@@ -52,11 +52,11 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'LOOM':0.00000015, # 10
     'CRO':0.00000020,  # 10
     'ENJ':0.00000100,  # 100
-    'IOST':0.00000020,  # 20
+    'IOST':0.00000003,  # 03
     'MANA':0.00000240,  # 80
     'DOGE':0.00000020,  # 15
     'VET':0.00000010,  # 10
-    'PLA':0.00000100,  # 100
+    'PLA':0.00000020,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
     'CRV' :0.00000200,   # 100
@@ -66,7 +66,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'BAT' :0.00000150,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000200,  # 100
-    'COMP' :0.00040000, # 20000
+    'COMP' :0.00020000, # 20000
     'BTT' :0.00000001,
     'DENT' :0.00000002,
     'NCASH' :0.00000002,
@@ -90,11 +90,12 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SXP' :0.00000200,  
     'ALGO' :0.00000150,    # 50
     'PSG' :0.00002000,    # 2000
-    'ATOM' :0.00003000,  # 1500
+    'ATOM' :0.00001500,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
     'NEAR' :0.00000500,  
     'SC'   :0.00000005,  # 5
+    'SOL'   :0.00010000,  # 10000
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -213,7 +214,7 @@ while True:
         print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
                 .format(pafp, bp))
         send_telegram(' previous ask fill price is same as bid price!')
-        bp -= 0.00000001
+        bp -= 0.00000002
         print('!!! changed bp:{:.8f}'.format(bp))
     # bp = coin.satoshi_floor(bp)
     bp = coin.satoshi_round(bp)
@@ -306,10 +307,11 @@ while True:
         #if bid_gop[price] < 1: bid_gop[price] *= 2
         #else: bid_gop[price] += 1
         # time.sleep(5)
-        print('after ask placed, wait 2 hours not to bid too soon!')
-        save_obj(bid_prices, TICKER+'_bid_prices')
-        save_obj(ask_prices, TICKER+'_ask_prices')
-        time.sleep(60 * 60 * 2)
+
+        #print('after ask placed, wait 2 hours not to bid too soon!')
+        #save_obj(bid_prices, TICKER+'_bid_prices')
+        #save_obj(ask_prices, TICKER+'_ask_prices')
+        # time.sleep(60 * 60 * 2)
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:

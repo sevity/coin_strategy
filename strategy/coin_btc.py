@@ -30,7 +30,7 @@ def load_obj(name):
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.00060000, # 80000 
+    'ETH':0.00080000, # 80000 
     'BFC':0.00000025,  # 5
     'MARO':0.00000010,  # 5
     'ZRX':0.00000050,  # 50
@@ -53,16 +53,16 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'CRO':0.00000020,  # 10
     'ENJ':0.00000100,  # 100
     'IOST':0.00000003,  # 03
-    'MANA':0.00000240,  # 80
+    'MANA':0.00000050,  # 80
     'DOGE':0.00000020,  # 15
     'VET':0.00000010,  # 10
-    'PLA':0.00000020,  # 100
+    'PLA':0.00000050,  # 100
     'IGNIS':0.00000020,
     'LINK' :0.00002000,  # 2000
     'CRV' :0.00000200,   # 100
     'UNI' :0.00002000,
     'LTC' :0.00015000,  # 10000
-    'STX' :0.00000100,  # 100
+    'STX' :0.00000200,  # 100
     'BAT' :0.00000150,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000200,  # 100
@@ -88,14 +88,15 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SRM' :0.00001000,  # 500
     'XTZ' :0.00001000,  # 500
     'SXP' :0.00000200,  
-    'ALGO' :0.00000150,    # 50
+    'ALGO' :0.00000100,    # 50
     'PSG' :0.00002000,    # 2000
     'ATOM' :0.00001500,  # 1500
     'SAND' :0.00000050,  
     'POWR' :0.00000030,  
     'NEAR' :0.00000500,  
     'SC'   :0.00000005,  # 5
-    'SOL'   :0.00010000,  # 10000
+    'SOL'  :0.00010000,  # 10000
+    'SNX'  :0.00000200,  # 200
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -252,8 +253,8 @@ while True:
     save_obj(ask_prices, TICKER+'_ask_prices')
     save_obj(total_gain, TICKER+'_total_gain')
     if len(aps) > 0: 
-        print('after ask filled, wait 2 hours not to bid too soon!')
-        time.sleep(60 * 60 * 2)
+        # print('after ask filled, wait 2 hours not to bid too soon!')
+        # time.sleep(60 * 60 * 2)
         continue
     
     # check bid fill
@@ -280,10 +281,12 @@ while True:
                 multiple = random.choice(
                         [ 1] * 64 +
                         [ 2] * 32 +
-                        [ 3] * 16 +
-                        [ 4] * 8 +
-                        [ 5] * 4 +
-                        [ 7] * 2 +
+                        [ 3] * 32 +
+                        [ 4] * 16 +
+                        [ 5] * 8 +
+                        [ 7] * 4 +
+                        [ 8] * 2 +
+                        [ 9] * 1 +
                         [10] * 1)
                 print('!! multiple:{}'.format(multiple))
                 ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
@@ -308,10 +311,10 @@ while True:
         #else: bid_gop[price] += 1
         # time.sleep(5)
 
-        #print('after ask placed, wait 2 hours not to bid too soon!')
-        #save_obj(bid_prices, TICKER+'_bid_prices')
-        #save_obj(ask_prices, TICKER+'_ask_prices')
-        # time.sleep(60 * 60 * 2)
+        print('after ask placed, wait 2 hours not to bid too soon!')
+        save_obj(bid_prices, TICKER+'_bid_prices')
+        save_obj(ask_prices, TICKER+'_ask_prices')
+        time.sleep(60 * 60 * 2)
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:

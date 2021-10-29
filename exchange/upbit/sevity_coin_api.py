@@ -581,7 +581,7 @@ def get_order_state(oid):
         elif state == 'wait' and remaining_vol == 0:
             raise Exception(f'state is wait but remaining volume is zero ({remaining_vol})')
     except Exception as e:
-        log('[get_order_state] error: ' + str(e) + ', j:' + str(j))
+        log('[get_order_state] res:' + str(res.text))
         return ''
     if state == 'wait': return 'ack'
     if state == 'done': return 'fill'

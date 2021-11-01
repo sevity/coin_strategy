@@ -546,6 +546,7 @@ def get_live_orders(currency):
 
 def get_order_state(oid):
     state = ''
+    j = ''
     try:
         query = {
             'uuid': oid,

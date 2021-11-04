@@ -52,7 +52,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'LOOM':0.00000015, # 10
     'CRO':0.00000020,  # 10
     'ENJ':0.00000100,  # 100
-    'IOST':0.00000003,  # 03
+    'IOST':0.00000005,  # 03
     'MANA':0.00000050,  # 80
     'DOGE':0.00000020,  # 15
     'VET':0.00000010,  # 10
@@ -214,11 +214,10 @@ while True:
         print('!! changed bp:{:.8f}.. 30 min wait'.format(bp))
         time.sleep(60 * 30)
     elif pafp > 0 and fsame(pafp, bp, 0.0000000001):
-        print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'
-                .format(pafp, bp))
-        send_telegram(' previous ask fill price is same as bid price!')
-        bp -= 0.00000002
-        print('!!! changed bp:{:.8f}'.format(bp))
+        # print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'.format(pafp, bp))
+        # send_telegram(' previous ask fill price is same as bid price!')
+        bp -= 0.00000001
+        # print('!!! changed bp:{:.8f}'.format(bp))
     # bp = coin.satoshi_floor(bp)
     bp = coin.satoshi_round(bp)
     pbp = bp

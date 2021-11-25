@@ -31,7 +31,7 @@ def load_obj(name):
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'ETH':0.00080000, # 80000 
-    'BFC':0.00000025,  # 5
+    'BFC':0.00000035,  # 5
     'MARO':0.00000010,  # 5
     'ZRX':0.00000050,  # 50
     'LRC':0.00000050,  
@@ -46,24 +46,24 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XRP':0.00000040,  # 80
     'XLM':0.00000040,  # 40
     'PUNDIX':0.00000150,
-    'EOS':0.00000600,  # 800
+    'EOS':0.00000200,  # 800
     'OMG':0.00002000,  # 500
     'TON':0.00000500,  # 500
     'ADA':0.00000200,  # 50
     'LOOM':0.00000015, # 10
     'CRO':0.00000020,  # 10
     'ENJ':0.00000100,  # 100
-    'IOST':0.00000005,  # 03
+    'IOST':0.00000003,  # 03
     'MANA':0.00000150,  # 80
-    'DOGE':0.00000020,  # 15
+    'DOGE':0.00000010,  # 15
     'VET':0.00000010,  # 10
     'PLA':0.00000050,  # 100
     'IGNIS':0.00000020,
-    'LINK' :0.00002000,  # 2000
+    'LINK' :0.00001500,  # 2000
     'CRV' :0.00000200,   # 100
     'UNI' :0.00001000,   # 1000
     'LTC' :0.00015000,  # 10000
-    'STX' :0.00000150,  # 100
+    'STX' :0.00000080,  # 100
     'BAT' :0.00000150,  # 50
     'SYS' :0.00000200,  # 100
     'HBD' :0.00000200,  # 100
@@ -76,18 +76,18 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'XEM' :0.00000015,  # 40
     'STORJ' :0.00000200,  # 250
     'GRT' :0.00000100,  # 100
-    'DOT' :0.00006000,  # 2000
+    'DOT' :0.00002000,  # 2000
     'REP' :0.00002000,  
-    'ETC' :0.00004000,  # 3000
+    'ETC' :0.00002000,  # 3000
     'RVN' :0.00000005,  # 5
-    'FIL' :0.00005000,  # 10000
+    'FIL' :0.00002800,  # 10000
     'BSV' :0.00030000,  
-    'BCH' :0.00200000, # 50000 
-    'WAVE' :0.00005000,  
+    'BCH' :0.00020000, # 20000 
+    'WAVES' :0.00002000,  
     'AXS' :0.00010000,  # 5000
     'MKR' :0.00300000,  
     'SRM' :0.00001000,  # 500
-    'XTZ' :0.00001000,  # 500
+    'XTZ' :0.00000200,  # 500
     'SXP' :0.00000200,  
     'ALGO' :0.00000100,    # 50
     'PSG' :0.00002000,    # 2000
@@ -99,7 +99,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'SOLVE'   :0.00000010,  # 5
     'SOL'  :0.00010000,  # 10000
     'SNX'  :0.00000400,  # 200
-    '1INCH'  :0.00000500,  # 
+    '1INCH'  :0.00000200,  # 
     }
 BETTING = 0.007    # 초기버전은 고정배팅으로 가보자(200만원 정도 된다)
 # BETTING = 0  # AUTO
@@ -114,7 +114,7 @@ parser = argparse.ArgumentParser(description='btc coin increase strategy for BTC
 parser.add_argument('--verbose', '-v', required=False, action='store_true', help='print debug messages.')
 parser.add_argument('--ticker', '-t', required=True, help='coin name ex)ETH')
 parser.add_argument('--betting', '-b', required=False, default=BETTING, help='betting BTC amount a time')
-parser.add_argument('--collect', '-c', required=False, action='store_true', help='cancel parital pending bid to gather token')
+parser.add_argument('--collect', '-c', required=False, type=int, nargs='?', const=10, help='cancel parital pending bid to gather token')
 parser.add_argument('--buying_start', '-bs', required=False, action='store_true', help='first bid will not be asked')
 args = parser.parse_args()
 VERBOSE = args.verbose
@@ -122,11 +122,15 @@ if VERBOSE: print('verbose option is ON!')
 TICKER = args.ticker.upper()
 BETTING = float(args.betting)
 COLLECT = args.collect  # True or False
-if COLLECT: print('collect token option is ON!')
+try:
+    cur_collect_cnt=load_obj(TICKER+'_cur_collect_cnt')
+except:
+    cur_collect_cnt=0
+if COLLECT: print('Collect token option is ON! collected:', cur_collect_cnt, '/', COLLECT)
 BUYING_START = args.buying_start
 if BUYING_START: print('buying start option is ON!')
 BTC_DELTA = float(DELTA[TICKER])
-TIME_INTERVAL = 5 * 60  # 60 sec.  pbp도입에 따라 사실상 폐지
+TIME_INTERVAL = 30 * 60  # 60 sec.  pbp도입에 따라 사실상 폐지
 ###############################################################################
 f = open("../upbit_api_key.txt", 'r')      
 access_key = f.readline().rstrip()         
@@ -206,14 +210,16 @@ while True:
     bb = BID_OFFSET * BTC_DELTA
     bp = int((cp+0.00000001-bb) / BTC_DELTA) * BTC_DELTA + bb # bid price
     ap = bp + BTC_DELTA + (ASK_OFFSET - BID_OFFSET) * BTC_DELTA # ask price
+    mm = '1) pbp:{:.8f}, bp:{:.8f}, {:.2f}BTC_DELTA, ap:{:.8f}, cp:{:.8f}'. format(pbp, bp, (bp-pbp)/BTC_DELTA, ap, cp)
+    if VERBOSE: print(mm)
     if pbp > 0 and bp - pbp > BTC_DELTA * 1.1 + 0.000000005:  # bp는 한번에 한스텝만 상승가능하도록 제한(폭등시를 위한 조치
-        m = '[{}-BTC] bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({}BTC_DELTA)'.format(
+        m = '[{}-BTC] bp change too big. cbp:{:.8f}, pbp:{:.8f}, cbp-pbp:{:.8f}({:.2f}BTC_DELTA)'.format(
                 TICKER, bp, pbp, bp-pbp, (bp-pbp)/BTC_DELTA)
         print(m)
         send_telegram(m)
         bp = pbp + BTC_DELTA
-        print('!! changed bp:{:.8f}.. 30 min wait'.format(bp))
-        time.sleep(60 * 30)
+        # print('!! changed bp:{:.8f}.. 60 min wait'.format(bp))
+        # time.sleep(60 * 60)
     elif pafp > 0 and fsame(pafp, bp, 0.0000000001):
         # print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'.format(pafp, bp))
         # send_telegram(' previous ask fill price is same as bid price!')
@@ -221,10 +227,12 @@ while True:
         # print('!!! changed bp:{:.8f}'.format(bp))
     # bp = coin.satoshi_floor(bp)
     bp = coin.satoshi_round(bp)
+    if bp > cp: bp = cp - 0.00000001
+    bp = coin.satoshi_round(bp)
     pbp = bp
     btckrw = coin.get_price('BTC', 'KRW')
-    mm = 'bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(bp, ap, cp)
-    # if VERBOSE: print(mm)
+    # mm = '2) pbp:{:.8f}, bp:{:.8f}, ap:{:.8f}, cp:{:.8f}'. format(pbp, bp, ap, cp)
+    if VERBOSE: print(mm)
 
     # check ask fill
     aps = copy.deepcopy(ask_prices)
@@ -255,8 +263,8 @@ while True:
     save_obj(ask_prices, TICKER+'_ask_prices')
     save_obj(total_gain, TICKER+'_total_gain')
     if len(aps) > 0: 
-        # print('after ask filled, wait 2 hours not to bid too soon!')
-        # time.sleep(60 * 60 * 2)
+        print('after ask filled, wait 30 min. not to bid too soon!')
+        time.sleep(60 * 30)
         continue
     
     # check bid fill
@@ -289,7 +297,19 @@ while True:
                         [ 7] * 4 +
                         [ 8] * 2 +
                         [ 9] * 1 +
-                        [10] * 1)
+                        [10] * 1 +
+                        [20] * 1)
+                if COLLECT and cur_collect_cnt < COLLECT:
+                    multiple *= 1.5
+                    multiple += 10
+                    cur_collect_cnt += 1
+                    print('!! collected:{}'.format(cur_collect_cnt))
+                    save_obj(cur_collect_cnt, TICKER+'_cur_collect_cnt')
+                if COLLECT and cur_collect_cnt >= COLLECT:
+                    print('!! COLLECT reset')
+                    cur_collect_cnt = 0  # reset
+                    COLLECT = None
+                    save_obj(cur_collect_cnt, TICKER+'_cur_collect_cnt')
                 print('!! multiple:{}'.format(multiple))
                 ap = float(price) + BTC_DELTA * multiple + (ASK_OFFSET-BID_OFFSET) * BTC_DELTA  # check
 # 아래거 활성화 시켰더니 사실상 거의 1배수로만 동작해서 제거함(좀더 도박성 높임)
@@ -313,10 +333,10 @@ while True:
         #else: bid_gop[price] += 1
         # time.sleep(5)
 
-        print('after ask placed, wait 2 hours not to bid too soon!')
+        # print('after ask placed, wait 2 hours not to bid too soon!')
         save_obj(bid_prices, TICKER+'_bid_prices')
         save_obj(ask_prices, TICKER+'_ask_prices')
-        time.sleep(60 * 60 * 2)
+        # time.sleep(60 * 60 * 2)
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:

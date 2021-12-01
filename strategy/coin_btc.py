@@ -30,7 +30,7 @@ def load_obj(name):
 # BTC개수를 늘리는걸 최우선으로 하여, BTC로 bid후 ask하는 전략
 # param #######################################################################
 DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
-    'ETH':0.00080000, # 80000 
+    'ETH':0.00100000, # 80000 
     'BFC':0.00000035,  # 5
     'MARO':0.00000010,  # 5
     'ZRX':0.00000050,  # 50
@@ -40,24 +40,29 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'TRX':0.00000008,  # 5
     'CHZ':0.00000100,  # 30
     'GLM':0.00000030,  # 
+    'OXT':0.00000030,  # 
     'MED':0.00000030,  # 5
     'SNT':0.00000080,  # 20
     'GOM2':0.00000005,
     'XRP':0.00000040,  # 80
-    'XLM':0.00000040,  # 40
+    'XLM':0.00000020,  # 40
     'PUNDIX':0.00000150,
     'EOS':0.00000200,  # 800
     'OMG':0.00002000,  # 500
     'TON':0.00000500,  # 500
+    'VAL':0.00000500,  # 500
+    'CELO':0.00000400,  # 400
+    'NKN':0.00000040,  # 40
     'ADA':0.00000200,  # 50
     'LOOM':0.00000015, # 10
     'CRO':0.00000020,  # 10
     'ENJ':0.00000100,  # 100
-    'IOST':0.00000003,  # 03
+    'IOST':0.00000005,  # 03
     'MANA':0.00000150,  # 80
     'DOGE':0.00000010,  # 15
     'VET':0.00000010,  # 10
     'PLA':0.00000050,  # 100
+    'ARDR':0.00000050,  # 50
     'IGNIS':0.00000020,
     'LINK' :0.00001500,  # 2000
     'CRV' :0.00000200,   # 100
@@ -66,6 +71,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'STX' :0.00000080,  # 100
     'BAT' :0.00000150,  # 50
     'SYS' :0.00000200,  # 100
+    'HIVE' :0.00000300,  # 500
     'HBD' :0.00000200,  # 100
     'COMP' :0.00020000, # 20000
     'BTT' :0.00000001,
@@ -218,8 +224,8 @@ while True:
         print(m)
         send_telegram(m)
         bp = pbp + BTC_DELTA
-        # print('!! changed bp:{:.8f}.. 60 min wait'.format(bp))
-        # time.sleep(60 * 60)
+        print('!! changed bp:{:.8f}.. 30 min wait'.format(bp))
+        time.sleep(60 * 30)
     elif pafp > 0 and fsame(pafp, bp, 0.0000000001):
         # print('!! previous ask fill({:.8f}) price is same as bid price({:.8f})!'.format(pafp, bp))
         # send_telegram(' previous ask fill price is same as bid price!')
@@ -263,8 +269,8 @@ while True:
     save_obj(ask_prices, TICKER+'_ask_prices')
     save_obj(total_gain, TICKER+'_total_gain')
     if len(aps) > 0: 
-        print('after ask filled, wait 30 min. not to bid too soon!')
-        time.sleep(60 * 30)
+        # print('after ask filled, wait 30 min. not to bid too soon!')
+        # time.sleep(60 * 30)
         continue
     
     # check bid fill
@@ -333,10 +339,10 @@ while True:
         #else: bid_gop[price] += 1
         # time.sleep(5)
 
-        # print('after ask placed, wait 2 hours not to bid too soon!')
+        print('after ask placed, wait 30 mins not to bid too soon!')
         save_obj(bid_prices, TICKER+'_bid_prices')
         save_obj(ask_prices, TICKER+'_ask_prices')
-        # time.sleep(60 * 60 * 2)
+        time.sleep(60 * 30)
     save_obj(bid_prices, TICKER+'_bid_prices')
     save_obj(ask_prices, TICKER+'_ask_prices')
     if len(bps) > 0:

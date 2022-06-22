@@ -14,7 +14,7 @@ idna==2.10
 incremental==17.5.0
 multimethods==1.0.0
 multipledispatch==0.6.0
-numpy==1.19.2
+numpy==1.22.0
 pudb==2019.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8

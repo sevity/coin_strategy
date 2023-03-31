@@ -17,12 +17,31 @@ import argparse
 
 import pickle
 from pathlib import Path
+
+def once_every(x):
+    def deco(func):
+        counter = 0
+        def wrapper(*args, **kwargs):
+            nonlocal counter
+            counter += 1
+            if counter % x == 0:
+                # print('pkekekekekekekekeke')
+                return func(*args, **kwargs)
+            else:
+                # print('kekekekekekekekeke')
+                return None
+        return wrapper
+    return deco
+
+@once_every(3000)
 def save_obj(obj, name):
+    print('saving..')
     Path("../obj").mkdir(parents=True, exist_ok=True)
     with open('../obj/coin_btc_'+ name + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 def load_obj(name):
+    # print('loading..')
     with open('../obj/coin_btc_' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
@@ -49,7 +68,7 @@ DELTA = { # 이걸 기준으로 촘촘하게 주문을 낸다.
     'PUNDIX':0.00000150,
     'EOS':0.00000200,  # 800
     'OMG':0.00002000,  # 500
-    'API3':0.00002000,  # 
+    'API3':0.00001000,  # 
     'TON':0.00000500,  # 500
     'GTC':0.00001000,  # 500
     'VAL':0.00000500,  # 500

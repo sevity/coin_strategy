@@ -34,7 +34,7 @@ service-identity==18.1.0
 six==1.15.0
 sty==1.0.0b12
 telegram==0.0.1
-tornado==6.0.4
+tornado==6.3.2
 Twisted==20.3.0
 txaio==20.4.1
 tzlocal==2.1
